@@ -1,0 +1,11 @@
+[package]
+name = "gold-core"
+description = "Pure domain logic for Gold School: money, sizing, gates, plans, journal, readiness, drills."
+edition.workspace = true
+version.workspace = true
+
+[lib]
+name = "gold_core"
+
+[dependencies]
+serde = { workspace = true }

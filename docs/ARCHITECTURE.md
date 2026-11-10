@@ -30,7 +30,7 @@ trade_school/
 ├── docs/                          # PRD, architecture, plan, ADRs, curriculum, design system
 ├── Cargo.toml                     # workspace
 ├── crates/
-│   ├── core/                      # PURE domain logic. No web, no async. Unit-tested natively.
+│   ├── core/                      # package `gold-core` (`core` clashes with Rust's built-in crate). PURE logic, no web.
 │   │   └── src/
 │   │       ├── money.rs           # DollarMove, Price, Lots, Usd newtypes
 │   │       ├── sizing.rs          # position-size calculator
@@ -108,9 +108,10 @@ The platform's rule is that a path with an even number of segments is a document
 | `profile` | profile | `createdAt`, `disclaimerAcceptedAt`, `theme` (`system`/`dark`/`light`) |
 | `lesson-<NN>` | progress | `quizBest` (0–100), `quizPassedAt?`, `grade` (latest), `gotItAt?`, `passedAt?` |
 | `attempt-<ulid>` | attempt | `lesson`, `answer`, `grade`, `feedback`, `reteach?`, `at` |
-| `plan-v<N>` | plan | `version`, `createdAt`, `hardRules{…}`, `softRules{setup, extra[]}`, `startingBalance` |
-| `trade-<ulid>` | journal | trade fields, `planVersion`, `hardResults[]`, `verdict{adherent, reasons[], at}`, `dispute?{text, verdict, at}`, `result?{exit, pnl, balanceAfter}` |
+| `plan-v<N>` | plan | `version`, `createdAt`, `hardRules{…}`, `softRules{setup, extra[]}` |
+| `trade-<ulid>` | journal | trade fields, `planVersion`, `run`, `hardResults[]`, `verdict{adherent, reasons[], at}`, `dispute?{text, verdict, at}`, `result?{exit, pnl, balanceAfter}` |
 | `drill-<id>` | drill | `bestScore`, `attempts`, `lastAt` |
+| `run-<N>` | run | `number`, `startedAt`, `startingBalance`, `endedAt?`, `endReason?` (`breach`). Max total loss is measured against the run's starting balance |
 | `readiness` | readiness | `reachedAt?` (written once; unlocks the Live and Advanced Tracks permanently) |
 
 - Queries use `where("kind", "==", …)` on that single collection.

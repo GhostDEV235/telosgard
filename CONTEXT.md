@@ -29,7 +29,7 @@ A practice exercise on an illustrative candle chart (spot a pattern, mark a leve
 Claude's ruling on an **Explain-Back**: **Got it** (understood), **Almost** (a named gap to fix, then rewrite) or **Not yet** (re-taught with a different analogy, then retry).
 
 **Gate**:
-The rule that locks the next **Lesson**: at least 80% on the **Quiz** *and* a **Got it** on the **Explain-Back**. Retries are unlimited and there is no penalty. Lessons cannot be skipped.
+The rule that locks the next **Lesson**: at least 80% on the **Quiz** *and* a **Got it** on the **Explain-Back**. Retries are unlimited and there is no penalty. Lessons cannot be skipped. Once passed, a Lesson stays passed.
 
 **Dollar Move**:
 The course's unit for how far gold's price travels: the change in USD per ounce (2650.00 → 2655.00 is a $5 move). Stops, targets, journal fields and the **Trading Plan** are always in dollar moves.
@@ -83,7 +83,7 @@ The state reached by logging at least 20 **Journal Entries** across at least 3 w
 A max-loss breach starts a new **Readiness Run**.
 
 **Readiness Run**:
-The current attempt at **Live Readiness**, starting from a fresh demo balance. Only **Journal Entries** in the current run count. A max-loss breach ends the run, and the next entry starts a new one.
+The current attempt at **Live Readiness**, starting from a fresh demo balance. The max total loss is measured against that starting balance. Only **Journal Entries** in the current run count. A max-loss breach ends the run, and the next entry starts a new one.
 
 **Journal Entry**:
 The **Learner**'s record of one **Demo Trade**: what they did, why they did it, and how it turned out.

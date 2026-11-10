@@ -22,17 +22,17 @@ A throwaway Leptos page (`spike/`) with four buttons, published as a private Art
 
 **Exit check:** all four work in the viewer. If WASM is blocked → **stop and ask the Learner.** If only YouTube iframes are blocked → use the thumbnail fallback and note it in ARCHITECTURE §11.
 
-## Phase 2: Domain core (`crates/core`), test-first
+## Phase 2: Domain core (`crates/core`, package `gold-core`), test-first
 Write each item as a red → green → refactor cycle (`cargo test`):
-- [ ] `money`: `DollarMove`, `Price`, `Lots`, `Usd` newtypes; points ↔ pips ↔ dollars conversions
-- [ ] `sizing`: lot formula, **round down** to 0.01, a minimum 0.01 lot with a "risk exceeds plan" warning, contract-size parameter. Cases: $10,000 · 1% · $5 stop → 0.20 lots; $500 · 1% · $8 stop → 0.00 → "too small to trade safely"
-- [ ] `gate`: `passed = quiz_best >= 80 && latest_grade == GotIt`; the unlock order of lessons
-- [ ] `plan`: `TradingPlan` with `HardRules` + `SoftRules`; version increments; immutability of old versions
-- [ ] `journal`: `evaluate_hard_rules(entry, plan) -> Vec<HardRuleResult>`, covering risk %, R:R, session, trades/day and stop present
-- [ ] `readiness`: counts only final verdicts; first→latest ≥ 21 days; ≥ 90% adherent; drawdown against max loss; reset behaviour per PRD open question 1
-- [ ] `drills`: seeded candle generator (same seed → same candles), answer checkers
+- [x] `money`: `DollarMove`, `Price`, `Lots`, `Usd` newtypes; points ↔ pips ↔ dollars conversions
+- [x] `sizing`: lot formula, **round down** to 0.01, a minimum 0.01 lot with a "risk exceeds plan" warning, contract-size parameter. Cases: $10,000 · 1% · $5 stop → 0.20 lots; $500 · 1% · $8 stop → 0.00 → "too small to trade safely"
+- [x] `gate`: `passed = quiz_best >= 80 && latest_grade == GotIt`; the unlock order of lessons
+- [x] `plan`: `TradingPlan` with `HardRules` + `SoftRules`; version increments; immutability of old versions
+- [x] `journal`: `evaluate_hard_rules(entry, plan) -> Vec<HardRuleResult>`, covering risk %, R:R, session, trades/day and stop present
+- [x] `readiness`: counts only final verdicts; first→latest ≥ 21 days; ≥ 90% adherent; drawdown against max loss; reset behaviour per PRD open question 1
+- [x] `drills`: seeded candle generator (same seed → same candles), answer checkers
 
-**Exit check:** `cargo test -p core` is green, and every PRD FR-4/5/6/7 rule has at least one test.
+**Exit check:** `cargo test -p gold-core` is green, and every PRD FR-4/5/6/7 rule has at least one test.
 
 ## Phase 3: App shell & design system
 - [ ] Workspace + Trunk + Tailwind pipeline; tokens from DESIGN-SYSTEM §6
