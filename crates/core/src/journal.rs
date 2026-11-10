@@ -1,7 +1,9 @@
 //! Journal Entries, deterministic Hard Rule evaluation, and the Adherence Verdict lifecycle (PRD FR-6).
 
+use crate::checklist::PreSessionChecklist;
 use crate::money::{Lots, Percent, Price, Usd};
 use crate::plan::{HardRules, Session};
+use crate::time::{NoTrade, no_trade_window, sessions_at};
 use crate::{DAY_MS, Millis};
 use serde::{Deserialize, Serialize};
 
@@ -16,8 +18,8 @@ pub enum Direction {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TradeEntry {
+    /// Entry time, UTC. The session is derived from it.
     pub at: Millis,
-    pub session: Session,
     pub direction: Direction,
     pub entry: Price,
     pub stop: Option<Price>,
@@ -29,7 +31,7 @@ pub struct TradeEntry {
     pub plan_version: u32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum HardRule {
     StopLoss,
@@ -37,6 +39,20 @@ pub enum HardRule {
     MinRewardRisk,
     Session,
     TradesPerDay,
+    DailyLossLimit,
+    NoTradeWindow,
+    ChecklistDone,
+}
+
+/// What the rules need to know about the rest of the Learner's day.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct DayContext<'a> {
+    /// Taken trades earlier the same local day (excludes this entry).
+    pub trades_earlier_today: u32,
+    /// Net P/L of trades closed earlier the same local day.
+    pub realized_today: Usd,
+    /// The Pre-Session Checklist saved for the entry's local day.
+    pub checklist: Option<&'a PreSessionChecklist>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -47,8 +63,8 @@ pub struct HardRuleResult {
     pub detail: String,
 }
 
-/// Evaluates every Hard Rule, always in the same order. `trades_earlier_today` excludes this entry.
-pub fn evaluate_hard_rules(e: &TradeEntry, rules: &HardRules, trades_earlier_today: u32) -> Vec<HardRuleResult> {
+/// Evaluates every Hard Rule, always in the same order.
+pub fn evaluate_hard_rules(e: &TradeEntry, rules: &HardRules, day: &DayContext) -> Vec<HardRuleResult> {
     let r = |rule, pass, detail: String| HardRuleResult { rule, pass, detail };
     // Distance from entry to stop/target in the trade's favour (positive = correct side).
     let favour = |p: Price| match e.direction {
@@ -92,18 +108,64 @@ pub fn evaluate_hard_rules(e: &TradeEntry, rules: &HardRules, trades_earlier_tod
         }
     };
 
-    let in_session = rules.sessions.contains(&e.session);
-    let session = r(
-        HardRule::Session,
-        in_session,
-        if in_session { format!("{} is one of your sessions.", session_name(e.session)) } else { format!("{} isn't one of your plan's sessions.", session_name(e.session)) },
-    );
+    let session = session_rule(e, rules);
 
-    let nth = trades_earlier_today + 1;
+    let nth = day.trades_earlier_today + 1;
     let ok = nth <= rules.max_trades_per_day;
     let per_day = r(HardRule::TradesPerDay, ok, format!("Trade {nth} of the day; your limit is {}.", rules.max_trades_per_day));
 
-    vec![stop, risk, rr, session, per_day]
+    vec![stop, risk, rr, session, per_day, daily_loss_rule(e, rules, day), no_trade_rule(e, day), checklist_rule(day)]
+}
+
+fn session_rule(e: &TradeEntry, rules: &HardRules) -> HardRuleResult {
+    let now = sessions_at(e.at);
+    let pass = now.iter().any(|s| rules.sessions.contains(s));
+    let detail = match now.as_slice() {
+        [] => "No session was running when you entered.".to_string(),
+        [a, b] => {
+            let verdict = if pass { "which your plan allows" } else { "neither of which your plan allows" };
+            format!("Entered in the overlap of {} and {}, {verdict}.", session_name(*a).to_lowercase(), session_name(*b).to_lowercase())
+        }
+        [one, ..] if pass => format!("{} is one of your sessions.", session_name(*one)),
+        [one, ..] => format!("{} isn't one of your plan's sessions.", session_name(*one)),
+    };
+    HardRuleResult { rule: HardRule::Session, pass, detail }
+}
+
+fn daily_loss_rule(e: &TradeEntry, rules: &HardRules, day: &DayContext) -> HardRuleResult {
+    let one_r = rules.max_risk.apply(e.balance_before);
+    let limit = Usd(one_r.0 * rules.daily_loss_limit.0 as i64 / 100);
+    let lost = Usd((-day.realized_today.0).max(0));
+    let pass = lost < limit;
+    let r = ratio_str(rules.daily_loss_limit);
+    let detail = if pass {
+        format!("Down {lost} today, under your {limit} ({r}R) daily limit.")
+    } else {
+        format!("Down {lost} today: your {limit} ({r}R) daily limit was already reached.")
+    };
+    HardRuleResult { rule: HardRule::DailyLossLimit, pass, detail }
+}
+
+fn no_trade_rule(e: &TradeEntry, day: &DayContext) -> HardRuleResult {
+    let events = day.checklist.map(|c| c.tier_one()).unwrap_or_default();
+    let (pass, detail) = match no_trade_window(e.at, &events) {
+        None => (true, "Outside every No-Trade Window.".to_string()),
+        Some(NoTrade::Rollover) => (false, "Entered during the daily rollover (17:00–18:00 New York), when spreads widen.".to_string()),
+        Some(NoTrade::SundayOpen) => (false, "Entered in the first hour after the Sunday open, when prices gap and spreads are wide.".to_string()),
+        Some(NoTrade::MarketClosed) => (false, "The market was closed at that time. Check the entry time.".to_string()),
+        Some(NoTrade::NearEvent { name }) => (false, format!("Entered within 5 minutes of {name}, a tier-1 release.")),
+    };
+    HardRuleResult { rule: HardRule::NoTradeWindow, pass, detail }
+}
+
+fn checklist_rule(day: &DayContext) -> HardRuleResult {
+    let pass = day.checklist.is_some();
+    let detail = if pass {
+        "Pre-Session Checklist done for this day.".to_string()
+    } else {
+        "No Pre-Session Checklist was saved for this day.".to_string()
+    };
+    HardRuleResult { rule: HardRule::ChecklistDone, pass, detail }
 }
 
 fn ratio_str(p: Percent) -> String {
@@ -185,13 +247,23 @@ impl Adherence {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::checklist::sample;
     use crate::money::DEFAULT_CONTRACT_OZ;
     use crate::plan::sample_rules;
+    use crate::time::{days_from_civil, utc};
+
+    fn checklist() -> PreSessionChecklist {
+        sample(days_from_civil(2026, 1, 13))
+    }
+
+    /// A normal day: checklist done, nothing earlier.
+    fn ok_day(c: &PreSessionChecklist) -> DayContext<'_> {
+        DayContext { trades_earlier_today: 0, realized_today: Usd(0), checklist: Some(c) }
+    }
 
     fn buy() -> TradeEntry {
         TradeEntry {
-            at: 0,
-            session: Session::London,
+            at: utc(2026, 1, 13, 9, 0), // Tuesday, London session
             direction: Direction::Buy,
             entry: Price::parse("2350").unwrap(),
             stop: Price::parse("2345"),        // $5 below
@@ -204,18 +276,28 @@ mod tests {
         }
     }
 
-    fn result(e: &TradeEntry, rule: HardRule, earlier: u32) -> HardRuleResult {
+    fn result_in(e: &TradeEntry, rule: HardRule, day: &DayContext) -> HardRuleResult {
         let (hard, _) = sample_rules();
-        evaluate_hard_rules(e, &hard, earlier).into_iter().find(|r| r.rule == rule).unwrap()
+        evaluate_hard_rules(e, &hard, day).into_iter().find(|r| r.rule == rule).unwrap()
+    }
+
+    fn result(e: &TradeEntry, rule: HardRule, earlier: u32) -> HardRuleResult {
+        let c = checklist();
+        result_in(e, rule, &DayContext { trades_earlier_today: earlier, ..ok_day(&c) })
+    }
+
+    fn eval(e: &TradeEntry) -> Vec<HardRuleResult> {
+        let (hard, _) = sample_rules();
+        let c = checklist();
+        evaluate_hard_rules(e, &hard, &ok_day(&c))
     }
 
     #[test]
     fn a_clean_trade_passes_every_rule_in_a_fixed_order() {
-        let (hard, _) = sample_rules();
-        let rs = evaluate_hard_rules(&buy(), &hard, 0);
+        let rs = eval(&buy());
         let order: Vec<_> = rs.iter().map(|r| r.rule).collect();
         use HardRule::*;
-        assert_eq!(order, vec![StopLoss, RiskPerTrade, MinRewardRisk, Session, TradesPerDay]);
+        assert_eq!(order, vec![StopLoss, RiskPerTrade, MinRewardRisk, Session, TradesPerDay, DailyLossLimit, NoTradeWindow, ChecklistDone]);
         assert!(rs.iter().all(|r| r.pass), "{rs:?}");
     }
 
@@ -253,9 +335,19 @@ mod tests {
     }
 
     #[test]
-    fn session_and_trades_per_day() {
-        let asian = TradeEntry { session: Session::Asian, ..buy() };
-        assert!(!result(&asian, HardRule::Session, 0).pass);
+    fn session_comes_from_the_entry_time() {
+        let asian = TradeEntry { at: utc(2026, 1, 13, 3, 0), ..buy() };
+        let r = result(&asian, HardRule::Session, 0);
+        assert!(!r.pass);
+        assert!(r.detail.contains("Asian"), "{}", r.detail);
+        let overlap = TradeEntry { at: utc(2026, 1, 13, 14, 0), ..buy() };
+        assert!(result(&overlap, HardRule::Session, 0).pass);
+        let gap = TradeEntry { at: utc(2026, 1, 13, 7, 30), ..buy() };
+        assert!(!result(&gap, HardRule::Session, 0).pass, "no session running");
+    }
+
+    #[test]
+    fn trades_per_day() {
         assert!(result(&buy(), HardRule::TradesPerDay, 1).pass); // 2nd of max 2
         assert!(!result(&buy(), HardRule::TradesPerDay, 2).pass); // 3rd
     }
@@ -279,18 +371,16 @@ mod tests {
 
     #[test]
     fn claude_cannot_overturn_a_hard_failure() {
-        let (hard, _) = sample_rules();
-        let ok = evaluate_hard_rules(&buy(), &hard, 0);
+        let ok = eval(&buy());
         assert!(combine(&ok, true));
         assert!(!combine(&ok, false));
-        let bad = evaluate_hard_rules(&TradeEntry { lots: Lots(50), ..buy() }, &hard, 0);
+        let bad = eval(&TradeEntry { lots: Lots(50), ..buy() });
         assert!(!combine(&bad, true));
     }
 
     #[test]
     fn dispute_lifecycle() {
-        let (hard, _) = sample_rules();
-        let ok = evaluate_hard_rules(&buy(), &hard, 0);
+        let ok = eval(&buy());
         assert_eq!(Adherence::Pending.final_adherent(), None);
         assert_eq!(Adherence::Pending.dispute(&ok), Err(DisputeError::NotJudged));
         assert_eq!(Adherence::Judged { adherent: true }.dispute(&ok), Err(DisputeError::AlreadyAdherent));
@@ -309,8 +399,41 @@ mod tests {
 
     #[test]
     fn hard_rule_failures_cannot_be_disputed() {
-        let (hard, _) = sample_rules();
-        let bad = evaluate_hard_rules(&TradeEntry { stop: None, ..buy() }, &hard, 0);
+        let bad = eval(&TradeEntry { stop: None, ..buy() });
         assert_eq!(Adherence::Judged { adherent: false }.dispute(&bad), Err(DisputeError::HardRuleFailed));
+    }
+
+    #[test]
+    fn daily_loss_limit_in_r() {
+        // 1R = 1% of $10,000 = $100; limit 3R = $300.
+        let c = checklist();
+        let down = |cents| DayContext { realized_today: Usd(cents), ..ok_day(&c) };
+        assert!(result_in(&buy(), HardRule::DailyLossLimit, &down(-29_999)).pass);
+        let r = result_in(&buy(), HardRule::DailyLossLimit, &down(-30_000));
+        assert!(!r.pass, "reaching the limit stops the day");
+        assert!(r.detail.contains("$300.00") && r.detail.contains("3R"), "{}", r.detail);
+        assert!(result_in(&buy(), HardRule::DailyLossLimit, &down(50_000)).pass, "a green day never trips it");
+    }
+
+    #[test]
+    fn no_trade_windows_use_the_clock_and_the_checklist() {
+        let rollover = TradeEntry { at: utc(2026, 1, 13, 22, 30), ..buy() };
+        let r = result(&rollover, HardRule::NoTradeWindow, 0);
+        assert!(!r.pass && r.detail.contains("rollover"), "{}", r.detail);
+        let near_cpi = TradeEntry { at: utc(2026, 1, 13, 13, 27), ..buy() };
+        let r = result(&near_cpi, HardRule::NoTradeWindow, 0);
+        assert!(!r.pass && r.detail.contains("US CPI"), "{}", r.detail);
+        let no_list = DayContext { checklist: None, ..DayContext::default() };
+        assert!(result_in(&near_cpi, HardRule::NoTradeWindow, &no_list).pass, "events come from the checklist");
+        assert!(result(&buy(), HardRule::NoTradeWindow, 0).pass);
+    }
+
+    #[test]
+    fn trading_without_a_checklist_breaks_the_plan() {
+        let none = DayContext::default();
+        assert!(!result_in(&buy(), HardRule::ChecklistDone, &none).pass);
+        assert!(result(&buy(), HardRule::ChecklistDone, 0).pass);
+        let (hard, _) = sample_rules();
+        assert!(!combine(&evaluate_hard_rules(&buy(), &hard, &none), true));
     }
 }

@@ -23,6 +23,8 @@ pub struct HardRules {
     pub min_reward_risk: Percent,
     pub sessions: Vec<Session>,
     pub max_trades_per_day: u32,
+    /// Daily Loss Limit in R, ×100 (3R = 300), where 1R = `max_risk` of the balance.
+    pub daily_loss_limit: Percent,
 }
 
 /// Judgement rules, checked by Claude.
@@ -49,6 +51,7 @@ pub enum PlanError {
     MinRewardRiskNotPositive,
     NoSessions,
     NoTradesAllowed,
+    DailyLossLimitNotPositive,
     SetupMissing,
 }
 
@@ -68,6 +71,9 @@ impl HardRules {
         }
         if self.max_trades_per_day == 0 {
             return Err(PlanError::NoTradesAllowed);
+        }
+        if self.daily_loss_limit.0 == 0 {
+            return Err(PlanError::DailyLossLimitNotPositive);
         }
         Ok(())
     }
@@ -113,6 +119,7 @@ pub(crate) fn sample_rules() -> (HardRules, SoftRules) {
             min_reward_risk: Percent(150),
             sessions: vec![Session::London, Session::NewYork],
             max_trades_per_day: 2,
+            daily_loss_limit: Percent(300),
         },
         SoftRules {
             setup: "H4 trend up or down, price at a key level, confirmation candle in the trend's direction".into(),
@@ -158,6 +165,7 @@ mod tests {
             (HardRules { min_reward_risk: Percent(0), ..hard.clone() }, PlanError::MinRewardRiskNotPositive),
             (HardRules { sessions: vec![], ..hard.clone() }, PlanError::NoSessions),
             (HardRules { max_trades_per_day: 0, ..hard.clone() }, PlanError::NoTradesAllowed),
+            (HardRules { daily_loss_limit: Percent(0), ..hard.clone() }, PlanError::DailyLossLimitNotPositive),
         ];
         for (bad, err) in cases {
             assert_eq!(h.save(bad, soft.clone(), 1).err(), Some(err));

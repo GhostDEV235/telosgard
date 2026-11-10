@@ -88,7 +88,7 @@ Later waves add one stage each, written when the Learner is near it and informed
 - FR-5.3 Plans are **versioned**. Saving creates a new version; old versions are read-only. Each **Journal Entry** records the plan version in force.
 
 ### FR-6 Journal & Adherence
-- FR-6.1 Journal Entry fields: date/time, session, direction, entry price, stop-loss price, take-profit price, lot size, account balance before, setup reason (free text), optional chart screenshot, and result (exit price, P/L in $, balance after) once closed.
+- FR-6.1 Journal Entry fields: date/time (the session is derived from it), direction, entry price, stop-loss price, take-profit price, lot size, account balance before, setup reason (free text), optional chart screenshot, and result (exit price, P/L in $, balance after) once closed.
 - FR-6.2 When an entry is submitted, the app:
   1. evaluates every **Hard Rule** in Rust, deterministically;
   2. sends the entry, the Soft Rules and the Hard Rule results to Claude;
@@ -125,7 +125,7 @@ Later waves add one stage each, written when the Learner is near it and informed
 - FR-11.4 **Weekly Review**: win rate, average R, rule breaks by rule, skipped setups, and a free-text note, computed from that week's entries.
 
 ### FR-12 Time
-- FR-12.1 All times are stored in UTC and shown in the device's timezone. Session and rollover boundaries are defined in New York time, so they follow US daylight saving automatically.
+- FR-12.1 All times are stored in UTC and shown in the device's timezone. Sessions are anchored to their own cities (Asian = Tokyo hours, London and New York = 08:00–17:00 local), and the rollover and market week to New York time, so they follow UK and US daylight saving automatically.
 - FR-12.2 A session clock shows the current session, the next London–New York overlap and the next rollover in local time.
 - FR-12.3 **No-Trade Windows**: daily rollover (17:00–18:00 New York), the first hour after the Sunday open (18:00–19:00 New York), and ±5 minutes around each tier-1 event listed in that day's checklist.
 

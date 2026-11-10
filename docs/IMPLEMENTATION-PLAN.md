@@ -29,19 +29,19 @@
 - [x] Home "Today" card stack; first-launch disclaimer
 - [x] Fix: `html`/`body` styles un-layered so the viewer's reset can't override them (ARCHITECTURE §9)
 
-## Phase 3b: Realign to course map v2 *(new; test-first in `gold-core`)*
+## Phase 3b: Realign to course map v2 ✅ *(test-first in `gold-core`)*
 Code built before the 2026-11-10 revision that now disagrees with the docs:
-- [ ] `course`: `LAST_CORE = 39`, `LAST_LIVE = 43`, `LAST_ADVANCED = 10`, 8 `STAGES` (1–11, 12–14, 15–19, 20–22, 23–27, 28–30, 31–35, 36–39); Indicators unlocks after L27. Update tests.
-- [ ] `readiness`: `REQUIRED_TRADES = 50`, `REQUIRED_DAYS = 56`. Update tests (boundary cases at 49/50 trades and 55/56 days).
-- [ ] `time` *(new module)*: UTC ↔ New York conversion with the US daylight-saving rule (2nd Sunday of March → 1st Sunday of November, 02:00 local), so sessions and rollover need no timezone database. Session at an instant (Asian / London / New York / London–NY overlap / closed). Tests on both DST transition days and across the year boundary.
-- [ ] `journal`: new Hard Rules, each with a plain-language detail:
+- [x] `course`: `LAST_CORE = 39`, `LAST_LIVE = 43`, `LAST_ADVANCED = 10`, 8 `STAGES` (1–11, 12–14, 15–19, 20–22, 23–27, 28–30, 31–35, 36–39); Indicators unlocks after L27. Update tests.
+- [x] `readiness`: `REQUIRED_TRADES = 50`, `REQUIRED_DAYS = 56`. Update tests (boundary cases at 49/50 trades and 55/56 days).
+- [x] `time` *(new module)*: UTC ↔ New York conversion with the US daylight-saving rule (2nd Sunday of March → 1st Sunday of November, 02:00 local), so sessions and rollover need no timezone database. Session at an instant (Asian / London / New York / London–NY overlap / closed). Tests on both DST transition days and across the year boundary.
+- [x] `journal`: new Hard Rules, each with a plain-language detail: *(the session is now derived from the entry time, not typed in)*
   - `DailyLossLimit`: closed losses earlier that day (in R, where 1R = the plan's max risk) have reached the plan's limit → fail
   - `NoTradeWindow`: entry within the daily rollover (17:00–18:00 NY), the first hour after the Sunday open (18:00–19:00 NY), or ±5 min of a tier-1 event listed in that day's checklist → fail
   - `ChecklistDone`: no Pre-Session Checklist saved for the entry's local day → fail
-- [ ] `plan`: `HardRules.daily_loss_limit_r` (validated > 0); the "matches a written Scenario" Soft Rule is implicit in every plan
-- [ ] `checklist` *(new module)*: `PreSessionChecklist` (date, events with UTC times and tier, Asian high/low, macro mood, bias, zones, Scenarios, risk commitment) + validation (≥ 1 Scenario, ≥ 1 zone)
-- [ ] `review` *(new module)*: `weekly_review(entries) -> WeeklyReview` (win rate, average R, rule breaks by rule, skipped count); R of a closed trade = P/L ÷ planned risk
-- [ ] App: `catalog.rs` titles and stage blurbs from CURRICULUM v2; stale copy ("20 trades over 3 weeks", "Lesson 24/25") → 50 / 8 weeks, Lesson 38/39; StageCard shows the suggested pace
+- [x] `plan`: `HardRules.daily_loss_limit_r` (validated > 0); the "matches a written Scenario" Soft Rule is implicit in every plan
+- [x] `checklist` *(new module)*: `PreSessionChecklist` (date, events with UTC times and tier, Asian high/low, macro mood, bias, zones, Scenarios, risk commitment) + validation (≥ 1 Scenario, ≥ 1 zone)
+- [x] `review` *(new module)*: `weekly_review(entries) -> WeeklyReview` (win rate, average R, rule breaks by rule, skipped count); R of a closed trade = P/L ÷ planned risk
+- [x] App: `catalog.rs` titles and stage blurbs from CURRICULUM v2; stale copy ("20 trades over 3 weeks", "Lesson 24/25") → 50 / 8 weeks, Lesson 38/39; StageCard shows the suggested pace
 
 **Exit check:** `cargo test --workspace` green; every new Hard Rule has a pass case, a fail case and a boundary case; Home shows 8 stages + Live + Advanced with the new titles.
 

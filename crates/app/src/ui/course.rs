@@ -43,6 +43,15 @@ pub fn StageCard(section: &'static Section) -> impl IntoView {
                 </div>
                 <h2 class="mt-1.5 text-title1">{section.title}</h2>
                 <p class=move || format!("mt-1.5 text-callout {}", soft())>{section.blurb}</p>
+                {(!section.pace.is_empty())
+                    .then(|| {
+                        view! {
+                            <p class=move || format!("mt-2 text-footnote font-semibold {}", soft())>
+                                <span aria-hidden="true">"◷ "</span>
+                                {section.pace}
+                            </p>
+                        }
+                    })}
                 {move || {
                     if locked() {
                         view! { <p class="mt-4 text-callout font-semibold">{section.locked_hint}</p> }.into_any()

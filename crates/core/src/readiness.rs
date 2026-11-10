@@ -1,4 +1,4 @@
-//! Live Readiness (PRD FR-7): 20 counted Demo Trades, first→latest ≥ 21 days, ≥ 90% adherent,
+//! Live Readiness (PRD FR-7): 50 counted Demo Trades, first→latest ≥ 56 days (8 weeks), ≥ 90% adherent,
 //! and no breach of the max total loss — all within one Readiness Run.
 //! A breach ends the run; the next run starts from 0 with a fresh demo balance.
 
@@ -6,8 +6,8 @@ use crate::money::{Percent, Usd};
 use crate::{DAY_MS, Millis};
 use serde::{Deserialize, Serialize};
 
-pub const REQUIRED_TRADES: u32 = 20;
-pub const REQUIRED_DAYS: i64 = 21;
+pub const REQUIRED_TRADES: u32 = 50;
+pub const REQUIRED_DAYS: i64 = 56;
 pub const REQUIRED_ADHERENCE: Percent = Percent(9_000);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -97,6 +97,20 @@ mod tests {
             .collect()
     }
 
+    /// `n` trades spread so the first→last span is exactly `span_days`.
+    fn spread(n: u32, span_days: i64) -> Vec<TradeSummary> {
+        let mut ts = trades(n, 0);
+        if let Some(last) = ts.last_mut() {
+            last.at = span_days * DAY_MS;
+        }
+        ts
+    }
+
+    #[test]
+    fn thresholds_are_fifty_trades_and_eight_weeks() {
+        assert_eq!((REQUIRED_TRADES, REQUIRED_DAYS, REQUIRED_ADHERENCE), (50, 56, Percent(9_000)));
+    }
+
     #[test]
     fn runs_number_from_one() {
         let r = run();
@@ -106,49 +120,45 @@ mod tests {
     }
 
     #[test]
-    fn twenty_adherent_trades_over_three_weeks_reaches_readiness() {
-        // 20 trades, 21 days from first to last when spaced 21/19 days apart ≈ use explicit times.
-        let mut ts = trades(20, 1);
-        ts[19].at = 21 * DAY_MS;
-        let p = run().progress(&ts, MAX_LOSS);
-        assert_eq!((p.counted, p.days, p.adherence), (20, 21, Percent(10_000)));
+    fn fifty_adherent_trades_over_eight_weeks_reaches_readiness() {
+        let p = run().progress(&spread(50, 56), MAX_LOSS);
+        assert_eq!((p.counted, p.days, p.adherence), (50, 56, Percent(10_000)));
         assert!(p.reached);
     }
 
     #[test]
-    fn twenty_trades_in_two_weeks_is_not_enough() {
-        let p = run().progress(&trades(20, 0), MAX_LOSS);
-        assert_eq!(p.days, 0);
+    fn fifty_five_days_is_not_enough() {
+        let p = run().progress(&spread(50, 55), MAX_LOSS);
+        assert_eq!(p.days, 55);
         assert!(!p.reached);
     }
 
     #[test]
-    fn nineteen_trades_is_not_enough() {
-        let mut ts = trades(19, 1);
-        ts[18].at = 30 * DAY_MS;
-        assert!(!run().progress(&ts, MAX_LOSS).reached);
+    fn forty_nine_trades_is_not_enough() {
+        assert!(!run().progress(&spread(49, 90), MAX_LOSS).reached);
     }
 
     #[test]
     fn ninety_percent_adherence_is_the_line() {
-        let mut ts = trades(20, 2);
-        ts[0].final_adherent = Some(false);
-        ts[1].final_adherent = Some(false);
+        let mut ts = spread(50, 60);
+        for t in ts.iter_mut().take(5) {
+            t.final_adherent = Some(false);
+        }
         let p = run().progress(&ts, MAX_LOSS);
-        assert_eq!((p.adherent, p.adherence), (18, Percent(9_000)));
+        assert_eq!((p.adherent, p.adherence), (45, Percent(9_000)));
         assert!(p.reached);
-        ts[2].final_adherent = Some(false);
+        ts[5].final_adherent = Some(false);
         assert!(!run().progress(&ts, MAX_LOSS).reached);
     }
 
     #[test]
     fn entries_without_a_final_verdict_do_not_count() {
-        let mut ts = trades(21, 2);
+        let mut ts = trades(51, 2);
         ts[0].final_adherent = None;
-        ts[20].final_adherent = None; // also excluded from the day span
+        ts[50].final_adherent = None; // also excluded from the day span
         let p = run().progress(&ts, MAX_LOSS);
-        assert_eq!(p.counted, 19);
-        assert_eq!(p.days, 38 - 2);
+        assert_eq!(p.counted, 49);
+        assert_eq!(p.days, 98 - 2);
         assert!(!p.reached);
     }
 
@@ -173,7 +183,7 @@ mod tests {
 
     #[test]
     fn touching_max_loss_breaches_even_after_recovering() {
-        let mut ts = trades(20, 2);
+        let mut ts = spread(50, 60);
         ts[3].balance_after = Some(Usd(900_000)); // exactly −$1,000
         let p = run().progress(&ts, MAX_LOSS);
         assert!(p.breached);

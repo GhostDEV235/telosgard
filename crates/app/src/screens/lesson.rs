@@ -36,7 +36,7 @@ fn locked(id: LessonId) -> impl IntoView {
         Some(p) if !matches!(id.track(), gold_core::course::Track::Live | gold_core::course::Track::Advanced) => {
             format!("Pass “{}” first. Lessons build on each other, so none can be skipped.", catalog::title(p))
         }
-        _ => "This track unlocks with Live Readiness: 20 disciplined Demo Trades over at least 3 weeks.".to_string(),
+        _ => "This track unlocks with Live Readiness: 50 disciplined Demo Trades over at least 8 weeks.".to_string(),
     };
     view! {
         <section class="mt-6 rounded-card bg-locked p-5">

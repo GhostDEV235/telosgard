@@ -80,7 +80,8 @@ mod tests {
         assert_eq!(Route::parse(""), Route::Today);
         assert_eq!(Route::parse("#size"), Route::Tools);
         assert_eq!(Route::parse("#nonsense"), Route::Today);
-        assert_eq!(Route::parse("#lesson-30"), Route::Today);
+        assert_eq!(Route::parse("#lesson-44"), Route::Today);
+        assert_eq!(Route::parse("#lesson-39"), Route::Lesson(LessonId::Numbered(39)));
         for id in [LessonId::Numbered(5), LessonId::Advanced(2), LessonId::Indicators] {
             assert_eq!(Route::parse(&lesson_href(id)), Route::Lesson(id));
         }

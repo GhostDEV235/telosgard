@@ -23,7 +23,7 @@ pub fn Journal() -> impl IntoView {
             <section class="mt-5 rounded-card bg-surface p-8 text-center shadow-card">
                 <p class="text-title2">"No trades yet"</p>
                 <p class="mx-auto mt-2 max-w-md text-callout text-text-muted">
-                    "You'll journal your first Demo Trade in Lesson 25. Each entry is checked against your Trading Plan."
+                    "You'll journal your first Demo Trade in Lesson 39. Each entry is checked against your Trading Plan."
                 </p>
             </section>
         </main>
@@ -54,7 +54,7 @@ pub fn Readiness() -> impl IntoView {
                 <p class="text-eyebrow uppercase text-text-muted">"Max total loss"</p>
                 <p class="tabular mt-1 text-headline">"$0.00 drawdown"</p>
                 <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-bg"><div class="h-full w-0 rounded-full bg-down"></div></div>
-                <p class="mt-2 text-footnote text-text-muted">"Set when you write your Trading Plan (Lesson 24)."</p>
+                <p class="mt-2 text-footnote text-text-muted">"Set when you write your Trading Plan (Lesson 38)."</p>
             </section>
             <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
                 <h2 class="text-headline">"All four, at the same time"</h2>

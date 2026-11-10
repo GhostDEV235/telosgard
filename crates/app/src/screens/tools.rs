@@ -111,7 +111,7 @@ pub fn Tools() -> impl IntoView {
             <a href="#plan" class="press mt-3 flex items-center gap-4 rounded-card bg-surface p-5 shadow-card hover:bg-raised">
                 <span class="min-w-0 flex-1">
                     <span class="block text-headline">"Trading Plan"</span>
-                    <span class="block text-callout text-text-muted">"Your written rules. You'll fill this in at Lesson 24."</span>
+                    <span class="block text-callout text-text-muted">"Your written rules. You'll fill this in at Lesson 38."</span>
                 </span>
                 <span class="text-title2 text-text-muted" aria-hidden="true">"›"</span>
             </a>
@@ -128,13 +128,16 @@ pub fn Plan() -> impl IntoView {
         ("Sessions you trade", "e.g. London and New York"),
         ("Max trades per day", "e.g. 2"),
         ("Stop-loss on every trade", "Always on. Not optional."),
+        ("Daily loss limit", "e.g. 3R: after losing three trades' worth in a day, you stop"),
+        ("No-Trade Windows", "Always on: the daily rollover, the Sunday open, and 5 minutes around big US news"),
+        ("Pre-Session Checklist done", "Always on: no checklist that day means the trade breaks your plan"),
     ];
     view! {
         <SubBar back="#size" back_label="Tools" title="Trading Plan" />
         <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
             <h1 class="text-title1">"Trading Plan"</h1>
             <p class="mt-2 text-callout text-text-muted">
-                "You'll build this at Lesson 24, once you know what each rule means. Every Demo Trade is then checked against it."
+                "You'll build this at Lesson 38, once you know what each rule means. Every Demo Trade is then checked against it."
             </p>
             <section class="mt-6 rounded-card bg-surface p-5 shadow-card">
                 <p class="text-eyebrow uppercase text-text-muted">"Hard Rules · checked by calculation"</p>
@@ -156,7 +159,7 @@ pub fn Plan() -> impl IntoView {
                 <p class="text-eyebrow uppercase text-text-muted">"Soft Rules · checked by Claude"</p>
                 <p class="mt-3 text-headline">"Your setup"</p>
                 <p class="text-callout text-text-muted">
-                    "For Classic Price Action: the higher-timeframe trend, a key level, and a confirmation candle at that level, in the trend's direction."
+                    "For Classic Price Action: the higher-timeframe trend, a key level, and a confirmation candle at that level, in the trend's direction. And always: the trade was one of that day's written Scenarios."
                 </p>
             </section>
         </main>
