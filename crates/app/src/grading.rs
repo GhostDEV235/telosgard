@@ -64,3 +64,19 @@ pub async fn judge(input: &gold_core::adherence::AdherenceInput<'_>) -> Result<g
     let v = platform::sample_json(&prompt, "default").await.map_err(|e| GradeError::Platform(e).describe().replace("graded", "judged"))?;
     gold_core::adherence::parse_adherence(&v).map_err(|_| "Claude's verdict didn't come back in the expected shape. Nothing was judged; try again.".to_string())
 }
+
+/// A Claude-written practice round (5 questions) on these lessons. Never counts towards a Gate.
+pub async fn practice(lessons: &[&Lesson], avoid: &[String]) -> Result<Vec<gold_core::practice::PracticeQ>, String> {
+    use gold_core::practice::{PracticeSource, build_practice_prompt, parse_practice};
+    let sources: Vec<PracticeSource> = lessons
+        .iter()
+        .map(|l| PracticeSource { lesson: l.id, title: l.title, objective: l.objective, takeaways: l.takeaways, key_ideas: l.explain.must_include })
+        .collect();
+    let avoid: Vec<&str> = avoid.iter().map(String::as_str).collect();
+    let ids: Vec<u8> = lessons.iter().map(|l| l.id).collect();
+    let prompt = build_practice_prompt(&sources, 5, &avoid);
+    let v = platform::sample_json(&prompt, "default")
+        .await
+        .map_err(|e| GradeError::Platform(e).describe().replace("Claude grading isn't available here", "Claude isn't available here").replace("Nothing was graded.", "No questions were written."))?;
+    parse_practice(&v, 5, &ids, &avoid).map_err(|_| "Claude's questions didn't come back in a usable shape. Try again.".to_string())
+}

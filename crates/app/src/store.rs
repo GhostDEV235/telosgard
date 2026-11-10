@@ -55,6 +55,9 @@ pub struct Attempt {
     pub answer: String,
     pub grade: Grade,
     pub feedback: String,
+    /// Almost: the missing idea. Got it: an optional tip.
+    #[serde(default)]
+    pub gap: Option<String>,
     pub reteach: Option<String>,
     pub at: Millis,
 }

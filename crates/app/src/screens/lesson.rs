@@ -10,7 +10,7 @@ use gold_core::grading::GradeResult;
 use leptos::task::spawn_local;
 use crate::ui::controls::{PILL, PILL_GHOST};
 use crate::ui::course::{Callout, CalloutKind, GateStatus, VideoCard};
-use crate::ui::quiz::QuizCard;
+use crate::ui::quiz::{QuizCard, QuizItem};
 use crate::ui::sheet::Sheet;
 use gold_core::course::LessonId;
 use leptos::prelude::*;
@@ -19,13 +19,16 @@ use leptos::prelude::*;
 pub fn LessonScreen(id: LessonId) -> impl IntoView {
     let progress = expect_context::<Progress>();
     let title = catalog::title(id);
+    // Only the lock state decides which view shows. Reading progress directly here re-rendered the
+    // whole reader on every save, which reset the quiz to question 1 and lost Explain-Back results.
+    let unlocked = Memo::new(move |_| progress.unlocked(id));
     view! {
         <crate::screens::shell::SubBar back="#today" back_label="Today" title=title />
         <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
             <p class="text-eyebrow uppercase text-text-muted">{catalog::eyebrow(id)}</p>
             <h1 class="mt-1 text-title1">{title}</h1>
             {move || {
-                if !progress.unlocked(id) {
+                if !unlocked.get() {
                     locked(id).into_any()
                 } else if let Some(l) = content_for(id) {
                     reader(id, l).into_any()
@@ -74,7 +77,9 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
     let progress = expect_context::<Progress>();
     let toasts = expect_context::<Toasts>();
     let store = expect_context::<crate::store::Store>();
+    let quiz_done = RwSignal::new(false);
     let on_quiz = move |score: u8| {
+        quiz_done.set(true);
         let was_passed = progress.passed(id);
         progress.update(id, |p| p.record_quiz(score, now()));
         store.save_lesson(progress, id);
@@ -120,8 +125,11 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
 
         <h2 class="mt-10 text-title2">"Check your understanding"</h2>
         <div class="mt-3">
-            <QuizCard questions=l.quiz on_done=on_quiz />
+            <QuizCard questions=l.quiz.iter().map(QuizItem::from).collect() on_done=on_quiz />
         </div>
+        <Show when=move || quiz_done.get()>
+            <MorePractice lesson=l />
+        </Show>
 
         <h2 class="mt-10 text-title2">"Explain it back"</h2>
         <div class="mt-3">
@@ -220,6 +228,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                         answer,
                         grade: res.grade,
                         feedback: res.feedback.clone(),
+                        gap: res.gap.clone(),
                         reteach: res.reteach.clone(),
                         at,
                     };
@@ -364,5 +373,95 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                 </div>
             </Show>
         </Sheet>
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MoreScope {
+    ThisLesson,
+    SoFar,
+}
+
+/// After the quiz: "Want to be quizzed on more concepts?" Claude writes a fresh practice round on
+/// this lesson, or mixed with earlier lessons already passed. Practice never affects the Gate.
+#[component]
+fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
+    let progress = expect_context::<Progress>();
+    let round = RwSignal::new(None::<(u32, Vec<QuizItem>)>);
+    let asking = RwSignal::new(true);
+    let busy = RwSignal::new(false);
+    let error = RwSignal::new(None::<String>);
+    let seen = StoredValue::new(lesson.quiz.iter().map(|q| q.q.to_string()).collect::<Vec<String>>());
+    let rounds = RwSignal::new(0u32);
+
+    let earlier = move || -> Vec<&'static Lesson> {
+        gold_content::LESSONS.iter().filter(|l| l.id < lesson.id && progress.passed(LessonId::Numbered(l.id))).collect()
+    };
+    let start = move |scope: MoreScope| {
+        let mut sources: Vec<&'static Lesson> = vec![lesson];
+        if scope == MoreScope::SoFar {
+            sources.extend(earlier());
+        }
+        busy.set(true);
+        error.set(None);
+        spawn_local(async move {
+            let avoid = seen.get_value();
+            match grading::practice(&sources, &avoid).await {
+                Ok(qs) => {
+                    seen.update_value(|s| s.extend(qs.iter().map(|q| q.q.clone())));
+                    let n = rounds.get_untracked() + 1;
+                    rounds.set(n);
+                    round.set(Some((n, qs.into_iter().map(QuizItem::from).collect())));
+                    asking.set(false);
+                }
+                Err(msg) => error.set(Some(msg)),
+            }
+            busy.set(false);
+        });
+    };
+    view! {
+        <div class="mt-5 grid gap-5">
+            {move || {
+                round.get().map(|(n, items)| {
+                    view! {
+                        <div>
+                            <p class="mb-2 text-eyebrow uppercase text-text-muted">{format!("Practice round {n} · written by Claude")}</p>
+                            <QuizCard questions=items on_done=move |_| asking.set(true) practice=true />
+                        </div>
+                    }
+                })
+            }}
+            <Show when=move || asking.get()>
+                <section class="anim-fade rounded-card bg-surface p-5 shadow-card" aria-live="polite">
+                    <h3 class="text-headline">
+                        {move || if rounds.get() == 0 { "Want to be quizzed on more concepts?" } else { "Another round?" }}
+                    </h3>
+                    <p class="mt-1 text-callout text-text-muted">
+                        "Claude writes 5 fresh questions. Practice only: it never changes your Gate."
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-3">
+                        <button type="button" class=PILL disabled=move || busy.get() on:click=move |_| start(MoreScope::ThisLesson)>
+                            "Yes, on this lesson"
+                        </button>
+                        {move || {
+                            let n = earlier().len();
+                            (n > 0)
+                                .then(|| {
+                                    view! {
+                                        <button type="button" class=PILL_GHOST disabled=move || busy.get() on:click=move |_| start(MoreScope::SoFar)>
+                                            {format!("Yes, mix in {n} earlier lesson{}", if n == 1 { "" } else { "s" })}
+                                        </button>
+                                    }
+                                })
+                        }}
+                        <button type="button" class="press min-h-11 px-3 text-callout text-text-muted" on:click=move |_| asking.set(false)>
+                            "No thanks"
+                        </button>
+                    </div>
+                    {move || busy.get().then(|| view! { <p class="mt-3 text-callout" role="status">"Claude is writing your questions…"</p> })}
+                    {move || error.get().map(|e| view! { <p class="mt-3 text-callout text-down" role="alert">"⚠ " {e}</p> })}
+                </section>
+            </Show>
+        </div>
     }
 }

@@ -15,7 +15,7 @@
 ## Phase 1: Proof of concept ✅ *(go/no-go on ADR 0001)*
 - [x] **WASM loads** in the claude.ai viewer (Learner confirmed the counter works)
 - [x] **Bridge → db/user:** confirmed by the published app loading the Learner's profile (Phase 4)
-- [ ] **Bridge → sample** (test 2b): first real use is Explain-Back grading in Phase 5
+- [x] **Bridge → sample** (test 2b): confirmed 2026-11-10, the Learner's Lesson 1 Explain-Back was graded live by Claude (stored attempt, grade "almost")
 - [x] **YouTube:** iframes and thumbnails are blocked by the platform → link-out VideoCards
 - [x] **Bundle size:** spike 37 KB gzipped; full app 175 KB gzipped
 
@@ -53,7 +53,7 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 - [x] Wired now: lesson progress, theme + disclaimer in `profile`, drill totals. Attempts, plans, trades, checklists and runs are wired in Phases 5 and 7
 - [x] Degraded mode: a status chip on Home (Connecting / Saved / Not saving in this view / sign in / couldn't save); with no platform the app renders all content (checked locally, no console errors)
 - [x] Published with capabilities `db`, `user`, `sample{images}`, `assets`; the live page reports "Progress saved to your account"
-- [ ] **Learner check:** pass the Lesson 1 quiz (or answer a drill), reload, and confirm it's still there
+- [x] **Learner check:** confirmed 2026-11-10 via `ArtifactData`: the Learner's `lesson-01` progress (quiz best 100%) and their Explain-Back attempt are stored in their private folder
 
 **Exit check:** in the published preview, progress survives a reload, and with the platform absent the app still renders all content.
 
@@ -103,7 +103,12 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 - [x] Published with capabilities `db`, `user`, `sample{images}`, `assets` (version 8); verified with `ArtifactData list`: the Learner's private folder holds their saved profile (theme, disclaimer acceptance)
 - [x] Handover: the link and a 2-minute "how to use this" note (README)
 
-**Still open (Learner checks):** Phase 4 reload check · Phase 5 grader lab · Phase 7 live verdict and dispute.
+**Still open (Learner checks):** Phase 5 grader lab · Phase 7 live verdict and dispute.
+
+## After Wave 1
+- [x] Fix: finishing the quiz reset it to question 1 instead of showing the score (the lesson reader re-rendered on every progress save; it now re-renders only when the lock state changes). The same bug closed the Explain-Back sheet when a grade arrived
+- [x] "Want to be quizzed on more concepts?" after the quiz: Claude writes 5 fresh questions on the lesson, or mixed with earlier passed lessons (`gold_core::practice`, 5 tests; strict checks, malformed questions dropped, fewer than 3 good = error). Practice never affects the Gate
+- [x] Explain-Back attempts now also store the "what's missing" note
 
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:

@@ -12,6 +12,7 @@ pub mod grading;
 pub mod journal;
 pub mod money;
 pub mod plan;
+pub mod practice;
 pub mod readiness;
 pub mod review;
 pub mod sizing;
