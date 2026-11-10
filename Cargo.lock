@@ -497,7 +497,10 @@ dependencies = [
  "gold-core",
  "js-sys",
  "leptos",
+ "serde",
+ "serde_json",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 
@@ -506,6 +509,7 @@ name = "gold-core"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
 ]
 
 [[package]]
