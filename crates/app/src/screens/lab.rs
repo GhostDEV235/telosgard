@@ -34,9 +34,21 @@ struct Outcome {
 #[serde(rename_all = "camelCase")]
 struct LabRun<'a> {
     at: i64,
+    started_at: i64,
+    /// False while the run is still going (or was stopped part-way).
+    complete: bool,
     passed: usize,
+    done: usize,
     total: usize,
     results: &'a [Outcome],
+}
+
+/// Writes the run so far to `lab/grader-latest`. Called after every answer, so a run that's
+/// interrupted (page closed, reload, rate limit) still leaves its results behind.
+async fn save(started_at: i64, list: &[Outcome], total: usize, complete: bool) -> Result<(), platform::PlatformError> {
+    let passed = list.iter().filter(|o| o.as_expected).count();
+    let doc = LabRun { at: now(), started_at, complete, passed, done: list.len(), total, results: list };
+    platform::set_shared("lab/grader-latest", &doc).await
 }
 
 #[component]
@@ -44,6 +56,7 @@ pub fn GraderLab() -> impl IntoView {
     let toasts = expect_context::<Toasts>();
     let results = RwSignal::new(Vec::<Outcome>::new());
     let running = RwSignal::new(false);
+    let saved = RwSignal::new(None::<Result<usize, String>>);
     let total: usize = LESSONS.iter().map(|l| l.explain.fixtures.len()).sum();
 
     let run = move |_| {
@@ -52,7 +65,14 @@ pub fn GraderLab() -> impl IntoView {
         }
         running.set(true);
         results.set(Vec::new());
+        saved.set(None);
+        let started_at = now();
         spawn_local(async move {
+            let checkpoint = move || async move {
+                let list = results.get_untracked();
+                let n = list.len();
+                saved.set(Some(save(started_at, &list, total, false).await.map(|_| n).map_err(|e| e.describe())));
+            };
             'outer: for r in LESSONS.iter() {
                 for (k, fx) in r.explain.fixtures.iter().enumerate() {
                     let (answer, expect) = (fx.answer, fx.expect);
@@ -85,6 +105,7 @@ pub fn GraderLab() -> impl IntoView {
                                     error: Some(e.describe()),
                                 })
                             });
+                            checkpoint().await;
                             if stop {
                                 break 'outer;
                             }
@@ -92,14 +113,19 @@ pub fn GraderLab() -> impl IntoView {
                         }
                     };
                     results.update(|v| v.push(outcome));
+                    checkpoint().await;
                 }
             }
             let list = results.get_untracked();
-            let passed = list.iter().filter(|o| o.as_expected).count();
-            let doc = LabRun { at: now(), passed, total, results: &list };
-            match platform::set_shared("lab/grader-latest", &doc).await {
-                Ok(()) => toasts.show("Results saved for Claude Code to read"),
-                Err(e) => toasts.show(format!("Results not saved: {}", e.describe())),
+            match save(started_at, &list, total, list.len() == total).await {
+                Ok(()) => {
+                    saved.set(Some(Ok(list.len())));
+                    toasts.show("Results saved for Claude Code to read");
+                }
+                Err(e) => {
+                    saved.set(Some(Err(e.describe())));
+                    toasts.show(format!("Results not saved: {}", e.describe()));
+                }
             }
             running.set(false);
         });
@@ -130,6 +156,14 @@ pub fn GraderLab() -> impl IntoView {
                     }}
                 </p>
             </div>
+            <p class="mt-3 text-callout" role="status">
+                {move || match saved.get() {
+                    None if running.get() => "Saving after every answer…".to_string(),
+                    None => "Results are saved after every answer, so you can leave once it's done.".to_string(),
+                    Some(Ok(n)) => format!("✓ Saved {n} of {total} for Claude Code{}", if running.get() { " · keep this page open until it finishes" } else { "" }),
+                    Some(Err(e)) => format!("⚠ Not saved: {e}"),
+                }}
+            </p>
             <ul class="mt-6 grid gap-2">
                 {move || {
                     results
