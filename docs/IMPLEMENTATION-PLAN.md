@@ -62,7 +62,7 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 - [x] Explain-Back: prompt builder + strict reply check in `gold_core::grading` (7 tests), the three Grade UIs (Got it + optional tip / Almost + "what's missing" / Not yet + re-teach with a different analogy), errors with "Try again" (no auto-retry, per the platform), attempt history saved and listed
 - [x] GateStatus wiring + unlocking the next lesson; a gold "Lesson passed" banner and toast
 - [x] Rubrics + 3 fixtures for each of L1–11 (`rubrics.rs`; moves into `crates/content` in Phase 6)
-- [x] **Rubric tuning:** grader lab run 2026-11-10: 32 of 33 as expected. The miss: L8's correct answer got Almost because the rubric demanded "margin is not the cost of the trade" literally; reworded to "a deposit that lets you control a much bigger position (it is not the full cost)". Re-run pending
+- [x] **Rubric tuning:** grader lab run 2026-11-10: 32 of 33 as expected. The miss: L8's correct answer got Almost because the rubric demanded "margin is not the cost of the trade" literally; reworded to "a deposit that lets you control a much bigger position (it is not the full cost)". **Re-run 2026-11-10 19:06 UTC: 33 of 33 as expected**, and all 22 Almost / Not yet replies carried a marked suggested answer (one awkward but correct L11 sentence noted)
 
 **Exit check:** for all 11 Stage 1 lessons, correct → Got it, gap → Almost, misconception → Almost or Not yet.
 
@@ -103,7 +103,7 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 - [x] Published with capabilities `db`, `user`, `sample{images}`, `assets` (version 8); verified with `ArtifactData list`: the Learner's private folder holds their saved profile (theme, disclaimer acceptance)
 - [x] Handover: the link and a 2-minute "how to use this" note (README)
 
-**Still open (Learner checks):** Phase 5 grader lab · Phase 7 live verdict and dispute.
+**Still open (Learner checks):** Phase 7 live verdict and dispute.
 
 ## After Wave 1
 - [x] Fix: finishing the quiz reset it to question 1 instead of showing the score (the lesson reader re-rendered on every progress save; it now re-renders only when the lock state changes). The same bug closed the Explain-Back sheet when a grade arrived
@@ -122,5 +122,4 @@ One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave:
 
 ## Open items
 1. The Learner's reload check for Phase 4.
-2. The Learner runs `#grader-lab` once for Phase 5's rubric tuning.
 3. The Learner's live journal check for Phase 7 (a real verdict and a dispute).
