@@ -42,6 +42,9 @@
 | `gold` | `#7A5C14` (text) / `#D4B062` (fills, icons) | Achievements | 5.69 on surface ✅ |
 
 ### Rules
+- **Locked cards use `text`, never `text-muted`:** muted measures 4.31:1 on `#3D4337`, below AA. Light-mode locked is `#DEE0D9` (12% of #3D4337 over surface).
+- **Extra tokens added in Phase 3:** `raised` (hover, #24443A dark / #FFFFFF light), `gold-fill` (#D4B062 in both themes), `on-gold` (#0F1F17), `scrim` (sheet backdrop), `shadow-card` (none in dark), `shadow-sheet`.
+- **Charts:** bullish candles are hollow and bearish filled, so direction never relies on colour alone.
 - Up/down **always** come with a second signal: ▲/▼, "+"/"−", or a word ("Profit", "Loss"). Colour is never the only cue.
 - Theme: follow `prefers-color-scheme` by default. A manual toggle sets `data-theme` on `<html>` and is saved in `profile.theme`, with `localStorage` as a fast first-paint hint.
 
@@ -80,7 +83,7 @@ System stack: `-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display
 | **SegmentedControl** | iOS-style, used for Buy/Sell, theme, and journal filters. |
 | **NumberField** | Large tabular numerals, unit suffix ("$", "%", "lots"), stepper on phones. |
 | **CandleChart** | SVG candles in `up`/`down`, axis in `text-muted`, gridlines in `line` at 30%. A footnote below every chart: "Illustrative, not real market data." |
-| **RingProgress** | Live Readiness rings (Apple-Fitness style): trades x/20, adherence %, days x/21. Gold when complete. |
+| **RingProgress** | Live Readiness rings (Apple-Fitness style): trades x/50, adherence %, days x/56. Gold when complete. |
 | **Toast** | Top-centre glass pill for "Saved", "Grading…" and error messages. |
 
 ## 6. Tailwind v4 mapping

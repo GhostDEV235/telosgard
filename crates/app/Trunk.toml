@@ -1,0 +1,9 @@
+[build]
+target = "index.html"
+dist = "dist"
+
+# Tailwind v4 compiles style/tailwind.css (scanning src/**/*.rs) before Trunk inlines the result.
+[[hooks]]
+stage = "pre_build"
+command = "sh"
+command_arguments = ["-c", "cd \"$TRUNK_SOURCE_DIR\" && ../../node_modules/.bin/tailwindcss -i style/tailwind.css -o style/out.css --minify"]

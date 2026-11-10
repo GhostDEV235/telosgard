@@ -39,7 +39,10 @@ trade_school/
 │   │       ├── journal.rs         # JournalEntry, hard-rule evaluation
 │   │       ├── readiness.rs       # Live Readiness computation
 │   │       ├── course.rs          # Stage/Lesson ids, unlock order
-│   │       └── drills.rs          # seeded illustrative candle generator + drill answer checking
+│   │       ├── drills.rs          # seeded illustrative candle generator + drill answer checking
+│   │       ├── time.rs            # UTC ↔ New York (US DST rule), sessions, rollover, No-Trade Windows
+│   │       ├── checklist.rs       # Pre-Session Checklist + validation
+│   │       └── review.rs          # Weekly Review statistics
 │   ├── content/                   # Lesson content compiled into Rust data at build time
 │   │   ├── build.rs               # parses lessons/*.md → generated.rs
 │   │   └── lessons/
@@ -109,7 +112,8 @@ The platform's rule is that a path with an even number of segments is a document
 | `lesson-<NN>` | progress | `quizBest` (0–100), `quizPassedAt?`, `grade` (latest), `gotItAt?`, `passedAt?` |
 | `attempt-<ulid>` | attempt | `lesson`, `answer`, `grade`, `feedback`, `reteach?`, `at` |
 | `plan-v<N>` | plan | `version`, `createdAt`, `hardRules{…}`, `softRules{setup, extra[]}` |
-| `trade-<ulid>` | journal | trade fields, `planVersion`, `run`, `hardResults[]`, `verdict{adherent, reasons[], at}`, `dispute?{text, verdict, at}`, `result?{exit, pnl, balanceAfter}` |
+| `checklist-<YYYY-MM-DD>` | checklist | local `date`, `events[{name, tier, atUtc}]`, `asianHigh`, `asianLow`, `mood`, `bias`, `zones[]`, `scenarios[]`, `risk{perTradePct, dailyLimitR, plannedSizes[]}` |
+| `trade-<ulid>` | journal | `status` (`taken`/`skipped`), trade fields, `checklistDate`, `planVersion`, `run`, `hardResults[]`, `verdict{adherent, reasons[], at}`, `dispute?{text, verdict, at}`, `result?{exit, pnl, balanceAfter}` |
 | `drill-<id>` | drill | `bestScore`, `attempts`, `lastAt` |
 | `run-<N>` | run | `number`, `startedAt`, `startingBalance`, `endedAt?`, `endReason?` (`breach`). Max total loss is measured against the run's starting balance |
 | `readiness` | readiness | `reachedAt?` (written once; unlocks the Live and Advanced Tracks permanently) |
@@ -199,6 +203,7 @@ The app runs inside an iframe at a single URL, so routing is **hash-based**. The
 
 1. `trunk build --release --public-url ./` runs the Tailwind CLI → `tailwind.css`, then builds the wasm, the glue JS and a hashed `dist/`.
 2. `node scripts/artifactify.mjs dist` rewrites `dist/index.html` into the Artifact page format: no doctype/html/head/body tags (the platform adds the skeleton); `<title>` and `<meta name="claude:viewport-fit-sides">` first, then head content, then body content. Relative paths throughout.
+   - **Gotcha:** the platform skeleton has its own *un-layered* reset (light color-scheme, 14px font, body colours). Un-layered CSS beats any `@layer`, so `html`/`body` colour and font rules must live outside `@layer base`. A local `trunk serve` does not show this; always check the published page.
 3. Publish with the Artifact tool: `file_path = dist/index.html`, `files = { "<hashed>.js", "<hashed>_bg.wasm", "<hashed>.css" }`, `capabilities` as in §5.
 4. Verification pass: one `ArtifactData list` of the Learner's collection after a test write.
 

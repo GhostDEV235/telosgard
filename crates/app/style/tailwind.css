@@ -1,0 +1,118 @@
+@import "tailwindcss";
+@source "../src";
+
+/* Tokens: docs/DESIGN-SYSTEM.md. Dark-first: dark values on bare :root, light under the two guarded blocks. */
+@theme static {
+  --color-bg: #0F1F17;
+  --color-surface: #1E3A2E;
+  --color-raised: #24443A;
+  --color-fill: #3E5A3F;
+  --color-on-fill: #F4F5EF;
+  --color-text: #C7CBB8;
+  --color-text-muted: #9DAD98;
+  --color-line: #6B7F67;
+  --color-locked: #3D4337;
+  --color-up: #7FC97A;
+  --color-down: #E8826B;
+  --color-gold: #D4B062;
+  --color-gold-fill: #D4B062;
+  --color-on-gold: #0F1F17;
+  --color-scrim: rgb(5 12 9 / 0.6);
+
+  --shadow-card: none;
+  --shadow-sheet: 0 -8px 40px rgb(0 0 0 / 0.45);
+
+  --radius-card: 22px;
+  --radius-btn: 14px;
+  --radius-field: 12px;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+
+  --text-large: 34px;   --text-large--line-height: 41px;   --text-large--font-weight: 700;  --text-large--letter-spacing: -0.02em;
+  --text-title1: 28px;  --text-title1--line-height: 34px;  --text-title1--font-weight: 700; --text-title1--letter-spacing: -0.015em;
+  --text-title2: 22px;  --text-title2--line-height: 28px;  --text-title2--font-weight: 600;
+  --text-headline: 17px; --text-headline--line-height: 22px; --text-headline--font-weight: 600;
+  --text-body: 17px;    --text-body--line-height: 26px;
+  --text-callout: 16px; --text-callout--line-height: 22px;
+  --text-footnote: 13px; --text-footnote--line-height: 18px;
+  --text-eyebrow: 12px; --text-eyebrow--line-height: 16px; --text-eyebrow--font-weight: 600; --text-eyebrow--letter-spacing: 0.06em;
+}
+
+:root { color-scheme: dark; }
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --color-bg: #E4E6DA; --color-surface: #F4F5EF; --color-raised: #FFFFFF; --color-text: #0F1F17;
+    --color-text-muted: #4E5F4B; --color-line: #C7CBB8; --color-locked: #DEE0D9;
+    --color-up: #2F7A2C; --color-down: #9E4232; --color-gold: #7A5C14; --color-scrim: rgb(15 31 23 / 0.35);
+    --shadow-card: 0 1px 2px rgb(15 31 23 / .06), 0 8px 24px rgb(15 31 23 / .06);
+    --shadow-sheet: 0 -8px 40px rgb(15 31 23 / .18);
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: #E4E6DA; --color-surface: #F4F5EF; --color-raised: #FFFFFF; --color-text: #0F1F17;
+  --color-text-muted: #4E5F4B; --color-line: #C7CBB8; --color-locked: #DEE0D9;
+  --color-up: #2F7A2C; --color-down: #9E4232; --color-gold: #7A5C14; --color-scrim: rgb(15 31 23 / 0.35);
+  --shadow-card: 0 1px 2px rgb(15 31 23 / .06), 0 8px 24px rgb(15 31 23 / .06);
+  --shadow-sheet: 0 -8px 40px rgb(15 31 23 / .18);
+}
+
+/* Un-layered on purpose: the artifact viewer wraps the page in its own un-layered reset (light
+   color-scheme, 14px font, body colours), and un-layered CSS always beats @layer base. These must win. */
+html { -webkit-text-size-adjust: 100%; background: var(--color-bg); }
+html, body {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+/* The band above the sticky bar, under the phone's status area. */
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30;
+  background: var(--color-bg);
+}
+
+@layer base {
+  h1, h2, h3 { text-wrap: balance; }
+  button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; border-radius: 8px; }
+  ::selection { background: var(--color-fill); color: var(--color-on-fill); }
+}
+
+@utility gutter {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  @media (width >= 48rem) {
+    padding-left: max(24px, env(safe-area-inset-left, 0px));
+    padding-right: max(24px, env(safe-area-inset-right, 0px));
+  }
+}
+@utility glass {
+  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+}
+@utility tabular { font-variant-numeric: tabular-nums; }
+@utility press {
+  transition: transform 200ms cubic-bezier(.2,.8,.2,1), background-color 200ms, opacity 200ms;
+  &:active { transform: scale(0.97); }
+}
+
+@keyframes sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes toast-in { from { transform: translateY(-12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@utility anim-sheet { animation: sheet-in 300ms cubic-bezier(.2,.8,.2,1); }
+@utility anim-fade { animation: fade-in 200ms ease-out; }
+@utility anim-toast { animation: toast-in 250ms cubic-bezier(.2,.8,.2,1); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

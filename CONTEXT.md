@@ -48,10 +48,23 @@ Trade size. 1 standard lot = 100 ounces, so a $1 **Dollar Move** = $100 profit o
 Trading from the price chart itself (candles, levels and structure) rather than from indicators. Within this course it means **Classic Price Action** unless stated otherwise.
 
 **Classic Price Action**:
-The **Learner**'s first strategy: read the trend from market structure on a higher timeframe, mark key support and resistance, and enter only on a confirmation candle (pin bar or engulfing candle) at a level, in the trend's direction.
+The **Learner**'s first strategy: read the trend from market structure on a higher timeframe, mark key support and resistance, and enter only on a confirmation candle (pin bar or engulfing candle) at a level, in the trend's direction. It covers two plays: a **pullback** to a level within the trend, and a **bounce** off a level tested at least twice.
+_Avoid_: trend pullback strategy, S/R bounce strategy (both are Classic Price Action)
+
+**Fibonacci Retracement**:
+A grid drawn over one completed impulse move, marking where a pullback often pauses (38.2%, 50%, 61.8%). A reference, never a signal on its own.
+
+**Confluence**:
+Two or more independent reasons pointing at the same price, such as a key level that is also a Fibonacci level or a round number. Stronger than any one reason alone.
+
+**ATR**:
+Average True Range: how far gold normally moves in one candle on a given timeframe. Used to check a stop sits beyond normal noise (at least 1–1.5× ATR beyond structure).
 
 **Supply & Demand** / **Smart Money Concepts (SMC)**:
 Later price-action methods layered on top of **Classic Price Action**, never taught as replacements for it.
+
+**Breakout & Retest** / **Asian-Range Breakout** / **News Follow-Through**:
+Later strategies, also layered on **Classic Price Action**: trading the retest of a broken level; trading the break of the Asian session's high or low as London opens; trading the direction gold settles into after a major news release (never the release candle itself).
 
 **Core Track**:
 The **Lessons** that take the **Learner** from zero to placing **Demo Trades** under a written **Trading Plan**. Completing it is the course's main finish line.
@@ -60,7 +73,7 @@ The **Lessons** that take the **Learner** from zero to placing **Demo Trades** u
 The final **Lessons** on moving to real money (psychology, journaling discipline, broker choice). Locked until the **Learner** has earned **Live Readiness**.
 
 **Advanced Track**:
-The **Supply & Demand** and **SMC** **Lessons**, locked until **Live Readiness**. Adopting one means writing a new version of the **Trading Plan**.
+The **Lessons** on further strategies, locked until **Live Readiness**: **Breakout & Retest**, **Asian-Range Breakout**, **News Follow-Through**, **Supply & Demand** and **SMC**. Adopting one means writing a new version of the **Trading Plan**.
 
 **Demo Trade**:
 A practice trade placed with a broker's simulated money on real market prices.
@@ -72,18 +85,34 @@ _Avoid_: strategy (a strategy is only one part of the plan)
 Its rules are either **Hard Rules** or **Soft Rules**.
 
 **Hard Rule**:
-A numeric **Trading Plan** rule that can be checked by calculation alone (max risk % per trade, min risk-to-reward, allowed sessions, max trades per day, stop-loss required).
+A numeric **Trading Plan** rule that can be checked by calculation alone (max risk % per trade, min risk-to-reward, allowed sessions, max trades per day, stop-loss required, **Daily Loss Limit**, **No-Trade Windows**, a **Pre-Session Checklist** saved for that day).
+
+**Daily Loss Limit**:
+A **Hard Rule**: the most the **Learner** may lose in one day, in R (multiples of their risk per trade). Once the day's closed losses reach it, any further entry that day breaks the rule.
+
+**No-Trade Windows**:
+A **Hard Rule**: no entries during the daily rollover (about 5–6 pm New York), the Sunday open, or within 5 minutes of a tier-1 release (CPI, NFP, FOMC).
 
 **Soft Rule**:
-A **Trading Plan** rule that needs judgement (for example "entered on a confirmation candle at a key level, with the higher-timeframe trend"). Judged by Claude from the **Journal Entry**.
+A **Trading Plan** rule that needs judgement (for example "entered on a confirmation candle at a key level, with the higher-timeframe trend"). Every plan includes one: the trade was one of that day's written **Scenarios**. Judged by Claude from the **Journal Entry**.
 A plan is versioned: each **Journal Entry** is judged against the version in force when its trade was taken.
 
 **Live Readiness**:
-The state reached by logging at least 20 **Journal Entries** across at least 3 weeks, with at least 90% showing **Plan Adherence**, and without the demo account breaching the **Trading Plan**'s maximum total loss. Profit is not required. It unlocks the **Live Track** and the **Advanced Track**.
+The state reached by logging at least 50 **Journal Entries** across at least 8 weeks, with at least 90% showing **Plan Adherence**, and without the demo account breaching the **Trading Plan**'s maximum total loss. Profit is not required. It unlocks the **Live Track** and the **Advanced Track**.
 A max-loss breach starts a new **Readiness Run**.
 
 **Readiness Run**:
 The current attempt at **Live Readiness**, starting from a fresh demo balance. The max total loss is measured against that starting balance. Only **Journal Entries** in the current run count. A max-loss breach ends the run, and the next entry starts a new one.
+
+**Pre-Session Checklist**:
+The **Learner**'s dated routine before trading: today's high-impact USD events, the Asian high and low, a one-line macro mood, the higher-timeframe bias, key zones, the day's **Scenarios**, and the risk committed for the day. A **Demo Trade** on a day without one is not adherent.
+_Avoid_: daily plan, prep (use one term)
+
+**Scenario**:
+A written "if price does X at level Y, I do Z" line in a **Pre-Session Checklist**. Only trades matching a Scenario follow the plan.
+
+**Weekly Review**:
+The **Learner**'s weekly look back at their **Journal Entries**: win rate, average R, and rules broken.
 
 **Journal Entry**:
 The **Learner**'s record of one **Demo Trade**: what they did, why they did it, and how it turned out.
