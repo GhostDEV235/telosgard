@@ -17,6 +17,8 @@ extern "C" {
     async fn js_delete(doc: &str) -> JsValue;
     #[wasm_bindgen(js_name = dbList)]
     async fn js_list(kind: &str) -> JsValue;
+    #[wasm_bindgen(js_name = dbSetShared)]
+    async fn js_set_shared(path: &str, json: &str) -> JsValue;
     #[wasm_bindgen(js_name = sampleJson)]
     async fn js_sample(prompt: &str, tier: &str) -> JsValue;
 }
@@ -48,6 +50,7 @@ impl PlatformError {
             "resource_exhausted" | "rate_limited" => PlatformError::RateLimited,
             "invalid_argument" | "transform_error" | "invalid_request" | "prompt_too_large" => PlatformError::Invalid(message),
             "refused" => PlatformError::Claude(message),
+            "invalid_json" => PlatformError::Claude("its reply couldn't be read".into()),
             _ => PlatformError::Unavailable,
         }
     }
@@ -55,7 +58,7 @@ impl PlatformError {
     /// Short, plain-language text for a toast or banner.
     pub fn describe(&self) -> String {
         match self {
-            PlatformError::NotGranted => "Saving isn't available in this view.".into(),
+            PlatformError::NotGranted => "This isn't available in this view (permission not granted, or signed out).".into(),
             PlatformError::Unavailable => "Couldn't reach claude.ai. Check your connection and try again.".into(),
             PlatformError::Revoked => "Access to this page changed. Reload to continue.".into(),
             PlatformError::Quota(_) => "Storage is full. Nothing new can be saved.".into(),
@@ -138,7 +141,12 @@ pub async fn list<T: DeserializeOwned>(kind: &str) -> Result<Vec<(String, T)>, P
         .collect())
 }
 
-#[allow(dead_code)] // used by grading in Phase 5
+/// Grader lab only: writes under the shared `lab/` prefix.
+pub async fn set_shared<T: Serialize>(path: &str, body: &T) -> Result<(), PlatformError> {
+    let json = serde_json::to_string(body).map_err(|e| PlatformError::Invalid(e.to_string()))?;
+    unwrap(js_set_shared(path, &json).await).map(|_| ())
+}
+
 pub async fn sample_json(prompt: &str, tier: &str) -> Result<Value, PlatformError> {
     unwrap(js_sample(prompt, tier).await)
 }

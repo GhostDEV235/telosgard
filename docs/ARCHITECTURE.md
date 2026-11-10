@@ -146,7 +146,9 @@ RETURN JSON: {"grade":"got_it"|"almost"|"not_yet","feedback":string,"gap":string
 ```
 - `modelTier: "default"`. Responses are short.
 - `got_it` requires every `must_include` item, paraphrase allowed, and no misconception present.
-- The response is validated against the Rust type. If the JSON is invalid or has unknown values, retry once, then show an error. **Never default to pass.**
+- Prompt and validation live in `gold_core::grading` (unit-tested): the answer is fenced in `<learner_answer>` tags (tags inside it are stripped, length capped at 2,000 chars) and Claude is told to treat it as data; the reply must have a known grade, non-empty feedback, a `gap` for Almost and a `reteach` for Not yet.
+- **No automatic retry.** The platform asks pages not to retry an unreadable reply (`invalid_json`) from code, so any failure shows the message and a "Try again" button. **Never default to pass.**
+- Rubric tuning uses the hidden `#grader-lab` page: it runs every fixture through the same call and writes the outcome to the shared doc `lab/grader-latest`, which Claude Code reads with `ArtifactData`.
 
 ### 6.2 Adherence Verdict
 1. `core::journal::evaluate_hard_rules(entry, plan)` → `Vec<HardRuleResult>`. This is deterministic.

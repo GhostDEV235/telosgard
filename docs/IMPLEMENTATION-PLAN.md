@@ -58,10 +58,11 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 **Exit check:** in the published preview, progress survives a reload, and with the platform absent the app still renders all content.
 
 ## Phase 5: Learning loop
-- [ ] Quiz flow: shuffle, instant feedback, best score saved
-- [ ] Explain-Back: prompt builder (ARCHITECTURE §6.1), JSON validation, single retry on bad JSON, the three Grade UIs, attempt history
-- [ ] GateStatus wiring + unlocking the next lesson; a gold "Lesson passed" moment
-- [ ] **Rubric tuning:** for each Stage 1 lesson, three fixture answers (correct / gap / misconception); adjust rubrics until the Grades match
+- [x] Quiz flow: shuffle, instant feedback, best score saved
+- [x] Explain-Back: prompt builder + strict reply check in `gold_core::grading` (7 tests), the three Grade UIs (Got it + optional tip / Almost + "what's missing" / Not yet + re-teach with a different analogy), errors with "Try again" (no auto-retry, per the platform), attempt history saved and listed
+- [x] GateStatus wiring + unlocking the next lesson; a gold "Lesson passed" banner and toast
+- [x] Rubrics + 3 fixtures for each of L1–11 (`rubrics.rs`; moves into `crates/content` in Phase 6)
+- [ ] **Rubric tuning:** the Learner runs `#grader-lab` once (Claude needs their permission); Claude Code reads `lab/grader-latest` and adjusts rubrics until the Grades match
 
 **Exit check:** for all 11 Stage 1 lessons, correct → Got it, gap → Almost, misconception → Almost or Not yet.
 
@@ -101,3 +102,4 @@ One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave:
 
 ## Open items
 1. The Learner's reload check for Phase 4.
+2. The Learner runs `#grader-lab` once for Phase 5's rubric tuning.

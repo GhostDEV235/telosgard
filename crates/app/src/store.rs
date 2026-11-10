@@ -46,7 +46,6 @@ pub struct Profile {
     pub theme: String,
 }
 
-#[allow(dead_code)] // Phase 5
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Attempt {
@@ -109,7 +108,6 @@ pub struct ReadinessRecord {
 }
 
 /// A sortable, unique id suffix: time then randomness (no extra crates on wasm).
-#[allow(dead_code)] // attempts and trades, Phases 5 and 7
 pub fn new_id(prefix: &str) -> String {
     let rand = (js_sys::Math::random() * u32::MAX as f64) as u32;
     format!("{prefix}-{:012x}{rand:08x}", now())
@@ -325,6 +323,17 @@ impl Store {
             match save_doc("profile", kind::PROFILE, &p).await {
                 Ok(()) => self.state.set(SaveState::Saved),
                 Err(e) => self.report(e),
+            }
+        });
+    }
+
+    pub fn save_attempt(self, a: Attempt) {
+        if !self.enabled() {
+            return;
+        }
+        spawn_local(async move {
+            if let Err(e) = repo::save_attempt(&a).await {
+                self.report(e);
             }
         });
     }

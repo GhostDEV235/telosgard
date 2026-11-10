@@ -5,6 +5,7 @@ pub mod checklist;
 pub mod course;
 pub mod drills;
 pub mod gate;
+pub mod grading;
 pub mod journal;
 pub mod money;
 pub mod plan;

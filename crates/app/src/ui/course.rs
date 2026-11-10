@@ -154,6 +154,15 @@ pub fn GateStatus(id: LessonId) -> impl IntoView {
     };
     view! {
         <section class="rounded-card bg-surface p-5 shadow-card" aria-labelledby="gate-h">
+            <Show when=move || progress.passed(id)>
+                <div class="anim-fade mb-4 flex items-center gap-3 rounded-btn bg-gold-fill p-4 text-on-gold" role="status">
+                    <span class="text-title2" aria-hidden="true">"🏅"</span>
+                    <div>
+                        <p class="text-headline">"Lesson passed"</p>
+                        <p class="text-callout">"You understood it and explained it back. The next lesson is open."</p>
+                    </div>
+                </div>
+            </Show>
             <h2 id="gate-h" class="text-headline">"To unlock the next lesson"</h2>
             <div class="mt-3 flex flex-wrap gap-2">
                 <span class=move || pill(progress.get(id).quiz_met())>

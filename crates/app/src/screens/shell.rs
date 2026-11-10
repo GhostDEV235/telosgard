@@ -28,6 +28,7 @@ pub fn Shell() -> impl IntoView {
                 Route::Plan => view! { <tools::Plan /> }.into_any(),
                 Route::Journal => view! { <journal::Journal /> }.into_any(),
                 Route::Readiness => view! { <journal::Readiness /> }.into_any(),
+                Route::GraderLab => view! { <crate::screens::lab::GraderLab /> }.into_any(),
             }}
         </div>
         <TabBar />

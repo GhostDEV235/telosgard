@@ -17,6 +17,7 @@ pub enum Route {
     Plan,
     Journal,
     Readiness,
+    GraderLab,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,13 +39,14 @@ impl Route {
             "plan" => Route::Plan,
             "journal" => Route::Journal,
             "readiness" => Route::Readiness,
+            "grader-lab" => Route::GraderLab,
             _ => h.strip_prefix("lesson-").and_then(parse_lesson).map(Route::Lesson).unwrap_or(Route::Today),
         }
     }
 
     pub fn tab(self) -> Tab {
         match self {
-            Route::Today | Route::Lesson(_) => Tab::Today,
+            Route::Today | Route::Lesson(_) | Route::GraderLab => Tab::Today,
             Route::Practice | Route::Drill(_) => Tab::Practice,
             Route::Tools | Route::Plan => Tab::Tools,
             Route::Journal | Route::Readiness => Tab::Journal,

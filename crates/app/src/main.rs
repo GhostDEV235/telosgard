@@ -1,8 +1,10 @@
 //! Gold School front-end. See docs/ARCHITECTURE.md.
 
 mod catalog;
+mod grading;
 mod platform;
 mod router;
+mod rubrics;
 mod screens;
 mod state;
 mod store;

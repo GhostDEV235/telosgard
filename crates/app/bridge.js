@@ -105,3 +105,14 @@ export async function sampleJson(prompt, tier) {
     return ok(value);
   } catch (e) { return errOf(e); }
 }
+
+/// Grader-lab results only: a shared (non-private) doc under `lab/` so Claude Code can read them back.
+export async function dbSetShared(path, json) {
+  try {
+    if (!path.startsWith("lab/")) throw { code: "invalid_argument", message: "shared writes are limited to lab/" };
+    if (!caps || !caps.db) throw { code: "not_granted", message: "storage unavailable" };
+    const body = JSON.parse(json);
+    await call(() => caps.db.doc(path).set(body));
+    return ok(null);
+  } catch (e) { return errOf(e); }
+}
