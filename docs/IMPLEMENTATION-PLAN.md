@@ -112,14 +112,56 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 - [x] **Suggested answer:** on Almost / Not yet, Claude returns the Learner's own answer minimally rewritten to include the missing idea, additions in [[brackets]] and highlighted in the app; required by the reply check (3 tests). The Learner still rewrites it in their own words to pass
 - [x] The latest grade, feedback and suggestion also show on the Explain-Back card, so they can't be lost when the sheet closes; sheets focus their first field on open
 
+## Wave 1.5: Learning upgrades *(from the second LLM review, decided 2026-11-10)*
+
+> Source: `Gold Trading Course Notes — LLM 2 Review`. It reviewed an earlier, different dashboard, so only the ideas that fit Gold School are taken. Not adopted: a US futures track (the Learner trades outside the US on MT5), fresh numbers on retry, bar replay, zone-tolerance grading (the existing Wave 5 drill stays as planned), data export, dated real headlines, Lightweight Charts, Papermorph narration. Already covered: current example prices (~4,100), Dollar Moves instead of pips, real yields and central banks (Stage 3), accessibility, process-based graduation (Live Readiness), DST-correct sessions.
+
+### Phase 9: Lessons in steps, the new Lesson 2, risk early
+- [ ] `gold-core` course map v3, test-first: new L2 shifts the core to **40 lessons**: `LAST_CORE = 40`, `LAST_LIVE = 44`, `STAGES = (1,12) (13,15) (16,20) (21,23) (24,28) (29,31) (32,36) (37,40)`, Indicators after L28. The Learner's saved progress is only `lesson-01`, so no data migration is needed (confirm with `ArtifactData list` before publishing)
+- [ ] Content format v2: each lesson is a list of **Lesson Steps** (`[[steps]]`: heading, text in Markdown, optional `why` detail, optional `widget` id) plus a **Recall Set** (`[[recall]]`, exactly 3 questions). `build.rs` rules: 4–8 steps; ≤ 60 words of main text per step (detail goes in `why`); main path 2–5 minutes at 130 wpm; every quiz question has a stable `id`; existing rules kept (sources, videos, no "pip" outside the pips lesson)
+- [ ] Reader v2: one step per screen with a progress bar, Back / Next, "Why?" toggle, keyboard-operable; then the Recall Set; then the Quiz, Explain-Back and Gate as today
+- [ ] **Widgets** (Rust components; one variable each, live readout states both prices and the difference): `price_drag` (sell price → P/L per ounce), `lots_money` (lots × move), `one_percent` (balance → the most you'd lose at 1%), `stop_first` (set a stop before entering; shows the loss if hit), `short_risk` (price rises with no ceiling → a short's loss keeps growing until stopped or closed out), `leverage_toggle` (1× / 10× / 50× on the same move, including the move against you and the margin close-out), `bid_ask` (which price you pay)
+- [ ] **Lesson 2: The honest maths of trading** (new): most retail CFD accounts lose money (the broker risk warning regulators require; fact-checked against the FCA/ESMA source), being right often isn't the goal, a 50% win rate with wins twice the size of losses still makes money, process over conviction. Full CURRICULUM spec, rubric + 3 fixtures, 1–2 verified videos
+- [ ] Rewrite Lessons 1 and 3–12 (old 2–11) into steps, keeping every checked fact and source. Additions: Lots (now L8) gains a 1% step with `one_percent`; Buying vs selling (now L5) gains the shorts step with `short_risk` (says plainly that many retail CFD accounts have negative-balance protection, so the lesson never claims you can lose more than the account); any widget or drill that "takes" a trade requires a stop first
+- [ ] Renumber everything that names a lesson: content files, `catalog.rs`, CURRICULUM, PRD, copy that says "Lesson 38/39" (now 39/40)
+- [ ] Grader lab re-run including the new L2 fixtures
+
+**Exit check:** `cargo test --workspace` green; the build rejects a step over 60 words; all 12 Stage 1 lessons render step by step with working widgets in both themes; grader lab 36 of 36 as expected.
+
+### Phase 10: Retention (Spaced Review, Confidence, Question Records)
+- [ ] `gold-core` `retention` module, test-first: `QuestionRecord { answered, wrong, guessed_right, last_at }`; `record(answer_correct, confidence)`; `pick_review(records, eligible_lessons, n, seed) -> Vec<QuestionId>` weighted towards wrong (×3) and right-but-guessing (×2), only from **passed** lessons other than the current one, deterministic for a seed; a question answered right while "Sure" twice in a row drops out
+- [ ] Quiz: a **Sure / Guessing** choice per answer (before the answer is revealed). A right answer counts towards the Gate either way (decided 2026-11-10)
+- [ ] Storage: one `qrec-<lesson>` document per lesson (question id → record); written after each quiz and review
+- [ ] **Spaced Review** card at the start of each lesson (2–3 questions; skipped when there's nothing eligible); practice only
+- [ ] Question stats view for course tuning: per question, answered / wrong % / guessed %, readable by Claude Code through `ArtifactData` on `data/users/me`
+
+**Exit check:** retention tests green (weighting, eligibility, determinism, drop-out rule); a guessed right answer still passes the Gate and reappears in the next lesson's Spaced Review.
+
+### Phase 11: Drills and journal upgrades
+- [ ] **Calibration drill** (Practice, after Lesson 2): predict up/down on 10 seeded illustrative charts, then see the hit rate (expected ≈ 50%) and the lesson: you can't predict the next candle; you manage risk over many trades. No streaks. `gold-core` test: seeded rounds are reproducible; the score is a plain hit rate
+- [ ] Journal: **R-Multiple** on each closed trade and in the list (`gold-core` `r_multiple`, test-first); **Emotion Tag** (calm / FOMO / revenge / fear / overconfident) set when closing; a one-line **post-trade lesson**, separate from the pre-trade reason
+- [ ] Weekly Review: **Expectancy** in R (`gold-core` `review`, test-first), emotions shown against broken rules, and the week's post-trade lessons
+- [ ] Phase 7's end-to-end test extended with R, Expectancy and emotion counts against a hand calculation
+
+**Exit check:** tests green; a closed −$100 trade risking $100 shows −1.0R; a week of +2R, −1R, −1R, +2R shows Expectancy +0.5R.
+
+### Phase 12: Ask Claude and the risk footer
+- [ ] **Ask Claude about this step**: a button on each Lesson Step opens a small sheet; the question goes to Claude with the lesson title, the current and previous steps, and the rule "answer as this course's tutor, using its terms; no trade recommendations; say so when a question is beyond this lesson". Plain-text answer (bridge gains `sampleText`), answers kept for the session only, failures show a message and never invent an answer
+- [ ] **Risk footer** on every screen: "Education, not financial advice. Trading CFDs carries a high risk of losing money."
+- [ ] Accessibility re-scan (axe) on the reader v2, widgets and new sheets, both themes
+
+**Exit check:** asking about a step returns an answer that stays on the lesson; the footer shows on every route; axe finds no violations.
+
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:
 - Wave 2: session drills ("which session is it?", "is this a No-Trade Window?")
 - Wave 3: "hot or soft surprise → which way does gold usually go?"
+- Wave 4: **candle reconstruction** (given open, high, low and close, pick the matching candle and say who won it; added from the second review)
 - Wave 5: tap the level, name the structure (HH/HL/LH/LL, BOS/CHoCH), confirmation candle at a location
 - Wave 6: **Fibonacci drills**: pick the valid impulse leg, place the grid, find the confluence zone
 - Wave 7: ATR stop placement and sizing speed drill (target: size from any stop in under 30 seconds)
 
+Stage numbers above refer to the stage, not the lesson number; from Phase 9 every lesson after Lesson 1 moves up by one.
+
 ## Open items
-1. The Learner's reload check for Phase 4.
-3. The Learner's live journal check for Phase 7 (a real verdict and a dispute).
+1. The Learner's live journal check for Phase 7 (a real verdict and a dispute). Before it, add a way to delete test entries (asked 2026-11-10, awaiting the Learner's choice).

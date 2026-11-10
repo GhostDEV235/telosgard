@@ -15,6 +15,24 @@ An ordered group of **Lessons** that share a theme (for example Stage 1 Foundati
 One concept, taught in plain language with an analogy, a real-life example and optional video references.
 _Avoid_: module, chapter, unit (unless grouping is introduced later)
 
+**Lesson Step**:
+One idea of a **Lesson** on its own screen: a short heading and a few sentences, with optional deeper detail behind a "Why?" toggle. A Lesson is read step by step.
+
+**Widget**:
+An interactive control inside a **Lesson Step** that lets the **Learner** move one number and watch one result change (for example, dragging the sell price to see profit or loss per ounce). Practice, not assessment.
+
+**Spaced Review**:
+Two or three **Quiz** questions from earlier **Lessons** shown at the start of a new one, chosen mostly from questions the **Learner** got wrong or answered while **Guessing**. Practice only; it never blocks progress.
+
+**Confidence**:
+The **Learner**'s own "Sure" or "Guessing" tag on each **Quiz** answer. A right answer tagged Guessing still counts towards the **Gate**, but is treated as not yet learned for **Spaced Review**, so honesty never costs the **Learner** anything.
+
+**Question Record**:
+How one **Quiz** question has gone for the **Learner** over time: times answered, wrong, and right-but-guessing. Feeds **Spaced Review** and shows which questions explain things poorly.
+
+**Recall Set**:
+Three quick questions at the end of a **Lesson**'s steps, answered from memory before the **Quiz**. Practice, not part of the **Gate**.
+
 **Quiz**:
 Multiple-choice questions at the end of a **Lesson** that check whether the learner *recognises* correct ideas.
 
@@ -110,6 +128,16 @@ _Avoid_: daily plan, prep (use one term)
 
 **Scenario**:
 A written "if price does X at level Y, I do Z" line in a **Pre-Session Checklist**. Only trades matching a Scenario follow the plan.
+
+**R-Multiple**:
+A closed trade's result divided by the money it risked at the stop: +2R won twice the risk, −1R lost exactly the planned amount.
+_Avoid_: "risk-reward" for a result (that term is for the plan, before the trade)
+
+**Expectancy**:
+The average result per trade in R: (win rate × average win) − (loss rate × average loss). Positive expectancy can come from being right only half the time.
+
+**Emotion Tag**:
+The **Learner**'s one-word label for how they felt about a **Demo Trade** (calm, FOMO, revenge, fear, overconfident), set after the trade.
 
 **Weekly Review**:
 The **Learner**'s weekly look back at their **Journal Entries**: win rate, average R, and rules broken.

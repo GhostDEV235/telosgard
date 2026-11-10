@@ -38,17 +38,17 @@ One Learner. They are a complete beginner, motivated to trade, and they know a p
 ### 4.1 Course structure
 | Track | Contents | Unlocks |
 |---|---|---|
-| **Core Track** | Stage 1 Foundations (L1–11), Stage 2 Sessions & Timing (L12–14), Stage 3 What Moves Gold (L15–19), Stage 4 Reading the Chart (L20–22), Stage 5 Price Action (L23–27), Stage 6 Fibonacci & Confluence (L28–30), Stage 7 Risk & Psychology (L31–35), Stage 8 Plan & Practise (L36–39) | Sequentially, by **Gate** |
-| **Live Track** | L40 Journal Review, L41 Brokers & Scams, L42 Going Live Small, L43 Scaling Up | **Live Readiness** |
+| **Core Track** | Stage 1 Foundations (L1–12), Stage 2 Sessions & Timing (L13–15), Stage 3 What Moves Gold (L16–20), Stage 4 Reading the Chart (L21–23), Stage 5 Price Action (L24–28), Stage 6 Fibonacci & Confluence (L29–31), Stage 7 Risk & Psychology (L32–36), Stage 8 Plan & Practise (L37–40) | Sequentially, by **Gate** |
+| **Live Track** | L41 Journal Review, L42 Brokers & Scams, L43 Going Live Small, L44 Scaling Up | **Live Readiness** |
 | **Advanced Track** | A1 Breakout & Retest, A2 Asian-Range Breakout, A3 News Follow-Through, A4–A6 Supply & Demand, A7–A10 **SMC**, all layered on **Classic Price Action** | **Live Readiness** |
-| Optional side lesson | Indicators (EMAs, RSI) | After Stage 5 |
+| Optional side lesson | Indicators (EMAs, RSI) | After Stage 5 (L28) |
 
 The full lesson map is in [`CURRICULUM.md`](CURRICULUM.md).
 
 ### 4.2 Wave 1 (this build)
 - The complete app: card-stack home, lesson reader, **Gates**, Claude grading, saved progress, theming.
 - All tools: position-size calculator, **Trading Plan** builder, Journal + Live Readiness dashboard, **Chart Drills** engine, **Pre-Session Checklist**, **Weekly Review**, session clock.
-- **Stage 1 (L1–11) fully written**, with verified videos. Stages 2–8, the Live Track and the Advanced Track appear as locked cards with titles.
+- **Stage 1 (L1–12) fully written** (L2 added in Wave 1.5), with verified videos. Stages 2–8, the Live Track and the Advanced Track appear as locked cards with titles.
 
 Later waves add one stage each, written when the Learner is near it and informed by their Wave 1 results (which analogies landed, and where they got **Almost**).
 
@@ -58,12 +58,14 @@ Later waves add one stage each, written when the Learner is near it and informed
 - FR-1.1 Each **Lesson** has: a title, a learning objective, a plain-language body (5–8 minutes of reading), at least one analogy, at least one real-life example, a "Key takeaways" list, and 0–2 videos.
 - FR-1.2 Videos appear *after* the written body. Each has a one-line "what to watch for" note and an optional start timestamp.
 - FR-1.3 All prices and distances in lesson text are written as **Dollar Moves**.
+- FR-1.4 *(Wave 1.5)* A Lesson is read as 4–8 **Lesson Steps**, one per screen with a progress bar and a "Why?" toggle for depth; it has 1–2 **Widgets** and ends with a 3-question **Recall Set** before the Quiz. Any widget or drill that opens a trade asks for the stop-loss first.
 
 ### FR-2 Gate
 - FR-2.1 A **Lesson** is passed when the **Quiz** score is ≥ 80% **and** the latest **Explain-Back** is graded **Got it**. The two can be completed in either order.
 - FR-2.2 The next **Lesson** stays locked until its predecessor is passed. Lessons cannot be skipped.
 - FR-2.3 Retries are unlimited for both parts, with no penalty and no cooldown.
 - FR-2.4 Quiz questions and their options are shuffled on each attempt.
+- FR-2.5 *(Wave 1.5)* Each quiz answer carries a **Confidence** tag (Sure / Guessing). A right answer counts towards the Gate either way.
 
 ### FR-3 Explain-Back grading
 - FR-3.1 The Learner writes a free-text answer to the Lesson's Explain-Back prompt.
@@ -81,7 +83,7 @@ Later waves add one stage each, written when the Learner is near it and informed
 - FR-4.4 Available standalone and embedded in the Journal Entry form.
 
 ### FR-5 Trading Plan
-- FR-5.1 The guided builder is introduced in Lesson 38. It is available in Wave 1 so the tool can be tested, but marked "you'll fill this in at Lesson 38."
+- FR-5.1 The guided builder is introduced in Lesson 39. It is available in Wave 1 so the tool can be tested, but marked "you'll fill this in at Lesson 38."
 - FR-5.2 A plan has **Hard Rules** (numeric, checked by calculation) and **Soft Rules** (judgement, checked by Claude):
   - Hard Rules: risk % per trade (max), max total loss % of the Readiness Run's starting balance, min risk-to-reward, allowed sessions, max trades per day, stop-loss required (always on), **Daily Loss Limit** (in R), **No-Trade Windows** (always on), and a **Pre-Session Checklist** saved for the trade's day (always on).
   - Soft Rules: setup definition (for **Classic Price Action**: higher-timeframe trend, level, confirmation candle), plus free-text rules. Always included: the trade matches one of that day's **Scenarios**.
@@ -96,6 +98,7 @@ Later waves add one stage each, written when the Learner is near it and informed
 - FR-6.3 If any Hard Rule fails, the verdict is "not adherent" without depending on Claude. Claude still writes the explanation.
 - FR-6.4 **Dispute**: the Learner may dispute a verdict once, with written reasoning. Claude re-judges, and the second verdict is final. Hard Rule failures cannot be disputed.
 - FR-6.5 The trade fields of a Journal Entry are locked once a verdict exists. The result fields can be filled in later.
+- FR-6.6 *(Wave 1.5)* Closing a trade records an **Emotion Tag** and a one-line post-trade lesson; every closed trade shows its **R-Multiple**.
 
 ### FR-7 Live Readiness dashboard
 - FR-7.1 Shows: counted entries (x/50), adherence % (final verdicts only), the days between the first and latest counted entry (target ≥ 56), and current drawdown against the plan's max total loss.
@@ -122,12 +125,21 @@ Later waves add one stage each, written when the Learner is near it and informed
 - FR-11.1 One **Pre-Session Checklist** per day: high-impact USD events with their times (entered by the Learner, shown in local time), Asian high and low, one-line macro mood (dollar, yields, risk on/off), higher-timeframe bias, 3–5 key zones, 1–3 written **Scenarios**, and the day's risk commitment (per-trade %, daily loss limit in R, sizes for planned stop distances).
 - FR-11.2 A **Journal Entry** links to its day's checklist. No checklist for that day → the checklist Hard Rule fails. The trade must match a Scenario (Soft Rule, judged by Claude).
 - FR-11.3 Skipped setups can be journaled as "skipped" with a reason. They never count toward **Live Readiness**.
-- FR-11.4 **Weekly Review**: win rate, average R, rule breaks by rule, skipped setups, and a free-text note, computed from that week's entries.
+- FR-11.4 **Weekly Review**: win rate, average R, **Expectancy** in R, rule breaks by rule, emotions against broken rules, skipped setups, the week's post-trade lessons, and a free-text note, computed from that week's entries.
 
 ### FR-12 Time
 - FR-12.1 All times are stored in UTC and shown in the device's timezone. Sessions are anchored to their own cities (Asian = Tokyo hours, London and New York = 08:00–17:00 local), and the rollover and market week to New York time, so they follow UK and US daylight saving automatically.
 - FR-12.2 A session clock shows the current session, the next London–New York overlap and the next rollover in local time.
 - FR-12.3 **No-Trade Windows**: daily rollover (17:00–18:00 New York), the first hour after the Sunday open (18:00–19:00 New York), and ±5 minutes around each tier-1 event listed in that day's checklist.
+
+### FR-13 Retention *(Wave 1.5)*
+- FR-13.1 A **Question Record** is kept per quiz question: answered, wrong, right-but-guessing.
+- FR-13.2 **Spaced Review**: 2–3 questions from earlier passed lessons at the start of each lesson, weighted towards wrong and guessed answers. Practice only.
+- FR-13.3 Question stats are viewable for course tuning.
+
+### FR-14 Ask Claude and the risk footer *(Wave 1.5)*
+- FR-14.1 Each Lesson Step has "Ask Claude about this", answered in the app with the lesson as context, in the course's terms, with no trade recommendations; failures show a message, never an invented answer.
+- FR-14.2 Every screen shows: "Education, not financial advice. Trading CFDs carries a high risk of losing money."
 
 ## 6. Non-functional requirements
 - **Honesty:** never fabricate prices, charts or videos. Illustrative data is labelled. Every video link is verified to exist before shipping.
@@ -148,3 +160,4 @@ Later waves add one stage each, written when the Learner is near it and informed
 1. **Max-loss breach** → the Live Readiness count resets to 0 and the Learner starts a fresh demo balance. Lessons stay unlocked. *(Decided 2026-11-09.)*
 2. **Plan change mid-count** → earlier trades keep counting; each was judged against the plan version in force at the time. *(Decided 2026-11-09.)*
 3. **Outside 7-phase lesson plan folded in** → Live Readiness raised to 50 entries over ≥ 8 weeks (profit still not required); Daily Loss Limit, No-Trade Windows and the checklist become Hard Rules; trading without a checklist is not adherent; Fibonacci and ATR are core, EMAs optional; strategies beyond Classic Price Action move to the Advanced Track; self-paced with a suggested pace; times follow the device timezone. *(Decided 2026-11-10.)*
+4. **Second LLM review folded in** → stay on MT5/CFDs (no US futures track); lessons in steps with widgets and a Recall Set; new Lesson 2 "The honest maths of trading" (core becomes 40 lessons); the 1% rule from the Lots lesson, stop-first in every widget, shorts'"'"' unlimited risk; Spaced Review, Confidence (a guessed right answer still counts for the Gate) and Question Records; a calibration drill now and candle reconstruction with Stage 4; journal R per trade, Emotion Tag, post-trade lesson and Expectancy; Ask Claude per step; a risk footer. Not adopted: fresh numbers on retry, bar replay, zone-tolerance grading, data export, dated headlines. *(Decided 2026-11-10.)*
