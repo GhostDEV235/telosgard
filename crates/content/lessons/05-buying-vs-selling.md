@@ -1,5 +1,5 @@
 +++
-id = 4
+id = 5
 stage = 1
 title = "Buying vs selling"
 objective = "explain going long and going short, and when each one makes or loses money."
@@ -38,30 +38,35 @@ url = "https://www.fca.org.uk/investsmart/understanding-high-risk-investments"
 checked = "2026-11-10"
 
 [[quiz]]
+id = "q1"
 q = "You think gold will rise. Which trade fits that view?"
 options = ["Go long (buy)", "Go short (sell)", "Either; it makes no difference", "Neither; you can only profit from falls"]
 answer = 0
 why = "Going long profits when the price rises."
 
 [[quiz]]
+id = "q2"
 q = "You go short at 4,150.00 and close at 4,138.00. What’s the result?"
 options = ["A $12 profit", "A $12 loss", "No change", "A $1.20 profit"]
 answer = 0
 why = "You sold at 4,150 and bought back at 4,138, $12 lower. Price fell, so the short made money."
 
 [[quiz]]
+id = "q3"
 q = "You go long at 4,150.00 and close at 4,143.00. What’s the result?"
 options = ["A $7 profit", "A $7 loss", "No change", "A $70 loss"]
 answer = 1
 why = "You bought at 4,150 and sold at 4,143: price fell $7 against your long."
 
 [[quiz]]
+id = "q4"
 q = "Do you need to own gold before you can go short with a broker?"
 options = ["Yes, always", "No, you can open a trade by selling", "Only on weekends", "Only if you hold a gold bar"]
 answer = 1
 why = "With a broker you trade the price, so you can open a position by selling."
 
 [[quiz]]
+id = "q5"
 q = "Your short trade’s price is rising. What is happening to your trade?"
 options = ["It is making money", "It is losing money", "Nothing until you close it", "It becomes a long automatically"]
 answer = 1
@@ -83,36 +88,39 @@ expect = "almost"
 [[explain_back.fixtures]]
 answer = "You can't really. You first have to buy gold and own it, and selling just means getting out of that buy."
 expect = "almost_or_not_yet"
+
+[[steps]]
+heading = "Going long"
+text = "**Going long** means you **buy first** and **sell later**. You profit if price rises in between and lose if it falls. Buy at 4,150.00, sell at 4,160.00: a **+$10** move in your favour."
+[[steps]]
+heading = "Going short"
+text = "**Going short** means you **sell first** and **buy back later**. You profit if price falls and lose if it rises. Sell at 4,150.00, buy back at 4,140.00: a **+$10** move in your favour."
+why = "It feels strange to sell something you don't own. With a broker you're trading the price, not delivering metal: opening by selling is how you take the view that price will fall, and closing a short buys back automatically."
+[[steps]]
+heading = "Same move, opposite results"
+text = "The same price move is a win for one side and a loss for the other. If gold rises $10, every long gains and every short loses. Your job is to choose a side for a good reason, with a plan for being wrong."
+why = "Buy, long and bullish all mean expecting price to go up. Sell, short and bearish all mean expecting it to go down. Closing a trade is the opposite of how you opened it."
+[[steps]]
+heading = "A short's loss has no ceiling"
+text = "A long can lose at most what gold is worth, because price can't fall below zero. Price has **no ceiling**, so a short's loss keeps growing as price rises, until a stop-loss or your broker closes the trade. That's why every short needs a stop."
+why = "In the UK and EU, retail CFD accounts have negative balance protection: you can't lose more than the money in your account. But you can still lose all of it, quickly."
+widget = "short_risk"
+[[recall]]
+id = "r1"
+q = "A short trade makes money when price…"
+options = ["Falls", "Rises", "Stays flat"]
+answer = 0
+why = "You sold first, so you want to buy back cheaper."
+[[recall]]
+id = "r2"
+q = "You go short at 4,150 and close at 4,158. Per ounce, that's…"
+options = ["$8 lost", "$8 made", "$0"]
+answer = 0
+why = "Price rose $8 against your short."
+[[recall]]
+id = "r3"
+q = "Which trade's loss has no ceiling if you don't stop it?"
+options = ["A short", "A long", "Neither"]
+answer = 0
+why = "Price can rise without limit, so a short's loss can keep growing."
 +++
-
-In Lesson 1 you learned that trading is about the change in price. Most people picture only one way to profit from a change: buy low, sell high. Traders have a second way, and it’s just as normal.
-
-### Going long
-
-**Going long** means you **buy first** and **sell later**. You profit if the price **rises** between the two, and you lose if it falls. This is the version everyone already understands.
-
-- Buy at 4,150.00, sell at 4,160.00 → **+$10 move** in your favour.
-- Buy at 4,150.00, sell at 4,142.00 → **−$8 move** against you.
-
-### Going short
-
-**Going short** means you **sell first** and **buy back later**. You profit if the price **falls** between the two, and you lose if it rises.
-
-- Sell at 4,150.00, buy back at 4,140.00 → **+$10 move** in your favour.
-- Sell at 4,150.00, buy back at 4,158.00 → **−$8 move** against you.
-
-It feels strange to sell something you don’t own. Remember that with a broker you’re trading the **price**, not delivering metal. Opening a trade by selling is simply the broker’s way of letting you take the view that price will fall. When you close a short, the platform buys back for you automatically.
-
-### Same move, opposite results
-
-Here is the key idea: **the same price move is a win for one side and a loss for the other.** If gold rises $10, every long trader gains on that move and every short trader loses on it. The market doesn’t care which side you chose. Your job is to choose a side for a good reason, and to have a plan for when you’re wrong.
-
-### Words you’ll hear
-
-- **Buy**, **long** and **bullish** all describe the view that price will go **up**.
-- **Sell**, **short** and **bearish** all describe the view that price will go **down**.
-- **Closing** a trade means doing the opposite of how you opened it: a long is closed by selling, a short by buying back.
-
-### Why this matters for gold
-
-Gold doesn’t only rise. It has long falling stretches, sharp drops after news, and choppy weeks that go nowhere. Being able to trade in both directions means a falling market isn’t automatically bad news for you. But it also means you can be wrong in both directions, so later lessons will make sure every trade, long or short, has a plan for limiting the loss.

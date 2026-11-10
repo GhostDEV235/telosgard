@@ -1,5 +1,5 @@
 +++
-id = 8
+id = 9
 stage = 1
 title = "Leverage & margin"
 objective = "explain margin as a deposit, and why leverage magnifies losses just as much as gains."
@@ -37,30 +37,35 @@ url = "https://www.fca.org.uk/investsmart/understanding-high-risk-investments"
 checked = "2026-11-10"
 
 [[quiz]]
+id = "q1"
 q = "What is margin?"
 options = ["The fee for opening a trade", "A deposit held while your trade is open", "Your profit on a trade", "Free money from the broker"]
 answer = 1
 why = "Margin is a deposit. You get it back when you close, minus any loss."
 
 [[quiz]]
+id = "q2"
 q = "With 100:1 leverage, roughly how much margin does a position worth $415,000 need?"
 options = ["$415", "$4,150", "$41,500", "$415,000"]
 answer = 1
 why = "$415,000 ÷ 100 = $4,150."
 
 [[quiz]]
+id = "q3"
 q = "You hold 1 lot of gold and price moves $41.50 against you. How much do you lose?"
 options = ["$41.50", "$415", "$4,150", "Nothing, thanks to leverage"]
 answer = 2
 why = "1 × 100 × $41.50 = $4,150. Leverage doesn’t change the money formula; it only lets you open the trade with a smaller deposit."
 
 [[quiz]]
+id = "q4"
 q = "What does leverage do to losses?"
 options = ["Reduces them", "Magnifies them just as much as gains", "Removes them", "Only affects profits"]
 answer = 1
 why = "Leverage magnifies both directions equally."
 
 [[quiz]]
+id = "q5"
 q = "What actually sets how much money you can lose on a trade?"
 options = ["The leverage number", "Your position size and the distance to your stop", "The broker’s logo", "The time of day"]
 answer = 1
@@ -82,34 +87,39 @@ expect = "almost"
 [[explain_back.fixtures]]
 answer = "It isn't dangerous really. More leverage means more profit, it's like the broker giving you extra money to trade with."
 expect = "almost_or_not_yet"
+
+[[steps]]
+heading = "Margin is a deposit"
+text = "Your broker doesn't ask for a trade's full value. It holds a **margin**: a deposit set aside while the trade is open, released when you close, plus any profit or minus any loss."
+why = "The ratio between the position's full value and the deposit is the **leverage**. 1 lot near 4,150 is about $415,000 of gold. With 100:1 leverage it needs about $4,150 of margin; with 20:1, about $20,750."
+[[steps]]
+heading = "Leverage magnifies both ways"
+text = "Leverage doesn't change money = lots × 100 × Dollar Move; it only lets a small deposit open a big trade. At 100:1, 1 lot needs about $4,150, and a **$41.50** move against you costs all of it."
+why = "That move is about 1% of gold's price, the kind it can make in a day. The same move your way would double the deposit, which is why leverage tempts people, and why it empties so many accounts."
+widget = "leverage_toggle"
+[[steps]]
+heading = "Limits and close-outs"
+text = "Regulators cap leverage for ordinary customers; in the UK it runs from 30:1 down to 2:1 depending on the market. If losses grow too far, your broker closes your trades automatically. You don't get to wait for a recovery."
+[[steps]]
+heading = "The real control: your size"
+text = "High leverage doesn't force you to trade big; it allows it. What decides your risk is **how many lots** and **how far away your stop** is. At 100:1, trading 0.01 lots risks far less than trading 1 lot at 20:1."
+why = "So never ask “how much leverage can I get?”. Ask “how big can this trade be so that, if my stop is hit, I lose only what I planned?”. Lesson 33 turns that into a calculator."
+[[recall]]
+id = "r1"
+q = "Margin is…"
+options = ["A deposit held while a trade is open", "The fee for a trade", "Your profit"]
+answer = 0
+why = "You get it back when you close, plus or minus the result."
+[[recall]]
+id = "r2"
+q = "Leverage magnifies…"
+options = ["Gains and losses equally", "Only gains", "Only losses"]
+answer = 0
+why = "It makes every move bigger, in both directions."
+[[recall]]
+id = "r3"
+q = "What actually sets how much you can lose?"
+options = ["Your size and stop distance", "The leverage number", "The time of day"]
+answer = 0
+why = "Lots × 100 × the distance to your stop."
 +++
-
-From the last lesson: 1 lot of gold is 100 ounces. At around 4,150, that’s roughly **$415,000** of gold. Very few beginners have $415,000. So how do people trade 1 lot? The answer is **leverage**, and it’s one of the most misunderstood ideas in trading.
-
-### Margin: a deposit, not a price
-
-When you open a trade, your broker doesn’t ask for the full value of the position. It asks for a **margin**, a deposit set aside from your account while the trade is open. When you close the trade, the margin is released back to you, plus any profit or minus any loss.
-
-The ratio between the position’s full value and the deposit is the **leverage**. With 100:1 leverage, a $415,000 position needs about $4,150 of margin. With 20:1, it needs about $20,750.
-
-Regulators limit how much leverage brokers can offer ordinary customers. In the UK, for example, the limits run from 30:1 down to 2:1 depending on the market. Limits differ by country, and brokers can offer less than the maximum.
-
-### Leverage magnifies both ways
-
-Here is the part that hurts beginners. Leverage doesn’t change the money formula from Lesson 7:
-
-> **money = lots × 100 × Dollar Move**
-
-It only changes how small a deposit lets you open the trade. So if you use leverage to open 1 lot with a $4,150 deposit, a **$41.50** move against you costs **$4,150**: your whole deposit. That move is only about 1% of gold’s price, the kind of move gold can make in a single day.
-
-The same is true in your favour: a $41.50 move your way would double that deposit. That’s exactly why leverage is tempting, and exactly why it empties so many accounts. **Leverage magnifies losses just as much as gains.**
-
-### What happens when losses grow
-
-If losses eat into your account far enough, your broker can close your trades automatically to stop the account going below zero. You won’t get to “wait for it to come back”. The trade is simply gone, along with the money.
-
-### The real control: position size
-
-High leverage doesn’t force you to trade big; it just *allows* it. What actually decides your risk is **how many lots you trade** and **how far away your stop-loss is**. A trader with 100:1 leverage who trades 0.01 lots is taking far less risk than a trader with 20:1 leverage who trades 1 lot.
-
-So in this course you’ll never ask “how much leverage can I get?” You’ll ask “**how big can this trade be so that, if my stop is hit, I lose only what I planned?**”. Lesson 32 turns that into a calculator you’ll use on every trade.

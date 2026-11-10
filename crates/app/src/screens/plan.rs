@@ -198,7 +198,7 @@ pub fn Plan() -> impl IntoView {
         <main class="gutter mx-auto max-w-[680px] pt-6 pb-10">
             <h1 class="text-title1">"Trading Plan"</h1>
             <p class="mt-2 text-callout text-text-muted">
-                "Your written rules. You'll build it properly at Lesson 38; every Demo Trade is checked against the version in force when you took it."
+                "Your written rules. You'll build it properly at Lesson 39; every Demo Trade is checked against the version in force when you took it."
             </p>
             <div class="mt-6 grid gap-5">
                 {move || match (journal.current_plan(), editing.get()) {

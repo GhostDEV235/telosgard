@@ -6,6 +6,10 @@ use std::fmt::Write as _;
 use std::{env, fs, path::Path};
 
 const READ_WPM: usize = 130;
+const MAX_STEP_WORDS: usize = 60;
+const WIDGETS: &[&str] = &["price_drag", "lots_money", "one_percent", "stop_first", "short_risk", "leverage_toggle", "bid_ask", "win_rate", "pip_convert"];
+/// The lesson about pips, the only one allowed to use the word.
+const PIPS_LESSON: u8 = 7;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -15,6 +19,7 @@ struct Front {
     title: String,
     objective: String,
     hook: String,
+    steps: Vec<Step>,
     analogy: String,
     analogy_tag: String,
     example: String,
@@ -24,9 +29,19 @@ struct Front {
     videos: Vec<Video>,
     sources: Vec<Source>,
     quiz: Vec<Quiz>,
+    recall: Vec<Quiz>,
     explain_back: Explain,
     #[serde(default)]
     drills: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Step {
+    heading: String,
+    text: String,
+    why: Option<String>,
+    widget: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -53,6 +68,7 @@ struct Source {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Quiz {
+    id: String,
     q: String,
     options: Vec<String>,
     answer: usize,
@@ -97,8 +113,45 @@ fn validate(file: &str, f: &Front, body: &str) -> (Vec<String>, usize) {
     if prefix != f.id {
         err(format!("file number {prefix} doesn't match id {}", f.id));
     }
-    if f.id <= 11 && f.stage != 1 {
-        err("lessons 1–11 are Stage 1".into());
+    if f.id <= 12 && f.stage != 1 {
+        err("lessons 1–12 are Stage 1".into());
+    }
+    if !body.trim().is_empty() {
+        err("the explanation lives in [[steps]]; leave the Markdown body empty".into());
+    }
+    if !(3..=6).contains(&f.steps.len()) {
+        err(format!("needs 3–6 steps, has {}", f.steps.len()));
+    }
+    for (i, st) in f.steps.iter().enumerate() {
+        if st.heading.trim().is_empty() || words(&st.heading) > 10 {
+            err(format!("step {}: a heading of 1–10 words", i + 1));
+        }
+        if words(&st.text) == 0 || words(&st.text) > MAX_STEP_WORDS {
+            err(format!("step {} has {} words of main text; keep it to {MAX_STEP_WORDS} and move detail into `why`", i + 1, words(&st.text)));
+        }
+        if let Some(w) = &st.widget {
+            if !WIDGETS.contains(&w.as_str()) {
+                err(format!("step {}: unknown widget {w}", i + 1));
+            }
+        }
+    }
+    if f.steps.iter().filter(|s| s.widget.is_some()).count() > 2 {
+        err("at most 2 widgets per lesson".into());
+    }
+    if f.recall.len() != 3 {
+        err(format!("the Recall Set has exactly 3 questions, not {}", f.recall.len()));
+    }
+    let mut qids: Vec<&str> = f.quiz.iter().chain(&f.recall).map(|q| q.id.as_str()).collect();
+    let nq = qids.len();
+    qids.sort();
+    qids.dedup();
+    if qids.len() != nq || f.quiz.iter().any(|q| !q.id.starts_with('q')) || f.recall.iter().any(|q| !q.id.starts_with('r')) {
+        err("question ids must be unique, quiz ids start with q and recall ids with r".into());
+    }
+    for (i, q) in f.recall.iter().enumerate() {
+        if !(2..=5).contains(&q.options.len()) || q.answer >= q.options.len() || q.why.trim().is_empty() {
+            err(format!("recall {} is malformed", i + 1));
+        }
     }
     for (name, v) in [("title", &f.title), ("objective", &f.objective), ("hook", &f.hook), ("analogy", &f.analogy), ("analogy_tag", &f.analogy_tag), ("example", &f.example), ("mistake", &f.mistake)] {
         if v.trim().is_empty() {
@@ -146,14 +199,20 @@ fn validate(file: &str, f: &Front, body: &str) -> (Vec<String>, usize) {
             err(format!("unknown drill {d}"));
         }
     }
-    let prose = [f.hook.as_str(), body, &f.analogy, &f.example, &f.mistake].join(" ");
-    if f.id != 6 && mentions_pips(&prose) {
-        err("the word \"pip\" belongs in Lesson 6 only; use Dollar Moves".into());
+    let step_text: Vec<&str> = f.steps.iter().map(|s| s.text.as_str()).collect();
+    let why_text: Vec<&str> = f.steps.iter().filter_map(|s| s.why.as_deref()).collect();
+    let main = [vec![f.hook.as_str(), &f.analogy, &f.example, &f.mistake], step_text].concat().join(" ");
+    if f.id != PIPS_LESSON && mentions_pips(&format!("{main} {}", why_text.join(" "))) {
+        err(format!("the word \"pip\" belongs in Lesson {PIPS_LESSON} only; use Dollar Moves"));
     }
-    let total = words(&prose) + f.takeaways.iter().map(|t| words(t)).sum::<usize>();
+    let total = words(&main) + f.takeaways.iter().map(|t| words(t)).sum::<usize>();
     let minutes = (total + READ_WPM / 2) / READ_WPM;
-    if !(5..=8).contains(&minutes) {
-        err(format!("reads in ~{minutes} min ({total} words); target 5–8"));
+    if !(2..=5).contains(&minutes) {
+        err(format!("the main path reads in ~{minutes} min ({total} words); target 2–5"));
+    }
+    let with_why = total + words(&why_text.join(" "));
+    if (with_why + READ_WPM / 2) / READ_WPM > 8 {
+        err(format!("with every \"Why?\" opened it reads in over 8 minutes ({with_why} words)"));
     }
     (e, minutes)
 }
@@ -201,8 +260,19 @@ fn main() {
         let (errs, minutes) = validate(&name, &f, body);
         errors.extend(errs);
 
-        let mut html = String::new();
-        pulldown_cmark::html::push_html(&mut html, pulldown_cmark::Parser::new_ext(body.trim(), pulldown_cmark::Options::ENABLE_TABLES));
+        let md = |src: &str| {
+            let mut html = String::new();
+            pulldown_cmark::html::push_html(&mut html, pulldown_cmark::Parser::new_ext(src.trim(), pulldown_cmark::Options::ENABLE_TABLES));
+            html
+        };
+        let steps: Vec<String> = f
+            .steps
+            .iter()
+            .map(|st| {
+                let opt = |o: Option<String>| o.map_or("None".to_string(), |v| format!("Some({})", s(&v)));
+                format!("Step {{ heading: {}, text_html: {}, why_html: {}, widget: {} }}", s(&st.heading), s(&md(&st.text)), opt(st.why.as_deref().map(md)), opt(st.widget.clone()))
+            })
+            .collect();
 
         let videos: Vec<String> = f
             .videos
@@ -210,7 +280,9 @@ fn main() {
             .map(|v| format!("Video {{ id: {}, title: {}, channel: {}, duration: {}, watch_for: {}, fallback_search: {}, checked: {} }}", s(&v.id), s(&v.title), s(&v.channel), s(&v.duration), s(&v.watch_for), s(&v.fallback_search), s(&v.checked)))
             .collect();
         let sources: Vec<String> = f.sources.iter().map(|x| format!("Source {{ claim: {}, name: {}, url: {}, checked: {} }}", s(&x.claim), s(&x.name), s(&x.url), s(&x.checked))).collect();
-        let quiz: Vec<String> = f.quiz.iter().map(|q| format!("QuizQ {{ q: {}, options: {}, answer: {}, why: {} }}", s(&q.q), list(&q.options), q.answer, s(&q.why))).collect();
+        let qz = |q: &Quiz| format!("QuizQ {{ id: {}, q: {}, options: {}, answer: {}, why: {} }}", s(&q.id), s(&q.q), list(&q.options), q.answer, s(&q.why));
+        let quiz: Vec<String> = f.quiz.iter().map(qz).collect();
+        let recall: Vec<String> = f.recall.iter().map(qz).collect();
         let fixtures: Vec<String> = f
             .explain_back
             .fixtures
@@ -227,13 +299,13 @@ fn main() {
         let x = &f.explain_back;
         write!(
             out,
-            "  Lesson {{ id: {}, stage: {}, title: {}, objective: {}, hook: {}, body_html: {}, analogy: {}, analogy_tag: {}, example: {}, mistake: {}, takeaways: {}, read_minutes: {minutes}, videos: &[{}], sources: &[{}], quiz: &[{}], explain: ExplainBack {{ prompt: {}, must_include: {}, misconceptions: {}, fixtures: &[{}] }}, drills: {} }},\n",
+            "  Lesson {{ id: {}, stage: {}, title: {}, objective: {}, hook: {}, steps: &[{}], analogy: {}, analogy_tag: {}, example: {}, mistake: {}, takeaways: {}, read_minutes: {minutes}, videos: &[{}], sources: &[{}], quiz: &[{}], recall: &[{}], explain: ExplainBack {{ prompt: {}, must_include: {}, misconceptions: {}, fixtures: &[{}] }}, drills: {} }},\n",
             f.id,
             f.stage,
             s(&f.title),
             s(&f.objective),
             s(&f.hook),
-            s(&html),
+            steps.join(", "),
             s(&f.analogy),
             s(&f.analogy_tag),
             s(&f.example),
@@ -242,6 +314,7 @@ fn main() {
             videos.join(", "),
             sources.join(", "),
             quiz.join(", "),
+            recall.join(", "),
             s(&x.prompt),
             list(&x.must_include),
             list(&x.misconceptions),

@@ -1,5 +1,5 @@
 +++
-id = 11
+id = 12
 stage = 1
 title = "Your demo account & platforms"
 objective = "open an MT5 demo, read XAUUSD’s contract details, and place and close a 0.01-lot trade with a stop-loss and take-profit."
@@ -58,30 +58,35 @@ url = "https://asic.gov.au/online-services/search-asic-s-registers/"
 checked = "2026-11-10"
 
 [[quiz]]
+id = "q1"
 q = "What is a demo account?"
 options = ["A live account with a small balance", "Real prices with simulated money", "A recording of past prices", "A paid trading course"]
 answer = 1
 why = "Demo uses live market prices but pretend money, so mistakes cost nothing."
 
 [[quiz]]
+id = "q2"
 q = "Which of these should you check in your broker’s XAUUSD specification?"
 options = ["The logo colour", "Contract size, minimum lot, swap and trading hours", "How many other people are trading", "Nothing; all brokers are the same"]
 answer = 1
 why = "Brokers set their own contract details, and every calculation depends on them."
 
 [[quiz]]
+id = "q3"
 q = "On demo you place a 0.01-lot buy with a stop-loss $5 below entry. If the stop is hit, roughly how much do you lose?"
 options = ["$0.05", "$0.50", "$5", "$50"]
 answer = 2
 why = "0.01 × 100 × $5 = $5 (simulated, on demo)."
 
 [[quiz]]
+id = "q4"
 q = "How do you check that a broker is properly regulated?"
 options = ["Trust the logo on its website", "Search the regulator’s official register yourself", "Ask in a social media group", "Check how many followers it has"]
 answer = 1
 why = "Licences can be faked. Look the firm up on the regulator’s own register."
 
 [[quiz]]
+id = "q5"
 q = "You’re profitable on demo for two weeks. What does that prove about live trading?"
 options = ["You will definitely profit live", "Nothing is guaranteed; real money changes how you feel and act", "Live trading is easier", "You can skip the stop-loss"]
 answer = 1
@@ -103,41 +108,42 @@ expect = "almost"
 [[explain_back.fixtures]]
 answer = "So I can prove I'm profitable, because if it works on demo it will definitely work live. The specs don't matter since gold is the same at every broker."
 expect = "almost_or_not_yet"
+
+[[steps]]
+heading = "Two tools"
+text = "You'll use **MetaTrader 5 (MT5)**, a platform many brokers offer, to place practice trades, and **TradingView**, a charting website, to study gold's price. You'll use TradingView properly from Stage 4."
+[[steps]]
+heading = "Choose a broker carefully"
+text = "Pick a broker **licensed by a financial regulator** where you live, and look it up yourself on the regulator's register: the FCA's in the UK, ASIC's in Australia, NFA BASIC in the US. If you can't find it, walk away."
+why = "Even for a demo, choose one you could one day trust with real money. A licence number on a website can be faked; the regulator's own register can't. If the name doesn't match exactly, walk away."
+[[steps]]
+heading = "Open a demo and read the spec"
+text = "Open an MT5 **demo account**: live prices, pretend money, with a balance close to what you'd really trade. In the XAUUSD specification, note the **contract size**, **minimum lot and step**, **swap** and **trading hours**."
+why = "These numbers feed every calculation you'll make, so keep them somewhere handy. A huge pretend balance teaches bad habits."
+[[steps]]
+heading = "Your first practice trade"
+text = "Open a **0.01-lot** order, where every $1 move is worth $1. Before confirming, set a stop-loss about $5 away and a take-profit about $10 away. Watch it start slightly negative (the spread), then close it."
+why = "Then find it in your history and check the result matches lots × 100 × Dollar Move. You're not trying to make money yet; you're learning where the buttons are, so they never distract you later."
+widget = "stop_first"
+[[steps]]
+heading = "Demo is training, not proof"
+text = "Demo trading builds skill and habits. It isn't proof you'll make money live: with no real money at stake, it's easy to hold losers or take risky trades. That's why this course judges your demo trading on **discipline**, not profit."
+[[recall]]
+id = "r1"
+q = "A demo account uses…"
+options = ["Real prices and pretend money", "Old prices and real money", "Pretend prices"]
+answer = 0
+why = "Real market prices, simulated money."
+[[recall]]
+id = "r2"
+q = "Where do you check a broker's licence?"
+options = ["On the regulator's own register", "On the broker's website", "In a social media group"]
+answer = 0
+why = "Licences can be faked; the register can't."
+[[recall]]
+id = "r3"
+q = "0.01 lots with a $5 stop: if the stop is hit you lose about…"
+options = ["$5", "$50", "$0.50"]
+answer = 0
+why = "0.01 × 100 × $5 = $5."
 +++
-
-You’ve learned the language of a trade: price, direction, spread, size, leverage, orders and costs. Now it’s time to touch a real platform, safely. In this course you’ll use two tools:
-
-- **MetaTrader 5 (MT5)**, a trading platform offered by many brokers, for placing practice trades.
-- **TradingView**, a charting website, for studying gold’s price. You’ll use it properly from Stage 4.
-
-### Step 1: choose a broker carefully
-
-Even for a demo, pick a broker you could one day trust with real money. That means one that is **licensed by a financial regulator** where you live. Don’t take the broker’s word for it: look the firm up yourself on the regulator’s official register. In the UK that’s the FCA’s Financial Services Register; in Australia, ASIC’s registers; in the US, the NFA’s BASIC search. If you can’t find the firm, or the name doesn’t match exactly, walk away.
-
-### Step 2: open a demo account
-
-Most brokers that offer MT5 let you open a **demo account** in a few minutes. It uses **live market prices with simulated money**. Choose a demo balance similar to what you might one day trade with for real; a huge pretend balance teaches bad habits.
-
-### Step 3: read the XAUUSD specification
-
-In MT5, find XAUUSD in the symbol list and open its **specification**. Write down:
-
-- **Contract size**: how many ounces make 1 lot. This course assumes 100; yours may differ.
-- **Minimum volume** and **volume step**: usually 0.01 lots.
-- **Swap**: the overnight charges for long and short trades.
-- **Trading hours**: when the symbol can be traded.
-
-These numbers feed every calculation you’ll make, so keep them somewhere handy.
-
-### Step 4: your first practice trade
-
-1. Open a new order for XAUUSD at **0.01 lots**, the smallest size, where every $1 move is worth $1.
-2. Before confirming, set a **stop-loss** about $5 away and a **take-profit** about $10 away.
-3. Place the order and watch it for a few minutes. Notice it starts slightly negative: that’s the spread.
-4. Close it by hand. Then find it in your history and check the result matches lots × 100 × Dollar Move.
-
-That’s it. You’re not trying to make money yet; you’re learning where the buttons are, so they never distract you later.
-
-### Demo is training, not proof
-
-Demo trading is excellent for learning the platform and building habits. It is **not** proof that you’ll make money live. With no real money at stake, it’s easy to hold losers too long or take risky trades “just to see”. That’s why this course measures your demo trading on **discipline**, whether you followed your plan, rather than on profit, before you ever go live.

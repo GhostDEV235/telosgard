@@ -1,5 +1,5 @@
 +++
-id = 3
+id = 4
 stage = 1
 title = "Reading “XAUUSD”"
 objective = "read the symbol and the quote as US dollars per troy ounce of gold."
@@ -38,30 +38,35 @@ url = "https://www.lbma.org.uk/prices-and-data/about-lbma-daily-auction-prices"
 checked = "2026-11-10"
 
 [[quiz]]
+id = "q1"
 q = "What does XAU stand for?"
 options = ["A gold mining company", "Gold", "The US dollar", "An exchange in London"]
 answer = 1
 why = "XAU is the official code for gold. “Au” comes from aurum, Latin for gold."
 
 [[quiz]]
+id = "q2"
 q = "XAUUSD = 4,150.00. What does that mean?"
 options = ["One gram of gold costs $4,150", "One troy ounce of gold costs $4,150", "One kilo of gold costs $4,150", "One share of gold costs $4,150"]
 answer = 1
 why = "The quote is the price of one troy ounce of gold in US dollars."
 
 [[quiz]]
+id = "q3"
 q = "XAUUSD moves from 4,150.00 to 4,162.00. What happened?"
 options = ["Gold got $12 cheaper", "Gold got $12 more expensive", "The dollar got $12 more expensive", "Nothing: that’s a normal rounding"]
 answer = 1
 why = "A higher number means one ounce of gold now costs more dollars: 4,162 − 4,150 = $12."
 
 [[quiz]]
+id = "q4"
 q = "XAUUSD moves from 4,150.00 to 4,135.50. How far did it move, and which way?"
 options = ["$14.50 down", "$14.50 up", "$1.45 down", "$145 down"]
 answer = 0
 why = "4,150.00 − 4,135.50 = $14.50, and the number went down, so gold got cheaper."
 
 [[quiz]]
+id = "q5"
 q = "Which unit of weight is XAUUSD priced in?"
 options = ["Kilograms", "Grams", "Troy ounces", "Regular kitchen ounces"]
 answer = 2
@@ -83,48 +88,39 @@ expect = "almost"
 [[explain_back.fixtures]]
 answer = "XAUUSD is the share price of a big gold mining company, and 4,150 is what one share costs."
 expect = "almost_or_not_yet"
+
+[[steps]]
+heading = "Splitting the symbol"
+text = "**XAU** is the official code for gold; **USD** is the US dollar. Together, XAUUSD means **gold priced in US dollars**. You'll also see it written XAU/USD; it's the same thing."
+why = "XAU comes from the international standard for currency codes, the same one that gives the dollar USD and the euro EUR. “Au” is gold's chemical symbol, from the Latin *aurum*."
+[[steps]]
+heading = "What the number means"
+text = "The number is the price of **one troy ounce** of gold, in dollars. XAUUSD **4,150.00** means one troy ounce costs **$4,150**. A troy ounce is the standard unit for precious metals, not the ounce on kitchen scales."
+why = "The main benchmark gold price, set twice a day in London, uses exactly the same unit: US dollars per troy ounce. You don't need to memorise its weight; just know the quote is always per troy ounce."
+[[steps]]
+heading = "Reading a change"
+text = "If the number rises, gold costs more dollars; if it falls, fewer. The distance is just subtraction: 4,150.00 to 4,155.00 is a **$5 move**. This course always measures distance this way, as a **Dollar Move**."
+widget = "price_drag"
+[[steps]]
+heading = "Two decimal places"
+text = "Quotes usually show two decimals, like 4,150.37. Those are cents, so the smallest move you'll normally see is **$0.01**. Lesson 7 shows the other units people use for moves, and why they confuse beginners."
+why = "Try these: 4,120.00 → 4,131.00 is up $11. 4,131.00 → 4,118.50 is down $12.50. 4,118.50 → 4,118.75 is up $0.25. A quote is just a price, and a move is just the difference between two prices."
+[[recall]]
+id = "r1"
+q = "XAU stands for…"
+options = ["Gold", "Silver", "The US dollar"]
+answer = 0
+why = "XAU is the official code for gold."
+[[recall]]
+id = "r2"
+q = "XAUUSD 4,150 means…"
+options = ["One troy ounce costs $4,150", "One gram costs $4,150", "One kilo costs $4,150"]
+answer = 0
+why = "The quote is per troy ounce, in dollars."
+[[recall]]
+id = "r3"
+q = "Gold goes from 4,120.00 to 4,131.00. The move is…"
+options = ["$11 up", "$11 down", "$1.10 up"]
+answer = 0
+why = "4,131 − 4,120 = $11, and the number rose."
 +++
-
-Every market has a symbol, and gold’s is **XAUUSD**. It looks like a password, but it reads like a sentence once you split it in two.
-
-### Splitting the symbol
-
-- **XAU** is the official code for gold. It comes from the international standard for currency codes, the same standard that gives the US dollar USD and the euro EUR. The “Au” is gold’s chemical symbol, from the Latin *aurum*.
-- **USD** is the US dollar.
-
-Put together, XAUUSD means **gold priced in US dollars**. You’ll sometimes see it written XAU/USD; it’s the same thing.
-
-### What the number means
-
-The number next to the symbol is the price of **one troy ounce** of gold, in dollars. So:
-
-- XAUUSD **4,150.00** → one troy ounce of gold costs **$4,150**.
-
-A **troy ounce** is the traditional unit of weight for precious metals. It is not the same as the ounce on kitchen scales, so don’t try to convert using your cookbook. You don’t need to memorise its weight for trading; you just need to know that the quote is always “per troy ounce”. The main benchmark price for gold, set twice a day in London, uses exactly the same unit: US dollars per troy ounce.
-
-### Reading a change
-
-Because the quote is a price, reading a change is simple:
-
-- The number **rises** → gold costs **more** dollars.
-- The number **falls** → gold costs **fewer** dollars.
-
-The distance between two quotes is just subtraction. From 4,150.00 to 4,155.00 is a **$5 move**. From 4,150.00 to 4,135.50 is a **$14.50 move** down. In this course we always describe distances this way, as a **Dollar Move**, because it’s the clearest unit there is. Lesson 6 explains the other units you’ll hear people use, and why they cause confusion.
-
-### Two decimal places
-
-Gold quotes usually show two decimals, like 4,150.37. Those are cents. The smallest change you’ll normally see is one cent, $0.01. You’ll meet this tiny step again when we talk about measuring moves.
-
-### Practice: reading three quotes
-
-Try these in your head before reading the answers:
-
-1. Gold moves from **4,120.00** to **4,131.00**. That’s up **$11**: one ounce now costs $11 more.
-2. Gold moves from **4,131.00** to **4,118.50**. That’s down **$12.50**: one ounce now costs $12.50 less.
-3. Gold moves from **4,118.50** to **4,118.75**. That’s up **$0.25**, a tiny move of 25 cents.
-
-Notice that you never needed to know anything about lots, accounts or brokers to answer. A quote is just a price, and a move is just the difference between two prices. Keep it that simple and you’ll avoid most of the confusion beginners run into.
-
-### Why this matters
-
-Almost every number you’ll handle as a gold trader starts here: entry prices, stop-losses, targets and profits are all built on “dollars per ounce”. Get comfortable reading a quote and measuring the gap between two of them, and the maths in later lessons becomes simple arithmetic.

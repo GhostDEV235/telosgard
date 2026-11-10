@@ -1,5 +1,5 @@
 +++
-id = 7
+id = 8
 stage = 1
 title = "Lots: how big is your trade?"
 objective = "turn a lot size and a dollar move into money gained or lost."
@@ -32,30 +32,35 @@ url = "https://www.metatrader5.com/en/mobile-trading/iphone/help/trade"
 checked = "2026-11-10"
 
 [[quiz]]
+id = "q1"
 q = "In this course, how many ounces of gold is 1 lot?"
 options = ["1", "10", "100", "1,000"]
 answer = 2
 why = "We use the common setting of 1 lot = 100 ounces. Always confirm it in your broker’s spec."
 
 [[quiz]]
+id = "q2"
 q = "You hold 0.20 lots and gold rises $4. How much do you make?"
 options = ["$0.80", "$8", "$80", "$800"]
 answer = 2
 why = "0.20 × 100 × $4 = $80."
 
 [[quiz]]
+id = "q3"
 q = "You hold 1 lot and gold falls $3 against you. What is the result?"
 options = ["−$3", "−$30", "−$300", "−$3,000"]
 answer = 2
 why = "1 × 100 × $3 = $300, and the move went against you, so it’s a $300 loss."
 
 [[quiz]]
+id = "q4"
 q = "Which trade size makes $1 for every $1 that gold moves?"
 options = ["0.01 lots", "0.10 lots", "1 lot", "10 lots"]
 answer = 0
 why = "0.01 lots is 1 ounce: 0.01 × 100 × $1 = $1."
 
 [[quiz]]
+id = "q5"
 q = "Two traders catch the same $5 move. Why might one make far more than the other?"
 options = ["Their brokers show different prices", "They traded different lot sizes", "One used a better chart", "Pips are worth more on Fridays"]
 answer = 1
@@ -77,42 +82,40 @@ expect = "almost"
 [[explain_back.fixtures]]
 answer = "$4, because the price went up $4 and that's what you make no matter how many lots."
 expect = "almost_or_not_yet"
+
+[[steps]]
+heading = "What a lot is"
+text = "A **lot** is a standard trade size. This course uses the common setting **1 lot = 100 ounces**. So 0.10 lots is 10 ounces, and 0.01 lots, usually the smallest size, is 1 ounce."
+why = "| Lots | Ounces | Money per $1 move |\n|---|---|---|\n| 1.00 | 100 | $100 |\n| 0.10 | 10 | $10 |\n| 0.01 | 1 | $1 |\n\nIn MetaTrader 5 the minimum size and its steps are set by your broker; you'll check them in Lesson 12."
+[[steps]]
+heading = "The money formula"
+text = "Every result comes from three numbers: **money = lots × 100 × Dollar Move**. 0.20 lots and gold up $4: 0.20 × 100 × 4 = **$80**. The same $4 move at 1 lot is $400."
+why = "A $10 move, which gold can make in minutes on a busy day, is $1,000 at 1 lot. That's why size, not just direction, decides whether a mistake is a lesson or a disaster."
+widget = "lots_money"
+[[steps]]
+heading = "Decide the loss first"
+text = "Before any trade, decide the most you're willing to lose. A common ceiling is **about 1% of your account** per trade: $100 on $10,000. Then choose a size so that hitting your stop-loss costs about that much."
+why = "Small losses keep you in the game: ten losses in a row at 1% each still leaves about 90% of the account. Lesson 33 turns this into a calculator you'll use on every trade."
+widget = "one_percent"
+[[steps]]
+heading = "Check your broker's contract size"
+text = "Not every broker uses 100 ounces per lot for XAUUSD. The **contract size** is listed in your broker's symbol specification. Until you've checked it, treat “1 lot = 100 ounces” as an assumption, not a fact."
+[[recall]]
+id = "r1"
+q = "0.10 lots and gold moves $5 your way. You make…"
+options = ["$50", "$5", "$500"]
+answer = 0
+why = "0.10 × 100 × $5 = $50."
+[[recall]]
+id = "r2"
+q = "1% of a $5,000 account is…"
+options = ["$50", "$500", "$5"]
+answer = 0
+why = "$5,000 × 1% = $50."
+[[recall]]
+id = "r3"
+q = "The smallest size most platforms allow is usually…"
+options = ["0.01 lots", "1 lot", "0.5 lots"]
+answer = 0
+why = "0.01 lots is 1 ounce: $1 per $1 move."
 +++
-
-You now know how to measure a move in dollars. But a $4 move doesn’t tell you how much money you made. For that you need one more number: **how big your trade was**. In trading, size is measured in **lots**.
-
-### What a lot is
-
-A **lot** is a standard trade size. For gold, this course uses the common setting:
-
-> **1 lot = 100 ounces of gold**
-
-Smaller sizes are written as fractions of a lot:
-
-| Lots | Ounces | Money per $1 move |
-|---|---|---|
-| 1.00 | 100 | $100 |
-| 0.10 | 10 | $10 |
-| 0.01 | 1 | $1 |
-
-The smallest size most platforms allow is **0.01 lots**. In MetaTrader 5, the minimum size and the steps you can increase it by are set by your broker, which is why you’ll check them when you open your demo account in Lesson 11.
-
-### The money formula
-
-Every gold trade’s result comes from three numbers multiplied together:
-
-> **money = lots × 100 × Dollar Move**
-
-- 0.20 lots, gold up $4 → 0.20 × 100 × 4 = **$80**.
-- 0.05 lots, gold down $6 → 0.05 × 100 × 6 = **$30 loss**.
-- 1 lot, gold up $0.50 → 1 × 100 × 0.50 = **$50**.
-
-Notice how quickly money adds up at 1 lot. A $10 move, which gold can make in minutes on a busy day, is $1,000 at 1 lot. That’s why size, not just direction, decides whether a trading mistake is a lesson or a disaster.
-
-### Check your broker’s contract size
-
-Not every broker uses 100 ounces for one lot of XAUUSD. Some use different contract sizes, and the formula changes if they do. The **contract size** is listed in your broker’s specification for the symbol. Until you’ve checked it, treat “1 lot = 100 ounces” as an assumption, not a fact.
-
-### Why this matters
-
-Later in the course, you’ll turn this formula around. Instead of asking “how much will I make at this size?”, you’ll ask “**what size can I trade so that, if I’m wrong, I lose only what I planned?**”. That’s position sizing, and it’s the single most important habit in trading. It starts with being completely comfortable with lots × 100 × Dollar Move.

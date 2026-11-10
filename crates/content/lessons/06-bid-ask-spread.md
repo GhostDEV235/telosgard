@@ -1,5 +1,5 @@
 +++
-id = 5
+id = 6
 stage = 1
 title = "Bid, ask & spread"
 objective = "explain why every trade starts slightly negative, and what the spread costs you."
@@ -32,36 +32,42 @@ url = "https://www.metatrader5.com/en/mobile-trading/iphone/help/trade/general_c
 checked = "2026-11-10"
 
 [[quiz]]
+id = "q1"
 q = "Gold shows Bid 4,150.20 / Ask 4,150.50. What is the spread?"
 options = ["$0.30", "$3.00", "$30", "$0.03"]
 answer = 0
 why = "4,150.50 − 4,150.20 = $0.30."
 
 [[quiz]]
+id = "q2"
 q = "You want to buy gold right now. Which price do you pay?"
 options = ["The bid", "The ask", "Halfway between them", "Yesterday’s close"]
 answer = 1
 why = "You buy at the ask, the higher of the two prices."
 
 [[quiz]]
+id = "q3"
 q = "You want to sell (go short) right now. Which price do you get?"
 options = ["The bid", "The ask", "The higher of the two", "Whichever you choose"]
 answer = 0
 why = "You sell at the bid, the lower of the two prices."
 
 [[quiz]]
+id = "q4"
 q = "When do you pay the spread?"
 options = ["Only when you close", "When you open the trade", "Once a month", "Only if the trade loses"]
 answer = 1
 why = "The spread is paid on entry: that’s why a new trade starts slightly negative."
 
 [[quiz]]
+id = "q5"
 q = "The spread is $0.40 and you buy. How far must gold rise before you break even?"
 options = ["$0.04", "$0.40", "$4.00", "It’s already at break-even"]
 answer = 1
 why = "You start $0.40 behind, so price needs to rise $0.40 to get back to zero."
 
 [[quiz]]
+id = "q6"
 q = "Which is true about the spread?"
 options = ["It never changes", "It can widen when the market is quiet or around big news", "It is always exactly $1", "It is paid back to you when you close"]
 answer = 1
@@ -83,35 +89,39 @@ expect = "almost"
 [[explain_back.fixtures]]
 answer = "Because the broker charges you the spread at the end when you close the trade, and it's always exactly the same amount."
 expect = "almost_or_not_yet"
+
+[[steps]]
+heading = "Two prices, always"
+text = "Every quote has two prices. The **bid** is what you can **sell** at: the lower one. The **ask** is what you can **buy** at: the higher one. Platforms often label them simply Sell and Buy."
+why = "In MetaTrader 5, the platform you'll practise on, buy orders fill at the ask and sell orders fill at the bid."
+widget = "bid_ask"
+[[steps]]
+heading = "The spread"
+text = "The gap between them is the **spread**: ask − bid. With 4,150.20 / 4,150.50, the spread is **$0.30**. It's how many brokers earn their money, built into the prices you trade at rather than billed separately."
+[[steps]]
+heading = "Why a new trade starts negative"
+text = "Buy, and you pay the ask; to get out immediately you'd sell at the lower bid. So the moment you open, the trade is worth exactly the spread less. Price must move at least that far your way before you make anything."
+why = "The same happens on a short: you sell at the bid and would have to buy back at the ask."
+[[steps]]
+heading = "Spreads change"
+text = "Spreads are narrow when many people are trading, and wider when the market is quiet or big news hits. A $0.30 spread can become several dollars in a news spike. Glance at both prices before every trade."
+why = "Ask yourself: how much of my expected move will the spread eat? Aiming for $3 with a $0.30 spread, a tenth of your idea is gone before you start. If the spread suddenly widens to $2, the trade may not be worth taking."
+[[recall]]
+id = "r1"
+q = "You buy now. Which price do you pay?"
+options = ["The ask", "The bid", "Halfway between"]
+answer = 0
+why = "You buy at the ask, the higher price."
+[[recall]]
+id = "r2"
+q = "Bid 4,150.20 / Ask 4,150.60. The spread is…"
+options = ["$0.40", "$4.00", "$0.04"]
+answer = 0
+why = "4,150.60 − 4,150.20 = $0.40."
+[[recall]]
+id = "r3"
+q = "When do you pay the spread?"
+options = ["When you open", "When you close", "Once a month"]
+answer = 0
+why = "It's paid on entry, so a new trade starts slightly negative."
 +++
-
-So far we’ve talked about “the price” of gold as if there were only one. On a real trading platform there are always **two**.
-
-### Two prices, always
-
-- The **bid** is the price you can **sell** at. It’s the lower one.
-- The **ask** is the price you can **buy** at. It’s the higher one.
-
-A gold quote might look like **4,150.20 / 4,150.50**. The first number is the bid and the second is the ask. Many platforms label them simply **Sell** and **Buy**, which is a helpful reminder of which is which. In MetaTrader 5, the platform you’ll use for practice, buy orders fill at the ask and sell orders fill at the bid.
-
-### The spread
-
-The gap between the two prices is the **spread**:
-
-> spread = ask − bid
-
-With 4,150.20 / 4,150.50, the spread is **$0.30**. This gap is how many brokers earn their money. You don’t see it as a separate fee on a bill; it’s built into the prices you trade at.
-
-### Why a new trade starts negative
-
-When you buy, you pay the higher price, the ask. But if you wanted to get out immediately, you’d have to sell at the lower price, the bid. So the moment you open the trade, it’s worth a little less than you paid: exactly the spread. The same happens on a short: you sell at the bid and would have to buy back at the ask.
-
-This is why a fresh trade always shows a small loss. It isn’t the market moving against you; it’s the cost of getting in. Before you can make any money, price has to travel at least the width of the spread in your favour.
-
-### Spreads change
-
-The spread isn’t fixed. It tends to be narrow when lots of people are trading and wider when the market is quiet, such as late at night, or in the moments around major economic news. A spread of $0.30 at a busy time might be several dollars during a news spike. That’s one reason beginners stay out of the market around big announcements; you’ll learn about those in a later stage.
-
-### What to do with this
-
-Get into the habit of glancing at both prices before every trade. Ask yourself: *how much of my expected move will the spread eat?* If you’re aiming for a $3 move and the spread is $0.30, that’s a tenth of your idea gone before you start. If the spread has suddenly widened to $2, the trade may not be worth taking at all.

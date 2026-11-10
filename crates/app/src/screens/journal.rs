@@ -105,7 +105,7 @@ pub fn Journal() -> impl IntoView {
                         <section class="mt-4 rounded-card bg-surface p-8 text-center shadow-card">
                             <p class="text-title2">"No entries yet"</p>
                             <p class="mx-auto mt-2 max-w-md text-callout text-text-muted">
-                                "You'll journal your first Demo Trade in Lesson 39. Skipped setups are worth logging too: they teach discipline."
+                                "You'll journal your first Demo Trade in Lesson 40. Skipped setups are worth logging too: they teach discipline."
                             </p>
                         </section>
                     }

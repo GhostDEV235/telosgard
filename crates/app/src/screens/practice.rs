@@ -18,11 +18,11 @@ struct DrillInfo {
 }
 
 const DRILLS: [DrillInfo; 5] = [
-    DrillInfo { kind: DrillKind::Direction, title: "Bullish or bearish?", blurb: "Read a candle's direction from its open and close.", lesson: "Lesson 4" },
-    DrillInfo { kind: DrillKind::BidAsk, title: "Spot the spread", blurb: "Find the bid, the ask, and the cost of getting in.", lesson: "Lesson 5" },
-    DrillInfo { kind: DrillKind::Distance, title: "Measure the move", blurb: "Turn two prices into a Dollar Move.", lesson: "Lesson 3" },
-    DrillInfo { kind: DrillKind::Pips, title: "Translate the pips", blurb: "Convert someone else's “pips” into dollars.", lesson: "Lesson 6" },
-    DrillInfo { kind: DrillKind::Orders, title: "Pick the order", blurb: "Market, limit or stop: match the order to the intent.", lesson: "Lesson 9" },
+    DrillInfo { kind: DrillKind::Direction, title: "Bullish or bearish?", blurb: "Read a candle's direction from its open and close.", lesson: "Lesson 5" },
+    DrillInfo { kind: DrillKind::BidAsk, title: "Spot the spread", blurb: "Find the bid, the ask, and the cost of getting in.", lesson: "Lesson 6" },
+    DrillInfo { kind: DrillKind::Distance, title: "Measure the move", blurb: "Turn two prices into a Dollar Move.", lesson: "Lesson 4" },
+    DrillInfo { kind: DrillKind::Pips, title: "Translate the pips", blurb: "Convert someone else's “pips” into dollars.", lesson: "Lesson 7" },
+    DrillInfo { kind: DrillKind::Orders, title: "Pick the order", blurb: "Market, limit or stop: match the order to the intent.", lesson: "Lesson 10" },
 ];
 
 #[component]

@@ -1,5 +1,5 @@
 +++
-id = 9
+id = 10
 stage = 1
 title = "Order types, stop-loss & take-profit"
 objective = "choose a market, limit or stop order for what you intend, with a stop-loss and take-profit attached."
@@ -47,30 +47,35 @@ url = "https://www.metatrader5.com/en/mobile-trading/iphone/help/trade/general_c
 checked = "2026-11-10"
 
 [[quiz]]
+id = "q1"
 q = "Gold is at 4,100. You want to buy only if it dips to 4,080. Which order?"
 options = ["Market buy", "Buy limit at 4,080", "Buy stop at 4,080", "Sell limit at 4,080"]
 answer = 1
 why = "A buy limit waits below the current price for a better entry."
 
 [[quiz]]
+id = "q2"
 q = "Gold is at 4,100. You want to buy only if it breaks above 4,120. Which order?"
 options = ["Buy limit at 4,120", "Buy stop at 4,120", "Sell stop at 4,120", "Market buy now"]
 answer = 1
 why = "A buy stop sits above the current price and triggers when price rises to it."
 
 [[quiz]]
+id = "q3"
 q = "Which order gets you into the market immediately?"
 options = ["Market order", "Buy limit", "Sell stop", "Take-profit"]
 answer = 0
 why = "A market order fills now at the current price."
 
 [[quiz]]
+id = "q4"
 q = "You buy at 4,100 with a stop-loss at 4,090 and a take-profit at 4,130. What is the most you plan to lose per ounce?"
 options = ["$1", "$10", "$30", "$40"]
 answer = 1
 why = "4,100 − 4,090 = $10 per ounce, if the stop fills at its price."
 
 [[quiz]]
+id = "q5"
 q = "Big news hits and price jumps straight past your stop-loss. What can happen?"
 options = ["It always fills exactly at your stop", "It can fill at a worse price", "The trade stays open", "The broker refunds the difference"]
 answer = 1
@@ -92,43 +97,41 @@ expect = "almost"
 [[explain_back.fixtures]]
 answer = "A buy stop at 4,080, and it's guaranteed to fill at exactly 4,080 so there's no risk of a worse price."
 expect = "almost_or_not_yet"
+
+[[steps]]
+heading = "Getting in now: market orders"
+text = "A **market order** buys or sells right now at the current price: buys near the ask, sells near the bid. It's simple and certain to fill, but you take whatever price is available, which in a fast market can differ from what you saw."
+[[steps]]
+heading = "Limit orders: a better price"
+text = "A **buy limit** sits **below** the current price: “buy only if gold gets cheaper, at this level.” A **sell limit** sits **above** it. Limits wait for a better price, and **may never fill** if price doesn't get there."
+[[steps]]
+heading = "Stop orders: through a level"
+text = "A **buy stop** sits **above** the current price: “buy only if gold rises to here.” A **sell stop** sits **below** it. Stop orders trigger only once price travels through your level."
+[[steps]]
+heading = "Getting out: stop-loss and take-profit"
+text = "A **stop-loss** closes the trade if price moves against you to your level; a **take-profit** closes it at your target. Set both when you open the trade, and the platform handles the rest, even while you sleep."
+why = "Buy at 4,100.00 with a stop-loss at 4,090.00 and a take-profit at 4,130.00, and you've decided in advance: risk $10 per ounce to try to make $30 per ounce."
+widget = "stop_first"
+[[steps]]
+heading = "A stop isn't a guarantee"
+text = "When price reaches your stop, the trade closes at the next available price, usually at or near your level. In a jump, such as big news, it can be worse: that's **slippage**. Still, every trade gets a stop, set the moment you open it."
+why = "This is the one rule in the course with no exceptions. A slightly worse exit is far better than no exit at all."
+[[recall]]
+id = "r1"
+q = "Gold is at 4,100. You want to buy only if it dips to 4,080. Use a…"
+options = ["Buy limit", "Buy stop", "Market order"]
+answer = 0
+why = "A buy limit waits below the price for a better entry."
+[[recall]]
+id = "r2"
+q = "You want to buy only if gold rises through 4,120. Use a…"
+options = ["Buy stop", "Buy limit", "Sell stop"]
+answer = 0
+why = "A buy stop sits above the price and triggers on the way up."
+[[recall]]
+id = "r3"
+q = "Does a stop-loss guarantee your exact exit price?"
+options = ["No, it can slip in a fast move", "Yes, always"]
+answer = 0
+why = "It closes at the next available price."
 +++
-
-So far a “trade” has meant clicking buy or sell. Real platforms give you more control than that: you can tell the platform **when** to get in and **when** to get out, then walk away. That’s what order types are for.
-
-### Getting in now: the market order
-
-A **market order** says “buy (or sell) right now at the current price”. A market buy fills near the ask; a market sell fills near the bid. It’s simple and certain to fill. The catch is that you take whatever price is available at that moment, and in a fast market that can be a little different from the price you saw when you clicked.
-
-### Getting in later: pending orders
-
-A **pending order** waits for price to reach a level you choose. There are two families, and the trick is where they sit compared with the current price.
-
-**Limit orders** wait for a **better** price:
-
-- **Buy limit**: placed **below** the current price. “Buy only if gold gets cheaper, at this level.”
-- **Sell limit**: placed **above** the current price. “Sell only if gold gets more expensive, at this level.”
-
-**Stop orders** wait for price to **travel through** a level:
-
-- **Buy stop**: placed **above** the current price. “Buy only if gold rises to here.”
-- **Sell stop**: placed **below** the current price. “Sell only if gold falls to here.”
-
-A limit order may **never fill**: if gold never dips to your buy limit, you never get in. That’s the price of asking for a better entry.
-
-### Getting out: stop-loss and take-profit
-
-Once you’re in a trade, two more orders protect you:
-
-- A **stop-loss** closes the trade if price moves against you to a level you set. It limits your loss.
-- A **take-profit** closes the trade if price reaches your target. It locks in the gain.
-
-Buy at 4,100.00 with a stop-loss at 4,090.00 and a take-profit at 4,130.00, and you’ve decided in advance: risk $10 per ounce to try to make $30 per ounce. The platform handles the rest, even while you sleep.
-
-### A stop isn’t a guarantee
-
-When price reaches your stop-loss, it becomes an instruction to close at the next available price. Usually that’s at or very near your level. But if price jumps, for example on big news, the next available price can be worse. This is called **slippage**, and you’ll meet it again in the next lesson. A stop-loss still matters enormously: a slightly worse exit is far better than no exit at all.
-
-### The habit to build
-
-From your very first demo trade, **every trade gets a stop-loss**, set the moment you open it, never “later”. It’s the one rule in this course that has no exceptions.

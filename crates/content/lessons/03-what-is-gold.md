@@ -1,5 +1,5 @@
 +++
-id = 2
+id = 3
 stage = 1
 title = "What is gold, and why does the world want it?"
 objective = "name three reasons people buy gold and connect them to its price."
@@ -40,30 +40,35 @@ url = "https://www.gold.org/goldhub/research/gold-demand-trends"
 checked = "2026-11-10"
 
 [[quiz]]
+id = "q1"
 q = "Which of these is NOT one of the main sources of demand for gold?"
 options = ["Jewellery", "Central banks", "Monthly interest payments", "Technology"]
 answer = 2
 why = "Gold pays no interest. Demand comes from jewellery, investment, central banks and technology."
 
 [[quiz]]
+id = "q2"
 q = "Why do people often buy gold when they’re scared?"
 options = ["It is guaranteed to rise", "It is seen as holding its value in a crisis", "Brokers give it away free", "It pays a bonus in bad times"]
 answer = 1
 why = "Gold is seen as a safe haven: something that keeps its value when other things feel risky."
 
 [[quiz]]
+id = "q3"
 q = "Many more people want to buy gold than sell it today. What usually happens to the price?"
 options = ["It rises", "It falls", "It stays exactly the same", "Trading stops"]
 answer = 0
 why = "When buyers outnumber sellers, they compete on price and push it up."
 
 [[quiz]]
+id = "q4"
 q = "Gold moves from 4,100.00 to 4,150.00 after scary news. How big was the move?"
 options = ["$5", "$50", "$500", "$0.50"]
 answer = 1
 why = "4,150 − 4,100 = $50."
 
 [[quiz]]
+id = "q5"
 q = "Which statement is true?"
 options = ["Gold only ever goes up", "Gold pays dividends every year", "Gold can fall for long periods", "Gold’s price never changes on calm days"]
 answer = 2
@@ -85,35 +90,37 @@ expect = "almost"
 [[explain_back.fixtures]]
 answer = "They buy gold because it always goes up in value and it pays them interest while they hold it."
 expect = "almost_or_not_yet"
+
+[[steps]]
+heading = "Who wants gold?"
+text = "The World Gold Council groups the world's demand into a few buckets: **jewellery**, **investment** (bars, coins and funds), **central banks** holding reserves, and a little for **technology**. Each buys more or less depending on prices, incomes and mood."
+why = "Central banks keep gold in their reserves as savings that don't depend on any one government. Add every group together and you get the world's demand for gold."
+[[steps]]
+heading = "Why fear matters"
+text = "Gold doesn't depend on a company's profits or a government's promises, so many people see it as **holding its value over time**. When the world feels uncertain, money moves into gold. That's why gold is called a **safe haven**."
+[[steps]]
+heading = "How demand becomes price"
+text = "A price is where buyers and sellers agree to meet. More buyers than sellers, and buyers must offer more: **the price rises**. When demand fades, **the price falls**. You don't need to predict the news, only understand that news changes demand."
+[[steps]]
+heading = "What gold doesn't do"
+text = "Gold pays you nothing while you hold it: no interest, no dividend. And it doesn't only go up; it has had long falling stretches. Anyone calling gold a sure thing is selling something."
+why = "Later you'll see why paying nothing matters: when interest rates are high, holding something that earns nothing becomes less attractive."
+[[recall]]
+id = "r1"
+q = "Which of these is a real source of demand for gold?"
+options = ["Central banks", "Monthly gold dividends", "Broker bonuses"]
+answer = 0
+why = "Central banks hold gold in their reserves."
+[[recall]]
+id = "r2"
+q = "Buyers suddenly outnumber sellers. The price usually…"
+options = ["Rises", "Falls", "Stays the same"]
+answer = 0
+why = "Buyers have to offer more to get it."
+[[recall]]
+id = "r3"
+q = "Does gold pay interest while you hold it?"
+options = ["No", "Yes, monthly", "Only to big holders"]
+answer = 0
+why = "Gold earns nothing on its own; you gain only if the price rises."
 +++
-
-Gold is a metal, but in markets it behaves more like a mood. People have treated it as valuable for thousands of years, and that long track record is exactly why it still matters today.
-
-### Who wants gold?
-
-The World Gold Council, which tracks gold demand around the world, groups it into a few big buckets:
-
-- **Jewellery.** Still a large share of all the gold bought each year.
-- **Investment.** Bars, coins and funds that hold gold for investors.
-- **Central banks.** National banks keep gold in their reserves as a form of savings that doesn’t depend on any one government.
-- **Technology.** A small but steady amount is used in electronics.
-
-Each of these groups buys more or less depending on prices, incomes and how worried people feel. Add them together and you get the world’s demand for gold.
-
-### Why fear matters
-
-Gold doesn’t depend on a company making profits or a government keeping its promises. Because of that, many people see it as something that **holds its value over time**. When the world feels uncertain (a financial scare, a war, worries about money losing value), investors move some of their savings into gold. This is why you’ll often hear gold called a **safe haven**.
-
-### How demand turns into price
-
-A price is simply where buyers and sellers agree to meet. When more people want to buy gold than want to sell it, buyers have to offer more to get it, so **the price rises**. When demand fades and sellers outnumber buyers, **the price falls**. As a trader you never need to predict the news itself. You need to understand that news changes demand, and demand changes price.
-
-### What gold doesn’t do
-
-Gold doesn’t pay you anything while you hold it. A savings account pays interest and a company share may pay a dividend, but a gold bar just sits there. Later in the course you’ll see why that matters: when interest rates are high, holding something that pays nothing becomes less attractive.
-
-And gold does not only go up. It has had long stretches of falling prices. Anyone who tells you gold is a sure thing is selling something.
-
-### What this means for you
-
-When you trade XAUUSD, you are trading the world’s changing appetite for gold. Fear, confidence, central bank decisions and interest rates all push on that appetite. You don’t need to know every reason behind a move, but knowing these drivers will stop the price from feeling random.

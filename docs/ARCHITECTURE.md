@@ -161,7 +161,9 @@ RETURN JSON: {"grade":"got_it"|"almost"|"not_yet","feedback":string,"gap":string
 
 ## 7. Content pipeline
 
-Each lesson is one file, `crates/content/lessons/NN-slug.md`: TOML front matter between `+++` lines, then the explanation in Markdown. The front matter holds every other part of the lesson, so the reader always renders the CURRICULUM order (hook → explanation → analogy → example → common mistake → takeaways → videos → quiz → Explain-Back → gate → sources):
+*(Format v2, Wave 1.5: the explanation lives in `[[steps]]`, each `{heading, text, why?, widget?}`; a `[[recall]]` set of exactly 3 questions; every `[[quiz]]` / `[[recall]]` has an `id`; the Markdown body must be empty; main path 2–5 minutes. The sample below shows the original v1 fields that are unchanged.)*
+
+Each lesson is one file, `crates/content/lessons/NN-slug.md`: TOML front matter between `+++` lines. The front matter holds every other part of the lesson, so the reader always renders the CURRICULUM order (hook → explanation → analogy → example → common mistake → takeaways → videos → quiz → Explain-Back → gate → sources):
 
 ```toml
 id = 5

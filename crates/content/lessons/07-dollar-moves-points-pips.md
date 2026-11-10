@@ -1,5 +1,5 @@
 +++
-id = 6
+id = 7
 stage = 1
 title = "Dollar moves, points and pips"
 objective = "measure any move in dollars and convert other people’s “pips” before trusting them."
@@ -32,30 +32,35 @@ url = "https://www.lbma.org.uk/prices-and-data/about-lbma-daily-auction-prices"
 checked = "2026-11-10"
 
 [[quiz]]
+id = "q1"
 q = "Gold moves from 4,150.00 to 4,153.00. What is the Dollar Move?"
 options = ["$0.30", "$3", "$30", "$300"]
 answer = 1
 why = "4,153 − 4,150 = $3."
 
 [[quiz]]
+id = "q2"
 q = "In this course, how big is one pip on gold?"
 options = ["$0.01", "$0.10", "$1", "$10"]
 answer = 1
 why = "We use a pip = $0.10 and a point = $0.01."
 
 [[quiz]]
+id = "q3"
 q = "A $5 move is how many pips in this course?"
 options = ["5", "50", "500", "0.5"]
 answer = 1
 why = "$5 ÷ $0.10 per pip = 50 pips."
 
 [[quiz]]
+id = "q4"
 q = "Someone says “a 30-pip stop on gold”. What is the first thing you should do?"
 options = ["Copy it exactly", "Ask or work out what pip size they mean, then convert to dollars", "Multiply by 100", "Ignore stops entirely"]
 answer = 1
 why = "“30 pips” could mean $0.30, $3 or $30 depending on the speaker. Convert first."
 
 [[quiz]]
+id = "q5"
 q = "Which statement is true?"
 options = ["A pip is the same size on every chart", "A pip is an amount of money", "A pip is a distance, and its size depends on who is using the word", "Pips only apply to stocks"]
 answer = 2
@@ -77,44 +82,39 @@ expect = "almost"
 [[explain_back.fixtures]]
 answer = "Nothing, 50 pips is 50 pips on every chart. It means you'd lose $50."
 expect = "almost_or_not_yet"
+
+[[steps]]
+heading = "Dollar Moves first"
+text = "You already measure a move by subtraction: 4,150.00 to 4,153.00 is a **$3 move**. This course calls that a **Dollar Move**, and uses it everywhere: stops, targets, your journal and your Trading Plan."
+[[steps]]
+heading = "Points and pips"
+text = "A **point** is **$0.01**, the smallest step a gold quote shows. **In this course, a pip is $0.10.** So a $3 move is 300 points or 30 pips, and a $5 move is 500 points or 50 pips."
+why = "| Dollar Move | Points ($0.01) | Pips ($0.10) |\n|---|---|---|\n| $0.30 | 30 | 3 |\n| $3 | 300 | 30 |\n| $5 | 500 | 50 |\n| $10 | 1,000 | 100 |"
+[[steps]]
+heading = "The problem with pips"
+text = "Gold has no agreed pip size. Some people mean **$0.01**, some **$0.10**, some **$1**. So “50 pips” could be **$0.50, $5 or $50**: a hundredfold difference when someone is telling you where to put your stop-loss."
+why = "The word pip comes from currency trading, where it has one clear meaning. Gold never got an agreed one."
+widget = "pip_convert"
+[[steps]]
+heading = "Your rule"
+text = "Whenever you hear a distance in pips or points for gold, **convert it to a Dollar Move first**. If you can't tell which size they mean, don't trust the number. And remember: a pip is a distance, not an amount of money."
+why = "How much a $5 move is worth to you depends on your trade size, which is the next lesson. “I made 50 pips” tells you nothing about how much money someone made."
+[[recall]]
+id = "r1"
+q = "Gold moves from 4,150.00 to 4,153.00. The Dollar Move is…"
+options = ["$3", "$30", "$0.30"]
+answer = 0
+why = "4,153 − 4,150 = $3."
+[[recall]]
+id = "r2"
+q = "In this course, one pip on gold is…"
+options = ["$0.10", "$0.01", "$1"]
+answer = 0
+why = "A point is $0.01 and a pip is $0.10."
+[[recall]]
+id = "r3"
+q = "Someone says “a 30-pip stop on gold”. That's…"
+options = ["$0.30, $3 or $30, depending on what they mean", "Always $3", "Always $30"]
+answer = 0
+why = "Pip size isn't agreed for gold, so convert before you trust it."
 +++
-
-You already know how to measure a move: subtract one price from the other. From 4,150.00 to 4,153.00 is a **$3 move**. This course calls that a **Dollar Move**, and it’s the unit we use everywhere: for stops, targets, journal entries and your Trading Plan.
-
-So why learn other units at all? Because the rest of the trading world uses them, and they cause real confusion.
-
-### Points and pips
-
-- A **point** is the smallest step a gold quote normally shows: **$0.01**, one cent.
-- A **pip** is a bigger step. **In this course, a pip is $0.10.**
-
-So a $3 move is 300 points, or 30 pips. A $5 move is 500 points, or 50 pips.
-
-| Dollar Move | Points ($0.01) | Pips ($0.10) |
-|---|---|---|
-| $0.30 | 30 | 3 |
-| $3 | 300 | 30 |
-| $5 | 500 | 50 |
-| $10 | 1,000 | 100 |
-
-### The problem with “pips”
-
-The word *pip* comes from currency trading, where it has a clear meaning. Gold doesn’t have one agreed pip size, so different people use different ones:
-
-- Some call **$0.01** a pip.
-- Some, like this course, call **$0.10** a pip.
-- Some call **$1** a pip.
-
-That means “50 pips” on gold could be **$0.50**, **$5** or **$50**. That’s a hundredfold difference, and it matters enormously when someone is telling you where to put a stop-loss.
-
-### Your rule
-
-Whenever you hear or read a distance in pips or points for gold, **convert it into a Dollar Move before you do anything with it.** If the source doesn’t say what size they mean, look at a chart or a number they quote alongside it and work it out. If you can’t, don’t trust the number.
-
-### Pips are distance, not money
-
-One more trap: a pip is a **distance in price**, not an amount of money. How much a $5 move is worth to you depends on how big your trade is, which is the subject of the next lesson. “I made 50 pips” tells you nothing about how much money someone made.
-
-### Why we use Dollar Moves
-
-Because dollars can’t be misunderstood. “My stop is $5 away” means the same thing to everyone, on every platform. You’ll use the pip vocabulary to understand other people, and Dollar Moves to plan your own trades.

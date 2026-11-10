@@ -111,7 +111,7 @@ pub fn Tools() -> impl IntoView {
             <a href="#plan" class="press mt-3 flex items-center gap-4 rounded-card bg-surface p-5 shadow-card hover:bg-raised">
                 <span class="min-w-0 flex-1">
                     <span class="block text-headline">"Trading Plan"</span>
-                    <span class="block text-callout text-text-muted">"Your written rules, versioned. You'll build it properly at Lesson 38."</span>
+                    <span class="block text-callout text-text-muted">"Your written rules, versioned. You'll build it properly at Lesson 39."</span>
                 </span>
                 <span class="text-title2 text-text-muted" aria-hidden="true">"›"</span>
             </a>

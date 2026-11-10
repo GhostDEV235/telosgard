@@ -31,30 +31,35 @@ url = "https://www.fca.org.uk/investsmart/understanding-high-risk-investments"
 checked = "2026-11-10"
 
 [[quiz]]
+id = "q1"
 q = "What is a trader trying to profit from?"
 options = ["Owning gold for many years", "A change in price", "Interest paid by the broker", "Storing gold safely"]
 answer = 1
 why = "Trading profits from the difference between the price you buy at and the price you sell at."
 
 [[quiz]]
+id = "q2"
 q = "You buy gold at 4,100.00 and sell at 4,115.00. How big was the move?"
 options = ["$1.50", "$15", "$150", "$1,500"]
 answer = 1
 why = "4,115 − 4,100 = $15. That’s the size of the move, and it went your way."
 
 [[quiz]]
+id = "q3"
 q = "You buy at 4,140.00 and sell at 4,130.00. What happened?"
 options = ["A $10 profit", "A $10 loss", "Nothing: the price came back", "A $100 profit"]
 answer = 1
 why = "Price fell $10 after you bought, so the move went against you."
 
 [[quiz]]
+id = "q4"
 q = "Do you need to own a physical gold bar to trade XAUUSD online?"
 options = ["Yes, the broker posts it to you", "Yes, it’s held in a vault in your name", "No, you trade the price", "Only for large trades"]
 answer = 2
 why = "Online gold trading settles the price difference in money; no bar changes hands."
 
 [[quiz]]
+id = "q5"
 q = "Which of these is trading rather than investing?"
 options = ["Buying gold coins for retirement", "Buying in the morning and selling that afternoon after a $12 rise", "Inheriting gold jewellery", "Keeping gold in a safe for 20 years"]
 answer = 1
@@ -76,29 +81,39 @@ expect = "almost"
 [[explain_back.fixtures]]
 answer = "A trader buys gold bars and keeps them safe for many years so they are worth more when they retire."
 expect = "almost_or_not_yet"
+
+[[steps]]
+heading = "Trading is about the change"
+text = "Trading means buying at one price and selling at another, aiming for the difference to land in your favour. A trader cares about one thing: will the price be higher or lower later? **Your profit or loss is the change in price** between getting in and getting out."
+widget = "price_drag"
+[[steps]]
+heading = "You don't need to own the gold"
+text = "When you trade gold online, no metal changes hands. You open a position at one price, close it at another, and the difference is settled in money. You're trading **the price**, which is also why you can make money when it falls (Lesson 5)."
+why = "That's why you can trade gold from a phone in your kitchen without ever touching a gold bar."
+[[steps]]
+heading = "The difference can go against you"
+text = "If you buy and the price drops, the gap is a loss: real money leaving your account. There is no version of trading where you only win. Good traders lose often; what keeps them in the game is that their losses are small and planned."
+why = "That's what most of this course is about: making sure that when you're wrong, it costs a little, and only what you planned."
+[[steps]]
+heading = "Trading is not investing"
+text = "An **investor** buys and holds for years, expecting value to grow. A **trader** is in and out over minutes, hours or days, aiming to profit from shorter moves. Different jobs, different skills. This course teaches the trader's."
+why = "Every decision later comes back to one question: *where do I think price is going next, and what happens to me if I'm wrong?* Remember that trading is about the change in price, and that the change can go against you."
+[[recall]]
+id = "r1"
+q = "A trader's profit comes from…"
+options = ["The change in price", "Owning the metal", "Interest from the broker"]
+answer = 0
+why = "Trading profits from the difference between your buy and sell prices."
+[[recall]]
+id = "r2"
+q = "You buy at 4,100 and sell at 4,090. What happened per ounce?"
+options = ["A $10 loss", "A $10 profit", "Nothing"]
+answer = 0
+why = "Price fell $10 after you bought."
+[[recall]]
+id = "r3"
+q = "Holding gold for 20 years is…"
+options = ["Investing", "Trading", "Neither"]
+answer = 0
+why = "Long holding is investing; trading aims at shorter moves."
 +++
-
-Not quite. **Trading** means buying something at one price and selling it at another, aiming for the difference to land in your favour. The thing itself matters less than how its price moves. A trader doesn’t care whether gold is beautiful or useful; a trader cares whether its price will be higher or lower later than it is now.
-
-That’s the whole idea, and everything else in this course builds on it: **your profit or loss is the change in price between when you get in and when you get out.** Buy at one price, sell at a higher one, and you’ve made money. Sell at a lower one, and you’ve lost money.
-
-### You don’t need to own the gold
-
-When you trade gold online with a broker, no metal changes hands. You open a position at one price and close it at another, and the difference is settled in money in your account. What you are really trading is **the price**. That’s why you can trade gold from a phone in your kitchen without ever touching a gold bar, and why you can also make money when the price falls (you’ll see how in Lesson 4).
-
-### The difference can go either way
-
-This is the part beginners skip, so let’s say it plainly: **the difference can be against you.** If you buy and the price drops, the gap is a loss, and it is real money leaving your account. There is no version of trading where you only win. Good traders lose often; what keeps them in the game is that their losses are small and planned. That’s what most of this course is really about.
-
-### Trading is not investing
-
-People often use the two words as if they meant the same thing. They don’t:
-
-- An **investor** buys something and holds it for years, expecting it to grow in value over time.
-- A **trader** is in and out over minutes, hours or days, aiming to profit from shorter moves in price.
-
-Neither is better. They are different jobs with different skills. This course teaches the trader’s job: reading price, planning a trade before you take it, and protecting your account when you’re wrong.
-
-### Why start here?
-
-Because every decision you make later comes back to one question: *where do I think price is going next, and what happens to me if I’m wrong?* If you remember that trading is about the change in price, and that the change can go against you, you already think more clearly than most people who open a trading app for the first time.

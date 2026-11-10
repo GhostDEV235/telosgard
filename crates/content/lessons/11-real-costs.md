@@ -1,5 +1,5 @@
 +++
-id = 10
+id = 11
 stage = 1
 title = "The real costs: spread, commission, slippage, swap"
 objective = "name all four costs of a trade and estimate them before you trade."
@@ -46,30 +46,35 @@ url = "https://www.metatrader5.com/en/mobile-trading/iphone/help/trade/general_c
 checked = "2026-11-10"
 
 [[quiz]]
+id = "q1"
 q = "You buy 0.10 lots with a $0.30 spread. What does the spread cost you?"
 options = ["$0.30", "$3", "$30", "Nothing until you close"]
 answer = 1
 why = "0.10 × 100 × $0.30 = $3, paid as you open."
 
 [[quiz]]
+id = "q2"
 q = "Your stop-loss fills $2 worse than its level on 0.20 lots. How much extra did slippage cost?"
 options = ["$2", "$4", "$40", "$400"]
 answer = 2
 why = "0.20 × 100 × $2 = $40."
 
 [[quiz]]
+id = "q3"
 q = "How often is swap charged?"
 options = ["Once, when you open", "For each night the trade stays open", "Only on profitable trades", "Never on gold"]
 answer = 1
 why = "Swap is an overnight charge: hold for three nights and it’s applied three times."
 
 [[quiz]]
+id = "q4"
 q = "Which cost happens because price moved fast past your order?"
 options = ["Spread", "Commission", "Slippage", "Swap"]
 answer = 2
 why = "Slippage is the gap between the price you expected and the price you got."
 
 [[quiz]]
+id = "q5"
 q = "Which statement is true?"
 options = ["Costs only matter for big accounts", "Bigger trades mean bigger costs in money", "Commission is the same as swap", "The spread is refunded if you lose"]
 answer = 1
@@ -91,36 +96,41 @@ expect = "almost"
 [[explain_back.fixtures]]
 answer = "Probably a one-off swap fee the broker takes, but costs like that only really matter for big accounts anyway."
 expect = "almost_or_not_yet"
+
+[[steps]]
+heading = "1. Spread"
+text = "You pay the spread every time you open a trade, and like everything else it scales with size: **spread cost = lots × 100 × spread**. A $0.30 spread on 0.10 lots is $3; on 1 lot, $30, every single trade."
+[[steps]]
+heading = "2. Commission"
+text = "Some brokers charge a **commission** per lot, often in exchange for a narrower spread. Others charge none and earn through the spread. Neither is automatically cheaper: add both together to compare brokers."
+[[steps]]
+heading = "3. Slippage"
+text = "**Slippage** is the gap between the price you expected and the one you got. It happens when price moves faster than orders can fill: around big news, after a weekend, in sudden spikes. Plan for it to cost you."
+why = "Slippage can occasionally work in your favour, but when you hold trades through news, expect it to cost you."
+[[steps]]
+heading = "4. Swap"
+text = "Hold a trade past the end of the trading day and your broker applies a **swap**: a small charge, or occasionally a credit, for **each night** it stays open. MetaTrader 5 shows the swap on every open position."
+why = "Some brokers apply a larger swap on one particular weekday to cover the weekend, so check the schedule. For trades lasting minutes or hours, swap barely matters; for days or weeks, it can become a real part of the result."
+[[steps]]
+heading = "Add it up before you trade"
+text = "Before a trade, tally the cost to get in, hold and get out: spread × size, plus any commission, plus swap if you'll hold overnight, plus room for slippage if news is due. If that eats much of your target, skip it."
+why = "Costs don't make trading impossible. They mean small, frequent trades need especially good reasons, and that your journal should record the real result, after costs."
+[[recall]]
+id = "r1"
+q = "0.20 lots with a $0.30 spread costs you…"
+options = ["$6", "$0.60", "$60"]
+answer = 0
+why = "0.20 × 100 × $0.30 = $6."
+[[recall]]
+id = "r2"
+q = "Swap is charged…"
+options = ["For each night a trade stays open", "Once, when you open"]
+answer = 0
+why = "It repeats every night you hold."
+[[recall]]
+id = "r3"
+q = "Slippage is most likely…"
+options = ["Around big news and sudden spikes", "On quiet, slow days"]
+answer = 0
+why = "It happens when price moves faster than orders can fill."
 +++
-
-A price move is not the same as money in your account. Between the two sit **costs**, and a trader who ignores them can follow every rule and still slowly lose. There are four to know.
-
-### 1. Spread
-
-You met this in Lesson 5. You buy at the ask and sell at the bid, so every trade starts behind by the width of the spread. Like everything else, its cost in money depends on your size:
-
-> spread cost = lots × 100 × spread
-
-A $0.30 spread on 0.10 lots is $3. On 1 lot it’s $30. Every single trade.
-
-### 2. Commission
-
-Some brokers charge a **commission** per lot traded, often in exchange for a narrower spread. Others charge no commission and earn everything through the spread. Neither is automatically cheaper; you have to add both together to compare. Your broker’s pricing page will tell you which model it uses.
-
-### 3. Slippage
-
-**Slippage** is the difference between the price you expected and the price you actually got. It happens when the market moves faster than orders can be filled: around big news, at the open after a weekend, or in any sudden spike. On a market order, or a stop-loss that triggers during a jump, the platform fills you at the next available price, which can be worse than you planned.
-
-Slippage can occasionally work in your favour, but you should plan for it to cost you, especially when holding trades through news.
-
-### 4. Swap
-
-If a trade stays open past the end of the trading day, your broker applies a **swap** (also called rollover): a small charge, or occasionally a small credit, for holding the position overnight. It is applied **for each night** you hold, so a trade held for a week pays it several times. Some brokers apply a larger swap on one particular day of the week to cover the weekend, so check your broker’s schedule. MetaTrader 5 shows the swap on each open position, so you can see it build up.
-
-For short trades lasting minutes or hours, swap barely matters. For trades held for days or weeks, it can become a real part of the result.
-
-### Putting it together
-
-Before a trade, ask: *what will it cost me to get in, to hold, and to get out?* A rough tally is enough: spread × size, plus any commission, plus swap if you’ll hold overnight, plus a little room for slippage if news is due. If those costs swallow a large share of what you’re hoping to make, the trade isn’t worth taking.
-
-Costs don’t mean trading is impossible. They mean small, frequent trades need especially good reasons, and that your journal should record the real result, after costs, not just the price move.

@@ -35,6 +35,7 @@ pub enum Route {
     Journal,
     Readiness,
     GraderLab,
+    WidgetLab,
     Checklist,
     Review,
     TradeNew,
@@ -65,6 +66,7 @@ impl Route {
             "journal" => Route::Journal,
             "readiness" => Route::Readiness,
             "grader-lab" => Route::GraderLab,
+            "widget-lab" => Route::WidgetLab,
             _ => {
                 if let Some(d) = h.strip_prefix("drill-").and_then(|s| DrillKind::ALL.into_iter().find(|k| k.slug() == s)) {
                     Route::Drill(d)
@@ -79,7 +81,7 @@ impl Route {
 
     pub fn tab(&self) -> Tab {
         match self {
-            Route::Today | Route::Lesson(_) | Route::GraderLab => Tab::Today,
+            Route::Today | Route::Lesson(_) | Route::GraderLab | Route::WidgetLab => Tab::Today,
             Route::Practice | Route::Drill(_) => Tab::Practice,
             Route::Tools | Route::Plan => Tab::Tools,
             Route::Journal | Route::Readiness | Route::Checklist | Route::Review | Route::TradeNew | Route::TradeSkip | Route::Trade(_) => Tab::Journal,
@@ -115,7 +117,8 @@ mod tests {
         assert_eq!(Route::parse(""), Route::Today);
         assert_eq!(Route::parse("#size"), Route::Tools);
         assert_eq!(Route::parse("#nonsense"), Route::Today);
-        assert_eq!(Route::parse("#lesson-44"), Route::Today);
+        assert_eq!(Route::parse("#lesson-45"), Route::Today);
+        assert_eq!(Route::parse("#lesson-44"), Route::Lesson(LessonId::Numbered(44)));
         assert_eq!(Route::parse("#lesson-39"), Route::Lesson(LessonId::Numbered(39)));
         assert_eq!(Route::parse("#drill-pips"), Route::Drill(DrillKind::Pips));
         assert_eq!(Route::parse("#trade-0198abc0123def45"), Route::Trade("trade-0198abc0123def45".into()));

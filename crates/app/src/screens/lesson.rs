@@ -73,10 +73,89 @@ fn not_written() -> impl IntoView {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Screen {
+    Hook,
+    Step(usize),
+    Analogy,
+    Example,
+    Mistake,
+    Takeaways,
+    Videos,
+    Recall,
+}
+
+fn screens(l: &Lesson) -> Vec<Screen> {
+    let mut v = vec![Screen::Hook];
+    v.extend((0..l.steps.len()).map(Screen::Step));
+    v.extend([Screen::Analogy, Screen::Example, Screen::Mistake, Screen::Takeaways]);
+    if !l.videos.is_empty() {
+        v.push(Screen::Videos);
+    }
+    v.push(Screen::Recall);
+    v
+}
+
+fn screen_view(l: &'static Lesson, s: Screen) -> AnyView {
+    match s {
+        Screen::Hook => view! {
+            <p class="text-eyebrow uppercase text-text-muted">"Start with a question"</p>
+            <p class="mt-2 text-title2">{l.hook}</p>
+            <p class="mt-3 text-callout text-text-muted">"Have a guess in your head, then tap Next."</p>
+        }
+        .into_any(),
+        Screen::Step(i) => {
+            let st = &l.steps[i];
+            view! {
+                <h2 class="text-title2">{st.heading}</h2>
+                <div class="lesson-prose mt-3" inner_html=st.text_html></div>
+                {st.widget.map(|w| view! { <div class="mt-4"><crate::ui::widgets::Widget kind=w /></div> })}
+                {st.why_html.map(|w| view! {
+                    <details class="mt-4 rounded-btn bg-bg p-3.5">
+                        <summary class="press min-h-11 cursor-pointer py-1 text-callout font-semibold">"Why? Tell me more"</summary>
+                        <div class="lesson-prose mt-2 text-callout" inner_html=w></div>
+                    </details>
+                })}
+            }
+            .into_any()
+        }
+        Screen::Analogy => view! { <Callout kind=CalloutKind::Analogy text=l.analogy /> }.into_any(),
+        Screen::Example => view! { <Callout kind=CalloutKind::Example text=l.example /> }.into_any(),
+        Screen::Mistake => view! { <Callout kind=CalloutKind::Mistake text=l.mistake /> }.into_any(),
+        Screen::Takeaways => view! {
+            <h2 class="text-headline">"Key takeaways"</h2>
+            <ul class="mt-3 grid gap-2">
+                {l.takeaways.iter().map(|t| view! {
+                    <li class="flex gap-3 text-callout"><span class="text-text-muted" aria-hidden="true">"✓"</span><span>{*t}</span></li>
+                }).collect_view()}
+            </ul>
+        }
+        .into_any(),
+        Screen::Videos => view! {
+            <h2 class="text-headline">"Watch (optional)"</h2>
+            <div class="mt-3 grid gap-3">{l.videos.iter().map(|v| view! { <VideoCard video=v /> }).collect_view()}</div>
+        }
+        .into_any(),
+        Screen::Recall => view! {
+            <p class="text-eyebrow uppercase text-text-muted">"Recall · from memory"</p>
+            <p class="mt-1 text-callout text-text-muted">"Three quick questions before the quiz. Practice only."</p>
+            <div class="mt-3">
+                <QuizCard questions=l.recall.iter().map(QuizItem::from).collect() on_done=|_| {} practice=true />
+            </div>
+        }
+        .into_any(),
+    }
+}
+
 fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
     let progress = expect_context::<Progress>();
     let toasts = expect_context::<Toasts>();
     let store = expect_context::<crate::store::Store>();
+    let all = StoredValue::new(screens(l));
+    let n = all.with_value(Vec::len);
+    let pos = RwSignal::new(0usize);
+    let returning = { let p = progress.get_untracked(id); p.quiz_best.is_some() || p.grade.is_some() };
+    let reached_end = RwSignal::new(false);
     let quiz_done = RwSignal::new(false);
     let on_quiz = move |score: u8| {
         quiz_done.set(true);
@@ -87,58 +166,68 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
             toasts.show("🏅 Lesson passed");
         }
     };
+    let go = move |to: usize| {
+        pos.set(to);
+        if let Some(el) = document().get_element_by_id("lesson-stepper") {
+            el.scroll_into_view();
+        }
+    };
+    let to_quiz = move || {
+        reached_end.set(true);
+        request_animation_frame(|| {
+            if let Some(el) = document().get_element_by_id("lesson-quiz") {
+                el.scroll_into_view();
+            }
+        });
+    };
+
     view! {
-        <p class="mt-3 text-footnote text-text-muted">{format!("About {} minutes of reading", l.read_minutes)}</p>
-        <p class="mt-3 text-callout text-text-muted">"By the end, you'll be able to " {l.objective}</p>
+        <p class="mt-3 text-footnote text-text-muted">{format!("About {} minutes, step by step", l.read_minutes)}</p>
+        <p class="mt-2 text-callout text-text-muted">"By the end, you'll be able to " {l.objective}</p>
+        {returning.then(|| view! {
+            <button type="button" class="press mt-2 min-h-11 text-callout underline underline-offset-4" on:click=move |_| to_quiz()>"Skip to the quiz ›"</button>
+        })}
 
-        <article class="mt-8 grid gap-5">
-            <p class="text-title2">{l.hook}</p>
-            <div class="lesson-prose" inner_html=l.body_html></div>
-            <Callout kind=CalloutKind::Analogy text=l.analogy />
-            <Callout kind=CalloutKind::Example text=l.example />
-            <Callout kind=CalloutKind::Mistake text=l.mistake />
-            <section class="rounded-card bg-surface p-5 shadow-card">
-                <h2 class="text-headline">"Key takeaways"</h2>
-                <ul class="mt-3 grid gap-2">
-                    {l.takeaways
-                        .iter()
-                        .map(|t| {
-                            view! {
-                                <li class="flex gap-3 text-callout">
-                                    <span class="text-text-muted" aria-hidden="true">"✓"</span>
-                                    <span>{*t}</span>
-                                </li>
-                            }
-                        })
-                        .collect_view()}
-                </ul>
-            </section>
-        </article>
+        <section id="lesson-stepper" class="mt-6 scroll-mt-20 rounded-card bg-surface p-5 shadow-card" aria-label="Lesson steps">
+            <div class="flex items-center justify-between gap-3">
+                <p class="tabular text-eyebrow uppercase text-text-muted">{move || format!("Step {} of {n}", pos.get() + 1)}</p>
+            </div>
+            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-bg" role="progressbar" aria-label="Lesson progress" aria-valuemin="1" aria-valuemax=n aria-valuenow=move || pos.get() + 1>
+                <div class="h-full rounded-full bg-text-muted transition-[width]" style=move || format!("width:{}%", (pos.get() + 1) * 100 / n)></div>
+            </div>
+            <div class="anim-fade mt-5 min-h-48" aria-live="polite">
+                {move || all.with_value(|v| screen_view(l, v[pos.get()]))}
+            </div>
+            <div class="mt-6 flex items-center justify-between gap-3">
+                <button type="button" class=PILL_GHOST disabled=move || pos.get() == 0 on:click=move |_| go(pos.get_untracked().saturating_sub(1))>"‹ Back"</button>
+                {move || if pos.get() + 1 < n {
+                    view! { <button type="button" class=PILL on:click=move |_| go(pos.get_untracked() + 1)>"Next ›"</button> }.into_any()
+                } else {
+                    view! { <button type="button" class=PILL on:click=move |_| to_quiz()>"On to the quiz ›"</button> }.into_any()
+                }}
+            </div>
+        </section>
 
-        {(!l.videos.is_empty())
-            .then(|| {
-                view! {
-                    <h2 class="mt-10 text-title2">"Watch"</h2>
-                    <div class="mt-3 grid gap-3">{l.videos.iter().map(|v| view! { <VideoCard video=v /> }).collect_view()}</div>
-                }
-            })}
+        <Show when=move || reached_end.get() || returning>
+            <div id="lesson-quiz" class="scroll-mt-20">
+                <h2 class="mt-10 text-title2">"Check your understanding"</h2>
+                <div class="mt-3">
+                    <QuizCard questions=l.quiz.iter().map(QuizItem::from).collect() on_done=on_quiz />
+                </div>
+            </div>
+            <Show when=move || quiz_done.get()>
+                <MorePractice lesson=l />
+            </Show>
 
-        <h2 class="mt-10 text-title2">"Check your understanding"</h2>
-        <div class="mt-3">
-            <QuizCard questions=l.quiz.iter().map(QuizItem::from).collect() on_done=on_quiz />
-        </div>
-        <Show when=move || quiz_done.get()>
-            <MorePractice lesson=l />
+            <h2 class="mt-10 text-title2">"Explain it back"</h2>
+            <div class="mt-3">
+                <ExplainBack id=id prompt=l.explain.prompt />
+            </div>
+
+            <div class="mt-10">
+                <GateStatus id=id />
+            </div>
         </Show>
-
-        <h2 class="mt-10 text-title2">"Explain it back"</h2>
-        <div class="mt-3">
-            <ExplainBack id=id prompt=l.explain.prompt />
-        </div>
-
-        <div class="mt-10">
-            <GateStatus id=id />
-        </div>
 
         <details class="mt-10 text-footnote text-text-muted">
             <summary class="press min-h-11 cursor-pointer py-2">"Sources for this lesson"</summary>

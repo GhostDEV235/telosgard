@@ -11,7 +11,7 @@
 6. **Quiz:** 5–8 questions, at least 2 of them applied (numbers or scenarios), not just definitions.
 7. **Times:** written in UTC and New York time; the app renders them in the **Learner's device timezone** (with daylight saving). Never hard-code one city.
 8. **Facts:** every factual claim (session hours, event times, contract specs, typical moves) is checked against a primary source before it ships: CME Group, LBMA, the World Gold Council, the Federal Reserve, or the US statistics agencies' release calendars. Broker and prop-firm blogs are leads, not sources. A figure that can't be checked becomes a range or is dropped.
-9. **Steps (from Wave 1.5):** a Lesson is read as **Lesson Steps**: 4–8 screens, one idea each, at most ~60 words of main text, deeper detail behind "Why?". Each lesson has 1–2 **Widgets** (move one number, watch one result; any widget that takes a trade asks for the stop first) and ends with a 3-question **Recall Set** before the Quiz.
+9. **Steps (from Wave 1.5):** a Lesson is read as **Lesson Steps**: a hook question, 3–6 explanation steps (one idea each, at most 60 words of main text, deeper detail behind "Why?"), then the analogy, example, mistake and takeaways as their own screens. Lessons have up to 2 **Widgets** (move one number, watch one result; any widget that takes a trade asks for the stop first) and ends with a 3-question **Recall Set** before the Quiz.
 10. **Risk as a reflex:** from the Lots lesson onwards, every example that opens a trade names its stop and what it would cost if hit.
 
 ## Video policy

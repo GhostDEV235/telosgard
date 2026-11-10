@@ -9,21 +9,38 @@ pub struct Lesson {
     /// Completes "By the end, you'll be able to …".
     pub objective: &'static str,
     pub hook: &'static str,
-    /// The explanation, pre-rendered from Markdown.
-    pub body_html: &'static str,
+    /// The explanation, one idea per step (Lesson Steps).
+    pub steps: &'static [Step],
     pub analogy: &'static str,
     pub analogy_tag: &'static str,
     pub example: &'static str,
     pub mistake: &'static str,
     pub takeaways: &'static [&'static str],
-    /// Estimated at a careful 130 words a minute.
+    /// The main path (hook, steps, analogy, example, mistake, takeaways) at a careful 130 words a
+    /// minute; "Why?" detail is extra.
     pub read_minutes: u8,
     pub videos: &'static [Video],
     pub sources: &'static [Source],
     pub quiz: &'static [QuizQ],
+    /// Three quick questions from memory before the Quiz. Practice only.
+    pub recall: &'static [QuizQ],
     pub explain: ExplainBack,
     pub drills: &'static [&'static str],
 }
+
+#[derive(Debug)]
+pub struct Step {
+    pub heading: &'static str,
+    /// Main text (at most 60 words), pre-rendered from Markdown.
+    pub text_html: &'static str,
+    /// Optional deeper detail behind a "Why?" toggle, pre-rendered from Markdown.
+    pub why_html: Option<&'static str>,
+    /// Optional interactive Widget id (see WIDGETS).
+    pub widget: Option<&'static str>,
+}
+
+/// Every Widget id a lesson may use; the app has a component for each.
+pub const WIDGETS: &[&str] = &["price_drag", "lots_money", "one_percent", "stop_first", "short_risk", "leverage_toggle", "bid_ask", "win_rate", "pip_convert"];
 
 #[derive(Debug)]
 pub struct Video {
@@ -53,6 +70,8 @@ pub struct Source {
 
 #[derive(Debug)]
 pub struct QuizQ {
+    /// Stable within the lesson ("q1"…), so Question Records survive reordering. Recall questions use "r1"….
+    pub id: &'static str,
     pub q: &'static str,
     pub options: &'static [&'static str],
     pub answer: usize,
@@ -95,15 +114,36 @@ mod tests {
     #[test]
     fn stage_one_is_complete_and_ordered() {
         let ids: Vec<u8> = LESSONS.iter().map(|l| l.id).collect();
-        assert_eq!(ids, (1..=11).collect::<Vec<_>>());
+        assert_eq!(ids, (1..=12).collect::<Vec<_>>());
         assert!(LESSONS.iter().all(|l| l.stage == 1));
     }
 
     #[test]
-    fn every_lesson_is_a_five_to_eight_minute_read() {
+    fn every_lesson_reads_in_two_to_five_minutes_on_the_main_path() {
         for l in LESSONS {
-            assert!((5..=8).contains(&l.read_minutes), "L{} is {} min", l.id, l.read_minutes);
+            assert!((2..=5).contains(&l.read_minutes), "L{} is {} min", l.id, l.read_minutes);
         }
+    }
+
+    #[test]
+    fn lessons_are_steps_with_a_recall_set_and_stable_quiz_ids() {
+        for l in LESSONS {
+            assert!((3..=6).contains(&l.steps.len()), "L{}: 3–6 steps", l.id);
+            assert_eq!(l.recall.len(), 3, "L{}: Recall Set", l.id);
+            let mut ids: Vec<&str> = l.quiz.iter().chain(l.recall).map(|q| q.id).collect();
+            let n = ids.len();
+            ids.sort();
+            ids.dedup();
+            assert_eq!(ids.len(), n, "L{}: question ids are unique", l.id);
+            let widgets = l.steps.iter().filter_map(|s| s.widget).count();
+            assert!(widgets <= 2, "L{}: at most 2 widgets", l.id);
+        }
+    }
+
+    #[test]
+    fn the_honest_maths_lesson_is_lesson_two() {
+        assert_eq!(lesson(2).unwrap().title, "The honest maths of trading");
+        assert_eq!(lesson(7).unwrap().title, "Dollar moves, points and pips");
     }
 
     #[test]

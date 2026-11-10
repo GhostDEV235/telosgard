@@ -198,3 +198,25 @@ pub fn GraderLab() -> impl IntoView {
         </main>
     }
 }
+
+/// Widget lab (`#widget-lab`, not linked): every lesson Widget on one page, for checking.
+#[component]
+pub fn WidgetLab() -> impl IntoView {
+    view! {
+        <SubBar back="#today" back_label="Today" title="Widget lab" />
+        <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
+            <h1 class="text-title1">"Widget lab"</h1>
+            <div class="mt-4 grid gap-6">
+                {gold_content::WIDGETS
+                    .iter()
+                    .map(|w| view! {
+                        <section aria-label=*w>
+                            <p class="tabular text-footnote text-text-muted">{*w}</p>
+                            <crate::ui::widgets::Widget kind=w />
+                        </section>
+                    })
+                    .collect_view()}
+            </div>
+        </main>
+    }
+}
