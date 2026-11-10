@@ -20,7 +20,7 @@ pub fn Sheet(
     // Move keyboard focus into the sheet when it opens (first field, else the first button).
     Effect::new(move |_| {
         if open.get() {
-            request_animation_frame(|| {
+            set_timeout(|| {
                 let doc = document();
                 let target = doc
                     .query_selector("[role=dialog] textarea, [role=dialog] input")
@@ -30,7 +30,7 @@ pub fn Sheet(
                 if let Some(el) = target.and_then(|e| wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(e).ok()) {
                     let _ = el.focus();
                 }
-            });
+            }, std::time::Duration::from_millis(60));
         }
     });
     view! {

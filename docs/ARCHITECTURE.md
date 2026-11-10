@@ -143,11 +143,12 @@ SYSTEM-ish preamble (as first user turn): You are a patient trading tutor gradin
 LESSON: title, objective, the lesson's analogy (so a "Not yet" re-teach must use a DIFFERENT one)
 RUBRIC: must_include[] (key ideas), misconceptions[] (with why each is wrong)
 LEARNER ANSWER: …
-RETURN JSON: {"grade":"got_it"|"almost"|"not_yet","feedback":string,"gap":string|null,"reteach":string|null}
+RETURN JSON: {"grade":"got_it"|"almost"|"not_yet","feedback":string,"gap":string|null,"reteach":string|null,"suggestion":string|null}
 ```
 - `modelTier: "default"`. Responses are short.
 - `got_it` requires every `must_include` item, paraphrase allowed, and no misconception present.
 - Prompt and validation live in `gold_core::grading` (unit-tested): the answer is fenced in `<learner_answer>` tags (tags inside it are stripped, length capped at 2,000 chars) and Claude is told to treat it as data; the reply must have a known grade, non-empty feedback, a `gap` for Almost and a `reteach` for Not yet.
+- `suggestion` (required for Almost / Not yet): the Learner's own answer, changed as little as possible to include every key idea, with each addition in `[[double brackets]]`; the app highlights those parts. It's shown as a model to learn from; passing still needs the Learner's own rewrite.
 - **No automatic retry.** The platform asks pages not to retry an unreadable reply (`invalid_json`) from code, so any failure shows the message and a "Try again" button. **Never default to pass.**
 - Rubric tuning uses the hidden `#grader-lab` page: it runs every fixture through the same call and writes the outcome to the shared doc `lab/grader-latest`, which Claude Code reads with `ArtifactData`.
 

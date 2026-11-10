@@ -177,6 +177,29 @@ fn grade_chip(g: Grade) -> impl IntoView {
     view! { <span class=format!("inline-block rounded-full px-3 py-1 text-footnote font-semibold {class}")>{label}</span> }
 }
 
+/// The Learner's answer with the missing idea added, additions highlighted (the [[...]] parts).
+fn suggestion_view(s: String) -> impl IntoView {
+    let parts = gold_core::grading::marked_segments(&s);
+    view! {
+        <div class="mt-3 rounded-btn border-l-4 border-fill bg-surface p-3.5">
+            <p class="text-eyebrow uppercase text-text-muted">"Your answer, with the missing piece added"</p>
+            <p class="mt-1.5 text-callout">
+                {parts
+                    .into_iter()
+                    .map(|(t, added)| {
+                        if added {
+                            view! { <mark class="rounded bg-fill/45 px-0.5 font-semibold text-text underline decoration-2 underline-offset-2">{t}</mark> }.into_any()
+                        } else {
+                            view! { <span>{t}</span> }.into_any()
+                        }
+                    })
+                    .collect_view()}
+            </p>
+            <p class="mt-2 text-footnote text-text-muted">"The highlighted part is what was missing. Read it, then explain it again in your own words."</p>
+        </div>
+    }
+}
+
 fn short_date(ms: i64) -> String {
     let d = js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(ms as f64));
     const M: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -230,6 +253,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                         feedback: res.feedback.clone(),
                         gap: res.gap.clone(),
                         reteach: res.reteach.clone(),
+                        suggestion: res.suggestion.clone(),
                         at,
                     };
                     attempts.update(|v| v.insert(0, attempt.clone()));
@@ -281,6 +305,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                     .into_any()
                 }),
             };
+            let suggested = res.suggestion.clone().map(suggestion_view);
             let next = if res.grade == Grade::GotIt {
                 view! { <button type="button" class=format!("{PILL} mt-4") on:click=move |_| open.set(false)>"Done"</button> }.into_any()
             } else {
@@ -292,6 +317,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                     {grade_chip(res.grade)}
                     <p class="mt-2 text-callout">{res.feedback.clone()}</p>
                     {extra}
+                    {suggested}
                     {next}
                 </div>
             }
@@ -312,6 +338,25 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                 </button>
                 {move || progress.get(id).grade.map(grade_chip)}
             </div>
+            {move || {
+                attempts
+                    .with(|a| a.first().cloned())
+                    .filter(|_| !open.get())
+                    .map(|a| {
+                        let reteach = (a.grade == Grade::NotYet).then_some(a.reteach.clone()).flatten();
+                        view! {
+                            <div class="anim-fade mt-4 rounded-btn bg-bg p-4">
+                                <p class="text-eyebrow uppercase text-text-muted">{format!("Your last answer · {}", short_date(a.at))}</p>
+                                <p class="mt-1.5 text-callout">{a.feedback.clone()}</p>
+                                {(a.grade == Grade::Almost).then_some(a.gap.clone()).flatten().map(|g| view! {
+                                    <p class="mt-2 text-callout"><span class="font-semibold">"What's missing: "</span>{g}</p>
+                                })}
+                                {reteach.map(|r| view! { <p class="mt-2 text-callout"><span class="font-semibold">"💡 Another way to see it: "</span>{r}</p> })}
+                                {a.suggestion.clone().map(suggestion_view)}
+                            </div>
+                        }
+                    })
+            }}
             {move || {
                 let n = attempts.with(Vec::len);
                 (n > 0)

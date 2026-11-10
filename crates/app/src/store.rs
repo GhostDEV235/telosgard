@@ -59,6 +59,9 @@ pub struct Attempt {
     #[serde(default)]
     pub gap: Option<String>,
     pub reteach: Option<String>,
+    /// Almost / Not yet: their answer completed, additions in [[brackets]].
+    #[serde(default)]
+    pub suggestion: Option<String>,
     pub at: Millis,
 }
 

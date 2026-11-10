@@ -28,6 +28,30 @@ pub struct GradeResult {
     pub gap: Option<String>,
     /// Not yet: the concept re-taught with a different analogy.
     pub reteach: Option<String>,
+    /// Almost / Not yet: the Learner's own answer, minimally rewritten to include what was missing,
+    /// with each added or corrected part wrapped in [[double brackets]].
+    pub suggestion: Option<String>,
+}
+
+/// A suggestion split into (text, added?) pieces, for highlighting what was missing.
+pub fn marked_segments(s: &str) -> Vec<(String, bool)> {
+    let mut out = Vec::new();
+    let mut rest = s;
+    while let Some(open) = rest.find("[[") {
+        let Some(close) = rest[open + 2..].find("]]") else { break };
+        if open > 0 {
+            out.push((rest[..open].to_string(), false));
+        }
+        let added = &rest[open + 2..open + 2 + close];
+        if !added.is_empty() {
+            out.push((added.to_string(), true));
+        }
+        rest = &rest[open + 2 + close + 2..];
+    }
+    if !rest.is_empty() {
+        out.push((rest.to_string(), false));
+    }
+    out
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -37,6 +61,7 @@ pub enum GradeParseError {
     MissingFeedback,
     AlmostWithoutGap,
     NotYetWithoutReteach,
+    MissingSuggestion,
     TooLong,
 }
 
@@ -75,10 +100,12 @@ Choose exactly one grade:
 - "almost": the core is there but a key idea is missing or one detail is wrong. "feedback" is one encouraging sentence. "gap" names the specific missing or incorrect idea in one or two plain sentences, without giving the full answer away.
 - "not_yet": the main idea is missing, or a misconception is present. "feedback" is one kind sentence. "reteach" explains the concept again in 3 to 5 short sentences using a DIFFERENT everyday analogy from the one above, with a gold price example written as a dollar move.
 
+For "almost" and "not_yet", also write "suggestion": the learner's OWN answer, changed as little as possible, so that it includes every key idea and no misconception. Keep their words, order and tone; add each missing idea next to the part of their answer it belongs with, and fix anything wrong in place. Wrap every word you added or changed in [[double brackets]], e.g. "You profit from the change in price, [[and a trade can lose money too]]." Keep it about as short as their answer. For "got_it", "suggestion" is null. Never put the full answer in "gap" or "feedback"; the learner will read the suggestion and then rewrite it in their own words.
+
 Voice: a friend who trades; short sentences; no jargon without a definition; never "easy money" or any trade recommendation. Write to the learner as "you".
 
 Reply with only this JSON object and nothing else:
-{{"grade": "got_it" | "almost" | "not_yet", "feedback": string, "gap": string | null, "reteach": string | null}}"#,
+{{"grade": "got_it" | "almost" | "not_yet", "feedback": string, "gap": string | null, "reteach": string | null, "suggestion": string | null}}"#,
         title = i.title,
         objective = i.objective,
         prompt = i.prompt,
@@ -108,15 +135,17 @@ pub fn parse_grade(v: &Value) -> Result<GradeResult, GradeParseError> {
     let feedback = text(v, "feedback").ok_or(GradeParseError::MissingFeedback)?;
     let gap = text(v, "gap");
     let reteach = text(v, "reteach");
-    if [Some(&feedback), gap.as_ref(), reteach.as_ref()].into_iter().flatten().any(|s| s.chars().count() > MAX_FEEDBACK_CHARS) {
+    let suggestion = text(v, "suggestion");
+    if [Some(&feedback), gap.as_ref(), reteach.as_ref(), suggestion.as_ref()].into_iter().flatten().any(|s| s.chars().count() > MAX_FEEDBACK_CHARS) {
         return Err(GradeParseError::TooLong);
     }
     match grade {
         Grade::Almost if gap.is_none() => Err(GradeParseError::AlmostWithoutGap),
         Grade::NotYet if reteach.is_none() => Err(GradeParseError::NotYetWithoutReteach),
-        Grade::GotIt => Ok(GradeResult { grade, feedback, gap, reteach: None }),
-        Grade::Almost => Ok(GradeResult { grade, feedback, gap, reteach: None }),
-        Grade::NotYet => Ok(GradeResult { grade, feedback, gap, reteach }),
+        Grade::Almost | Grade::NotYet if suggestion.is_none() => Err(GradeParseError::MissingSuggestion),
+        Grade::GotIt => Ok(GradeResult { grade, feedback, gap, reteach: None, suggestion: None }),
+        Grade::Almost => Ok(GradeResult { grade, feedback, gap, reteach: None, suggestion }),
+        Grade::NotYet => Ok(GradeResult { grade, feedback, gap, reteach, suggestion }),
     }
 }
 
@@ -173,9 +202,9 @@ mod tests {
     fn parses_each_grade() {
         let got = parse_grade(&json!({"grade": "got_it", "feedback": "Spot on.", "gap": null, "reteach": null})).unwrap();
         assert_eq!((got.grade, got.gap, got.reteach), (Grade::GotIt, None, None));
-        let almost = parse_grade(&json!({"grade": "almost", "feedback": "Close.", "gap": "Losses are possible too."})).unwrap();
+        let almost = parse_grade(&json!({"grade": "almost", "feedback": "Close.", "gap": "Losses are possible too.", "suggestion": "x [[y]]"})).unwrap();
         assert_eq!((almost.grade, almost.gap.as_deref()), (Grade::Almost, Some("Losses are possible too.")));
-        let not_yet = parse_grade(&json!({"grade": "not_yet", "feedback": "Let's try another angle.", "reteach": "Think of a fruit stall…"})).unwrap();
+        let not_yet = parse_grade(&json!({"grade": "not_yet", "feedback": "Let's try another angle.", "reteach": "Think of a fruit stall…", "suggestion": "[[A trader profits from price changes.]]"})).unwrap();
         assert_eq!(not_yet.grade, Grade::NotYet);
         assert!(not_yet.reteach.is_some());
     }
@@ -183,7 +212,7 @@ mod tests {
     #[test]
     fn grade_spelling_is_forgiving_but_values_are_not() {
         assert_eq!(parse_grade(&json!({"grade": "Got it", "feedback": "Yes."})).unwrap().grade, Grade::GotIt);
-        assert_eq!(parse_grade(&json!({"grade": "NOT-YET", "feedback": "No.", "reteach": "x"})).unwrap().grade, Grade::NotYet);
+        assert_eq!(parse_grade(&json!({"grade": "NOT-YET", "feedback": "No.", "reteach": "x", "suggestion": "y"})).unwrap().grade, Grade::NotYet);
         assert_eq!(parse_grade(&json!({"grade": "pass", "feedback": "Yes."})), Err(GradeParseError::UnknownGrade("pass".into())));
     }
 
@@ -196,6 +225,36 @@ mod tests {
         assert_eq!(parse_grade(&json!({"grade": "not_yet", "feedback": "No."})), Err(GradeParseError::NotYetWithoutReteach));
         let huge = "x".repeat(MAX_FEEDBACK_CHARS + 1);
         assert_eq!(parse_grade(&json!({"grade": "got_it", "feedback": huge})), Err(GradeParseError::TooLong));
+    }
+
+    #[test]
+    fn almost_and_not_yet_need_a_suggested_answer() {
+        let a = json!({"grade": "almost", "feedback": "Close.", "gap": "Losses too.", "suggestion": "Profit from the change in price, [[and it can be a loss]]."});
+        assert_eq!(parse_grade(&a).unwrap().suggestion.as_deref(), Some("Profit from the change in price, [[and it can be a loss]]."));
+        let no_sugg = json!({"grade": "almost", "feedback": "Close.", "gap": "Losses too."});
+        assert_eq!(parse_grade(&no_sugg), Err(GradeParseError::MissingSuggestion));
+        let nyet = json!({"grade": "not_yet", "feedback": "No.", "reteach": "x"});
+        assert_eq!(parse_grade(&nyet), Err(GradeParseError::MissingSuggestion));
+        let got = json!({"grade": "got_it", "feedback": "Yes.", "suggestion": "ignored"});
+        assert_eq!(parse_grade(&got).unwrap().suggestion, None, "a Got it needs no suggested answer");
+    }
+
+    #[test]
+    fn prompt_asks_for_a_minimal_rewrite_with_marked_additions() {
+        let p = build_prompt(&input("Profit from price moving."));
+        assert!(p.contains("\"suggestion\"") && p.contains("[[") && p.contains("own words"));
+    }
+
+    #[test]
+    fn marked_segments_split_added_text() {
+        assert_eq!(
+            marked_segments("You profit from the change, [[but a trade can also lose]]."),
+            vec![("You profit from the change, ".to_string(), false), ("but a trade can also lose".to_string(), true), (".".to_string(), false)]
+        );
+        assert_eq!(marked_segments("no markers"), vec![("no markers".to_string(), false)]);
+        assert_eq!(marked_segments("[[all new]]"), vec![("all new".to_string(), true)]);
+        assert_eq!(marked_segments("broken [[marker"), vec![("broken [[marker".to_string(), false)], "an unclosed marker stays plain text");
+        assert!(marked_segments("").is_empty());
     }
 
     #[test]

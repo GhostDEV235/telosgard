@@ -68,7 +68,7 @@ why = "Lots × 100 × Dollar Move to your stop: size and stop distance decide th
 
 [explain_back]
 prompt = "Why is leverage dangerous for a beginner even though it “lets you trade bigger”?"
-must_include = ["margin is a deposit, not the cost of the trade", "leverage magnifies losses as much as gains", "it can wipe out an account fast", "position size, not leverage, sets your risk"]
+must_include = ["margin is a deposit that lets you control a much bigger position (it is not the full cost of the trade)", "leverage magnifies losses as much as gains", "it can wipe out an account fast", "position size, not leverage, sets your risk"]
 misconceptions = ["leverage is free money", "more leverage means more profit"]
 
 [[explain_back.fixtures]]

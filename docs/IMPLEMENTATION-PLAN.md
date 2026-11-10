@@ -62,7 +62,7 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 - [x] Explain-Back: prompt builder + strict reply check in `gold_core::grading` (7 tests), the three Grade UIs (Got it + optional tip / Almost + "what's missing" / Not yet + re-teach with a different analogy), errors with "Try again" (no auto-retry, per the platform), attempt history saved and listed
 - [x] GateStatus wiring + unlocking the next lesson; a gold "Lesson passed" banner and toast
 - [x] Rubrics + 3 fixtures for each of L1–11 (`rubrics.rs`; moves into `crates/content` in Phase 6)
-- [ ] **Rubric tuning:** the Learner runs `#grader-lab` once (Claude needs their permission); Claude Code reads `lab/grader-latest` and adjusts rubrics until the Grades match
+- [x] **Rubric tuning:** grader lab run 2026-11-10: 32 of 33 as expected. The miss: L8's correct answer got Almost because the rubric demanded "margin is not the cost of the trade" literally; reworded to "a deposit that lets you control a much bigger position (it is not the full cost)". Re-run pending
 
 **Exit check:** for all 11 Stage 1 lessons, correct → Got it, gap → Almost, misconception → Almost or Not yet.
 
@@ -109,6 +109,8 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 - [x] Fix: finishing the quiz reset it to question 1 instead of showing the score (the lesson reader re-rendered on every progress save; it now re-renders only when the lock state changes). The same bug closed the Explain-Back sheet when a grade arrived
 - [x] "Want to be quizzed on more concepts?" after the quiz: Claude writes 5 fresh questions on the lesson, or mixed with earlier passed lessons (`gold_core::practice`, 5 tests; strict checks, malformed questions dropped, fewer than 3 good = error). Practice never affects the Gate
 - [x] Explain-Back attempts now also store the "what's missing" note
+- [x] **Suggested answer:** on Almost / Not yet, Claude returns the Learner's own answer minimally rewritten to include the missing idea, additions in [[brackets]] and highlighted in the app; required by the reply check (3 tests). The Learner still rewrites it in their own words to pass
+- [x] The latest grade, feedback and suggestion also show on the Explain-Back card, so they can't be lost when the sheet closes; sheets focus their first field on open
 
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:

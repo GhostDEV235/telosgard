@@ -26,6 +26,7 @@ struct Outcome {
     feedback: Option<String>,
     gap: Option<String>,
     reteach: Option<String>,
+    suggestion: Option<String>,
     error: Option<String>,
 }
 
@@ -65,6 +66,7 @@ pub fn GraderLab() -> impl IntoView {
                             feedback: Some(g.feedback),
                             gap: g.gap,
                             reteach: g.reteach,
+                            suggestion: g.suggestion,
                             error: None,
                         },
                         Err(e) => {
@@ -79,6 +81,7 @@ pub fn GraderLab() -> impl IntoView {
                                     feedback: None,
                                     gap: None,
                                     reteach: None,
+                                    suggestion: None,
                                     error: Some(e.describe()),
                                 })
                             });
@@ -149,6 +152,7 @@ pub fn GraderLab() -> impl IntoView {
                                             {o.feedback.map(|f| view! { <p>{f}</p> })}
                                             {o.gap.map(|g| view! { <p><span class="font-semibold">"Gap: "</span>{g}</p> })}
                                             {o.reteach.map(|t| view! { <p><span class="font-semibold">"Re-teach: "</span>{t}</p> })}
+                                            {o.suggestion.map(|t| view! { <p><span class="font-semibold">"Suggested answer: "</span>{t}</p> })}
                                         </div>
                                     </details>
                                 </li>

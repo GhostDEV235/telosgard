@@ -26,7 +26,7 @@ _Avoid_: essay, open question
 A practice exercise on an illustrative candle chart (spot a pattern, mark a level, name the structure). It trains the eye; it is separate from the **Gate**.
 
 **Grade**:
-Claude's ruling on an **Explain-Back**: **Got it** (understood), **Almost** (a named gap to fix, then rewrite) or **Not yet** (re-taught with a different analogy, then retry).
+Claude's ruling on an **Explain-Back**: **Got it** (understood), **Almost** (a named gap to fix, then rewrite) or **Not yet** (re-taught with a different analogy, then retry). Almost and Not yet also show a **Suggested Answer**: the Learner's own answer with the missing idea added and highlighted, to learn from before rewriting it in their own words.
 
 **Gate**:
 The rule that locks the next **Lesson**: at least 80% on the **Quiz** *and* a **Got it** on the **Explain-Back**. Retries are unlimited and there is no penalty. Lessons cannot be skipped. Once passed, a Lesson stays passed.
