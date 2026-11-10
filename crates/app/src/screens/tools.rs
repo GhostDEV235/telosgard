@@ -1,6 +1,6 @@
 //! Tools tab: position-size calculator (live) and the Trading Plan placeholder.
 
-use crate::screens::shell::{LargeTitle, SubBar};
+use crate::screens::shell::LargeTitle;
 use crate::ui::controls::NumberField;
 use gold_core::money::{DEFAULT_CONTRACT_OZ, DollarMove, Percent, Usd};
 use gold_core::sizing::{Sizing, SizingInput, size};
@@ -111,57 +111,10 @@ pub fn Tools() -> impl IntoView {
             <a href="#plan" class="press mt-3 flex items-center gap-4 rounded-card bg-surface p-5 shadow-card hover:bg-raised">
                 <span class="min-w-0 flex-1">
                     <span class="block text-headline">"Trading Plan"</span>
-                    <span class="block text-callout text-text-muted">"Your written rules. You'll fill this in at Lesson 38."</span>
+                    <span class="block text-callout text-text-muted">"Your written rules, versioned. You'll build it properly at Lesson 38."</span>
                 </span>
                 <span class="text-title2 text-text-muted" aria-hidden="true">"›"</span>
             </a>
-        </main>
-    }
-}
-
-#[component]
-pub fn Plan() -> impl IntoView {
-    let hard = [
-        ("Max risk per trade", "e.g. 1% of your balance"),
-        ("Max total loss", "e.g. 10% of your starting demo balance"),
-        ("Minimum reward-to-risk", "e.g. 1.5R: aim to win at least 1.5× what you risk"),
-        ("Sessions you trade", "e.g. London and New York"),
-        ("Max trades per day", "e.g. 2"),
-        ("Stop-loss on every trade", "Always on. Not optional."),
-        ("Daily loss limit", "e.g. 3R: after losing three trades' worth in a day, you stop"),
-        ("No-Trade Windows", "Always on: the daily rollover, the Sunday open, and 5 minutes around big US news"),
-        ("Pre-Session Checklist done", "Always on: no checklist that day means the trade breaks your plan"),
-    ];
-    view! {
-        <SubBar back="#size" back_label="Tools" title="Trading Plan" />
-        <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
-            <h1 class="text-title1">"Trading Plan"</h1>
-            <p class="mt-2 text-callout text-text-muted">
-                "You'll build this at Lesson 38, once you know what each rule means. Every Demo Trade is then checked against it."
-            </p>
-            <section class="mt-6 rounded-card bg-surface p-5 shadow-card">
-                <p class="text-eyebrow uppercase text-text-muted">"Hard Rules · checked by calculation"</p>
-                <ul class="mt-3 divide-y divide-line/30">
-                    {hard
-                        .into_iter()
-                        .map(|(t, d)| {
-                            view! {
-                                <li class="py-3">
-                                    <p class="text-headline">{t}</p>
-                                    <p class="text-callout text-text-muted">{d}</p>
-                                </li>
-                            }
-                        })
-                        .collect_view()}
-                </ul>
-            </section>
-            <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
-                <p class="text-eyebrow uppercase text-text-muted">"Soft Rules · checked by Claude"</p>
-                <p class="mt-3 text-headline">"Your setup"</p>
-                <p class="text-callout text-text-muted">
-                    "For Classic Price Action: the higher-timeframe trend, a key level, and a confirmation candle at that level, in the trend's direction. And always: the trade was one of that day's written Scenarios."
-                </p>
-            </section>
         </main>
     }
 }

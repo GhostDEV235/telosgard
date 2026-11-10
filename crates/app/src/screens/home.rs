@@ -96,6 +96,8 @@ pub fn Home() -> impl IntoView {
                     })
             }}
 
+            <div class="mt-6 max-w-xl"><crate::ui::clock::SessionClock /></div>
+
             <h2 class="mt-9 text-title2">"Your course"</h2>
             <div class="mt-3 grid items-start gap-5 md:grid-cols-2">
                 {SECTIONS.iter().map(|s| view! { <StageCard section=s /> }).collect_view()}

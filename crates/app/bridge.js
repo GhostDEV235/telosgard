@@ -116,3 +116,18 @@ export async function dbSetShared(path, json) {
     return ok(null);
   } catch (e) { return errOf(e); }
 }
+
+/// Uploads the image chosen in <input type=file id=inputId> to the artifact's asset store: {id, url}.
+export async function uploadFromInput(inputId) {
+  try {
+    const input = document.getElementById(inputId);
+    const file = input && input.files && input.files[0];
+    if (!file) return ok(null);
+    if (!file.type.startsWith("image/")) throw { code: "invalid_argument", message: "please choose an image" };
+    if (file.size > 8 * 1024 * 1024) throw { code: "invalid_argument", message: "images up to 8 MB" };
+    const assets = await use("assets");
+    if (!assets) throw { code: "not_granted", message: "uploads unavailable" };
+    const r = await withTimeout(assets.upload(file), 60000);
+    return ok({ id: r.id, url: r.url });
+  } catch (e) { return errOf(e); }
+}

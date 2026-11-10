@@ -4,40 +4,245 @@ use crate::screens::shell::{LargeTitle, SubBar};
 use crate::state::now;
 use crate::ui::chart::CandleChart;
 use crate::ui::controls::PILL;
-use gold_core::drills::{Candle, CandleDirection, check_direction, generate};
+use crate::router::DrillKind;
+use gold_core::drills::{Candle, CandleDirection, Rng, check_direction, generate};
+use gold_core::stage1_drills::{BidAskAsk, BidAskQ, DistanceQ, OrderKind, OrderQ, PipQ};
 use gold_core::money::{DollarMove, Price};
 use leptos::prelude::*;
 
+struct DrillInfo {
+    kind: DrillKind,
+    title: &'static str,
+    blurb: &'static str,
+    lesson: &'static str,
+}
+
+const DRILLS: [DrillInfo; 5] = [
+    DrillInfo { kind: DrillKind::Direction, title: "Bullish or bearish?", blurb: "Read a candle's direction from its open and close.", lesson: "Lesson 4" },
+    DrillInfo { kind: DrillKind::BidAsk, title: "Spot the spread", blurb: "Find the bid, the ask, and the cost of getting in.", lesson: "Lesson 5" },
+    DrillInfo { kind: DrillKind::Distance, title: "Measure the move", blurb: "Turn two prices into a Dollar Move.", lesson: "Lesson 3" },
+    DrillInfo { kind: DrillKind::Pips, title: "Translate the pips", blurb: "Convert someone else's “pips” into dollars.", lesson: "Lesson 6" },
+    DrillInfo { kind: DrillKind::Orders, title: "Pick the order", blurb: "Market, limit or stop: match the order to the intent.", lesson: "Lesson 9" },
+];
+
 #[component]
 pub fn Practice() -> impl IntoView {
-    let drills = [
-        ("#drill-direction", "Bullish or bearish?", "Read a candle's direction from its open and close.", true),
-        ("", "Spot the spread", "Find the bid and ask, and the cost of getting in.", false),
-        ("", "Measure the move", "Turn two prices into a Dollar Move.", false),
-    ];
+    let store = expect_context::<crate::store::Store>();
     view! {
         <main class="gutter mx-auto max-w-[1040px] pb-8">
             <LargeTitle title="Practice" />
             <p class="mt-2 max-w-xl text-callout text-text-muted">
-                "Quick drills on illustrative charts. They train your eye and never count towards a Gate."
+                "Quick drills on illustrative prices and charts. They train your eye and never count towards a Gate."
             </p>
-            <div class="mt-6 grid gap-4 md:grid-cols-3">
-                {drills
-                    .into_iter()
-                    .map(|(href, title, blurb, ready)| {
-                        let inner = view! {
-                            <span class="block text-headline">{title}</span>
-                            <span class="mt-1 block text-callout text-text-muted">{blurb}</span>
-                            <span class="mt-4 block text-footnote font-semibold">{if ready { "Start ›" } else { "Coming soon" }}</span>
-                        };
-                        if ready {
-                            view! { <a href=href class="press block rounded-card bg-surface p-5 shadow-card hover:bg-raised">{inner}</a> }.into_any()
-                        } else {
-                            view! { <div class="block rounded-card bg-locked p-5" aria-disabled="true">{inner}</div> }.into_any()
+            <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {DRILLS
+                    .iter()
+                    .map(|d| {
+                        let slug = d.kind.slug();
+                        view! {
+                            <a href=format!("#drill-{slug}") class="press block rounded-card bg-surface p-5 shadow-card hover:bg-raised">
+                                <span class="block text-eyebrow uppercase text-text-muted">{d.lesson}</span>
+                                <span class="mt-1 block text-headline">{d.title}</span>
+                                <span class="mt-1 block text-callout text-text-muted">{d.blurb}</span>
+                                <span class="tabular mt-4 block text-footnote font-semibold">
+                                    {move || {
+                                        store
+                                            .drills
+                                            .with(|m| m.get(slug).map(|r| (r.correct, r.answered)))
+                                            .map_or("Start ›".to_string(), |(c, a)| format!("{c} of {a} right · Continue ›"))
+                                    }}
+                                </span>
+                            </a>
                         }
                     })
                     .collect_view()}
             </div>
+        </main>
+    }
+}
+
+fn money(p: Price) -> String {
+    p.to_string().trim_start_matches('$').to_string()
+}
+
+struct Choice {
+    prompt: String,
+    detail: Option<String>,
+    options: Vec<String>,
+    answer: usize,
+    why: String,
+}
+
+fn shuffle_choice(mut options: Vec<(String, bool)>, seed: u64) -> (Vec<String>, usize) {
+    let mut rng = Rng::new(seed ^ 0x5eed);
+    options.dedup_by(|a, b| a.0 == b.0);
+    for i in (1..options.len()).rev() {
+        options.swap(i, rng.below(i as u64 + 1) as usize);
+    }
+    let answer = options.iter().position(|o| o.1).unwrap_or(0);
+    (options.into_iter().map(|o| o.0).collect(), answer)
+}
+
+fn make_choice(kind: DrillKind, seed: u64) -> Choice {
+    match kind {
+        DrillKind::BidAsk => {
+            let q = BidAskQ::new(seed);
+            let spread = q.ask - q.bid;
+            let (prompt, opts, why) = match q.asked {
+                BidAskAsk::Spread => (
+                    "What is the spread?".to_string(),
+                    vec![(spread.to_string(), true), (DollarMove(spread.0 * 10).to_string(), false), (DollarMove(spread.0 * 100).to_string(), false), (DollarMove((spread.0 / 10).max(1) + spread.0).to_string(), false)],
+                    format!("ask − bid = {} − {} = {spread}.", money(q.ask), money(q.bid)),
+                ),
+                BidAskAsk::BuyPrice => (
+                    "You buy now. Which price do you pay?".to_string(),
+                    vec![(money(q.ask), true), (money(q.bid), false), (money(Price((q.ask.0 + q.bid.0) / 2)), false)],
+                    "You buy at the ask, the higher price.".to_string(),
+                ),
+                BidAskAsk::SellPrice => (
+                    "You sell (go short) now. Which price do you get?".to_string(),
+                    vec![(money(q.bid), true), (money(q.ask), false), (money(Price((q.ask.0 + q.bid.0) / 2)), false)],
+                    "You sell at the bid, the lower price.".to_string(),
+                ),
+            };
+            let (options, answer) = shuffle_choice(opts, seed);
+            Choice { prompt, detail: Some(format!("Bid (sell) {}  ·  Ask (buy) {}", money(q.bid), money(q.ask))), options, answer, why }
+        }
+        DrillKind::Distance => {
+            let q = DistanceQ::new(seed);
+            let a = q.answer();
+            let way = if q.to > q.from { "up" } else { "down" };
+            let (options, answer) = shuffle_choice(
+                vec![(a.to_string(), true), (DollarMove(a.0 * 10).to_string(), false), (DollarMove((a.0 / 10).max(1)).to_string(), false), (DollarMove(a.0 + 100).to_string(), false)],
+                seed,
+            );
+            Choice {
+                prompt: format!("Gold moves from {} to {}. How big was the move?", money(q.from), money(q.to)),
+                detail: None,
+                options,
+                answer,
+                why: format!("{} − {} = {a}, {way}.", money(q.from.max(q.to)), money(q.from.min(q.to))),
+            }
+        }
+        DrillKind::Pips => {
+            let q = PipQ::new(seed);
+            let size = DollarMove(q.pip_cents);
+            let (options, answer) = shuffle_choice(
+                [1, 10, 100].into_iter().map(|c| (DollarMove(q.pips * c).to_string(), c == q.pip_cents)).collect(),
+                seed,
+            );
+            Choice {
+                prompt: format!("A trader says “a {}-pip stop on gold” and, when you ask, they mean {size} per pip. What Dollar Move is that?", q.pips),
+                detail: None,
+                options,
+                answer,
+                why: format!("{} pips × {size} = {}. Always convert before you trust a pip number.", q.pips, q.answer()),
+            }
+        }
+        _ => {
+            let q = OrderQ::new(seed);
+            let want = match (q.buy, q.target) {
+                (true, None) => "buy right now".to_string(),
+                (false, None) => "sell right now".to_string(),
+                (b, Some(t)) => format!("{} only if price {} {}", if b { "buy" } else { "sell" }, if t > q.current { "rises to" } else { "falls to" }, money(t)),
+            };
+            let all = [(OrderKind::Market, "Market order"), (OrderKind::BuyLimit, "Buy limit"), (OrderKind::SellLimit, "Sell limit"), (OrderKind::BuyStop, "Buy stop"), (OrderKind::SellStop, "Sell stop")];
+            let correct = q.answer();
+            let (options, answer) = shuffle_choice(all.iter().map(|(k, n)| (n.to_string(), *k == correct)).collect(), seed);
+            let why = match correct {
+                OrderKind::Market => "To act now, use a market order.",
+                OrderKind::BuyLimit => "Buying below the current price is a buy limit: it waits for a better price.",
+                OrderKind::SellLimit => "Selling above the current price is a sell limit: it waits for a better price.",
+                OrderKind::BuyStop => "Buying only once price rises through a level is a buy stop.",
+                OrderKind::SellStop => "Selling only once price falls through a level is a sell stop.",
+            };
+            Choice { prompt: format!("Gold is at {}. You want to {want}. Which order?", money(q.current)), detail: None, options, answer, why: why.into() }
+        }
+    }
+}
+
+#[component]
+pub fn ChoiceDrill(kind: DrillKind) -> impl IntoView {
+    let store = expect_context::<crate::store::Store>();
+    let info = DRILLS.iter().find(|d| d.kind == kind).expect("known drill");
+    let seed = RwSignal::new(now() as u64);
+    let choice = Memo::new(move |_| {
+        let c = make_choice(kind, seed.get());
+        (c.prompt, c.detail, c.options, c.answer, c.why)
+    });
+    let picked = RwSignal::new(None::<usize>);
+    let score = RwSignal::new((0u32, 0u32));
+    let pick = move |i: usize| {
+        if picked.get_untracked().is_some() {
+            return;
+        }
+        picked.set(Some(i));
+        let right = choice.with_untracked(|c| c.3 == i);
+        store.record_drill(kind.slug(), right);
+        score.update(|(r, t)| {
+            *t += 1;
+            *r += right as u32;
+        });
+    };
+    let next = move |_| {
+        seed.update(|s| *s = s.wrapping_add(7919));
+        picked.set(None);
+    };
+    view! {
+        <SubBar back="#practice" back_label="Practice" title=info.title />
+        <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
+            <div class="flex items-baseline justify-between gap-4">
+                <h1 class="text-title1">{info.title}</h1>
+                <p class="tabular shrink-0 whitespace-nowrap text-callout text-text-muted">{move || { let (r, t) = score.get(); format!("{r} of {t} right") }}</p>
+            </div>
+            <p class="mt-2 text-callout text-text-muted">{info.blurb} " Prices are illustrative."</p>
+            <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
+                {move || {
+                    let (prompt, detail, options, answer, why) = choice.get();
+                    view! {
+                        {detail.map(|d| view! { <p class="tabular mb-3 rounded-btn bg-bg p-3 text-headline">{d}</p> })}
+                        <h2 class="text-headline">{prompt}</h2>
+                        <div class="mt-4 grid gap-2">
+                            {options
+                                .into_iter()
+                                .enumerate()
+                                .map(|(i, o)| {
+                                    let is_answer = i == answer;
+                                    view! {
+                                        <button
+                                            type="button"
+                                            disabled=move || picked.get().is_some()
+                                            on:click=move |_| pick(i)
+                                            class=move || {
+                                                let base = "press tabular flex min-h-12 w-full items-center rounded-btn bg-bg px-4 py-3 text-left text-body";
+                                                match picked.get() {
+                                                    None => format!("{base} hover:bg-raised"),
+                                                    Some(_) if is_answer => format!("{base} ring-2 ring-up"),
+                                                    Some(p) if p == i => format!("{base} ring-2 ring-down"),
+                                                    Some(_) => format!("{base} opacity-55"),
+                                                }
+                                            }
+                                        >
+                                            {o}
+                                        </button>
+                                    }
+                                })
+                                .collect_view()}
+                        </div>
+                        <Show when=move || picked.get().is_some()>
+                            <div class="anim-fade mt-4 rounded-btn bg-bg p-4" aria-live="polite">
+                                {move || if picked.get() == Some(answer) {
+                                    view! { <p class="text-headline text-up">"✓ Right"</p> }.into_any()
+                                } else {
+                                    view! { <p class="text-headline text-down">"✗ Not quite"</p> }.into_any()
+                                }}
+                                <p class="mt-1 text-callout">{why.clone()}</p>
+                            </div>
+                            <button type="button" class=format!("{PILL} mt-4") on:click=next>"Next question ›"</button>
+                        </Show>
+                    }
+                }}
+            </section>
         </main>
     }
 }

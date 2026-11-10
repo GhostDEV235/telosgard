@@ -24,11 +24,17 @@ pub fn Shell() -> impl IntoView {
                 Route::Lesson(id) => view! { <LessonScreen id=id /> }.into_any(),
                 Route::Practice => view! { <practice::Practice /> }.into_any(),
                 Route::Drill(DrillKind::Direction) => view! { <practice::DirectionDrill /> }.into_any(),
+                Route::Drill(kind) => view! { <practice::ChoiceDrill kind=kind /> }.into_any(),
                 Route::Tools => view! { <tools::Tools /> }.into_any(),
-                Route::Plan => view! { <tools::Plan /> }.into_any(),
+                Route::Plan => view! { <crate::screens::plan::Plan /> }.into_any(),
                 Route::Journal => view! { <journal::Journal /> }.into_any(),
                 Route::Readiness => view! { <journal::Readiness /> }.into_any(),
                 Route::GraderLab => view! { <crate::screens::lab::GraderLab /> }.into_any(),
+                Route::Checklist => view! { <crate::screens::checklist::Checklist /> }.into_any(),
+                Route::Review => view! { <crate::screens::review::Review /> }.into_any(),
+                Route::TradeNew => view! { <crate::screens::trade::TradeNew /> }.into_any(),
+                Route::TradeSkip => view! { <crate::screens::trade::TradeSkip /> }.into_any(),
+                Route::Trade(id) => view! { <crate::screens::trade::TradeDetail id=id /> }.into_any(),
             }}
         </div>
         <TabBar />

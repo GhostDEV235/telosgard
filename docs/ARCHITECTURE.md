@@ -113,7 +113,8 @@ The platform's rule is that a path with an even number of segments is a document
 | `attempt-<ulid>` | attempt | `lesson`, `answer`, `grade`, `feedback`, `reteach?`, `at` |
 | `plan-v<N>` | plan | `version`, `createdAt`, `hardRules{…}`, `softRules{setup, extra[]}` |
 | `checklist-<YYYY-MM-DD>` | checklist | local `date`, `events[{name, tier, atUtc}]`, `asianHigh`, `asianLow`, `mood`, `bias`, `zones[]`, `scenarios[]`, `risk{perTradePct, dailyLimitR, plannedSizes[]}` |
-| `trade-<ulid>` | journal | `status` (`taken`/`skipped`), trade fields, `checklistDate`, `planVersion`, `run`, `hardResults[]`, `verdict{adherent, reasons[], at}`, `dispute?{text, verdict, at}`, `result?{exit, pnl, balanceAfter}` |
+| `review-<YYYY-MM-DD>` | review | `week` (Monday, days since epoch), `note` |
+| `trade-<ulid>` | journal | `status` (`taken`/`skipped`), `entry{at, direction, entry, stop?, takeProfit?, lots, balanceBefore, contractOz, setupReason, planVersion}`, `checklistDay`, `run`, `scenario?`, `hardResults[]`, `adherence{state: pending/judged/dispute_pending/disputed, …}`, `softResults[]`, `verdictSummary?`, `firstSummary?`, `disputeText?`, `screenshot?` (asset id), `result?{exit, pnl, balanceAfter, closedAt}` |
 | `drill-<id>` | drill | `answered`, `correct`, `lastAt` (all-time totals) |
 | `run-<N>` | run | `number`, `startedAt`, `startingBalance`, `endedAt?`, `endReason?` (`breach`). Max total loss is measured against the run's starting balance |
 | `readiness` | readiness | `reachedAt?` (written once; unlocks the Live and Advanced Tracks permanently) |

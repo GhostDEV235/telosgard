@@ -76,15 +76,20 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 **Exit check:** the build passes validation; each lesson takes 5–8 minutes to read; every fact has a recorded source; every video link was opened and confirmed within the last 7 days. *(Met 2026-11-10.)*
 
-## Phase 7: Tools
-- [ ] Position-size calculator (standalone + embedded in the journal form)
-- [ ] Trading Plan builder with versioning, incl. Daily Loss Limit (marked "you'll complete this in Lesson 38")
-- [ ] **Session clock:** current session, next overlap and next rollover in local time (FR-12.2); on Home and in the checklist
-- [ ] **Pre-Session Checklist:** dated form (FR-11.1), link-out to an economic calendar, sizes pre-computed for planned stops
-- [ ] Journal: form (links to the day's checklist; "skipped setup" entries), Hard Rule evaluation, Claude Adherence Verdict incl. the Scenario Soft Rule (ARCHITECTURE §6.2), optional screenshot via `assets`, one Dispute, result fields after close
-- [ ] **Weekly Review** screen (FR-11.4)
-- [ ] Live Readiness dashboard (rings x/50, %, x/56 days) + permanent unlock record
-- [ ] Chart Drill player
+## Phase 7: Tools ✅ *(Claude's live verdicts pending the Learner's check)*
+- [x] New core modules, test-first: `clock` (next overlap/rollover, week start), `daily` (same-day count and realized P/L), `adherence` (verdict prompt with Hard Rule facts, fenced learner notes, dispute section; strict reply check incl. consistency), `stage1_drills` (bid/ask, distance, pip conversion, order type). 108 unit tests
+- [x] Position-size calculator (Tools) and the plan's max size suggested live in the trade form
+- [x] Trading Plan builder: Hard + Soft Rules incl. Daily Loss Limit; every save is a new version; earlier versions listed read-only
+- [x] Session clock on Home, Journal and the checklist (local time; updates every 30 s)
+- [x] Pre-Session Checklist: news events (local time → UTC, tier), Asian range, mood, bias, zones, Scenarios, risk with sizes for planned stops; links to the BLS and Fed calendars
+- [x] Journal: log a trade (Hard Rules previewed as you type, Scenario picker, optional screenshot via `assets`), log a skipped setup; trade page with Hard Rules, Claude's verdict (judged against the plan version in force), one Dispute, result after close. Trade fields can't be edited after saving
+- [x] Weekly Review (this / last / two weeks ago) with a saved note
+- [x] Live Readiness on real data: Readiness Runs (Run 1 starts with the first trade's balance; a breach blocks new trades until the next run is started with a fresh balance), rings, drawdown, permanent unlock record
+- [x] Chart Drill player: the candle drill plus four Stage 1 drills, with all-time totals
+- [x] Exit check, deterministic part: `crates/core/tests/phase7_e2e.rs` runs the whole scenario and matches the hand calculation
+- [x] Local walk-through without the platform: plan → checklist → trade (8/8 Hard Rules previewed) → verdict fails safely with "Get Claude's verdict" → result → readiness, review, drills; no console errors
+- [ ] **Learner check:** on the live app, log a trade and get a real verdict; dispute one; confirm everything survives a reload
+- Note: screenshots are stored and shown, but not yet sent to Claude (`has_screenshot: false`); sending images is a later improvement
 
 **Exit check:** an end-to-end scripted run: create plan v1 → log a trade with no checklist (not adherent, no dispute) → save a checklist → log an adherent trade matching a Scenario → log a trade at 17:30 New York (No-Trade Window fail) → log trades until the Daily Loss Limit is hit, then one more (fail) → dispute a Soft Rule verdict → the dashboard and Weekly Review numbers match a hand calculation.
 
@@ -104,3 +109,4 @@ One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave:
 ## Open items
 1. The Learner's reload check for Phase 4.
 2. The Learner runs `#grader-lab` once for Phase 5's rubric tuning.
+3. The Learner's live journal check for Phase 7 (a real verdict and a dispute).

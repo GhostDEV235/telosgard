@@ -19,6 +19,8 @@ extern "C" {
     async fn js_list(kind: &str) -> JsValue;
     #[wasm_bindgen(js_name = dbSetShared)]
     async fn js_set_shared(path: &str, json: &str) -> JsValue;
+    #[wasm_bindgen(js_name = uploadFromInput)]
+    async fn js_upload(input_id: &str) -> JsValue;
     #[wasm_bindgen(js_name = sampleJson)]
     async fn js_sample(prompt: &str, tier: &str) -> JsValue;
 }
@@ -149,4 +151,22 @@ pub async fn set_shared<T: Serialize>(path: &str, body: &T) -> Result<(), Platfo
 
 pub async fn sample_json(prompt: &str, tier: &str) -> Result<Value, PlatformError> {
     unwrap(js_sample(prompt, tier).await)
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Uploaded {
+    pub id: String,
+}
+
+/// Uploads the file chosen in an `<input type=file>`; `None` when nothing was chosen.
+pub async fn upload_from_input(input_id: &str) -> Result<Option<Uploaded>, PlatformError> {
+    match unwrap(js_upload(input_id).await)? {
+        Value::Null => Ok(None),
+        v => serde_json::from_value(v).map(Some).map_err(|e| PlatformError::Invalid(e.to_string())),
+    }
+}
+
+/// Where a stored asset id is served (assets capability contract).
+pub fn asset_url(id: &str) -> String {
+    format!("/_blob/{id}")
 }

@@ -5,9 +5,26 @@ use gold_core::course::LessonId;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DrillKind {
     Direction,
+    BidAsk,
+    Distance,
+    Pips,
+    Orders,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+impl DrillKind {
+    pub const ALL: [DrillKind; 5] = [DrillKind::Direction, DrillKind::BidAsk, DrillKind::Distance, DrillKind::Pips, DrillKind::Orders];
+    pub fn slug(self) -> &'static str {
+        match self {
+            DrillKind::Direction => "direction",
+            DrillKind::BidAsk => "bid-ask",
+            DrillKind::Distance => "distance",
+            DrillKind::Pips => "pips",
+            DrillKind::Orders => "orders",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Route {
     Today,
     Lesson(LessonId),
@@ -18,6 +35,11 @@ pub enum Route {
     Journal,
     Readiness,
     GraderLab,
+    Checklist,
+    Review,
+    TradeNew,
+    TradeSkip,
+    Trade(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -34,22 +56,33 @@ impl Route {
         match h {
             "" | "today" => Route::Today,
             "practice" => Route::Practice,
-            "drill-direction" => Route::Drill(DrillKind::Direction),
+            "checklist" => Route::Checklist,
+            "review" => Route::Review,
+            "trade-new" => Route::TradeNew,
+            "trade-skip" => Route::TradeSkip,
             "size" => Route::Tools,
             "plan" => Route::Plan,
             "journal" => Route::Journal,
             "readiness" => Route::Readiness,
             "grader-lab" => Route::GraderLab,
-            _ => h.strip_prefix("lesson-").and_then(parse_lesson).map(Route::Lesson).unwrap_or(Route::Today),
+            _ => {
+                if let Some(d) = h.strip_prefix("drill-").and_then(|s| DrillKind::ALL.into_iter().find(|k| k.slug() == s)) {
+                    Route::Drill(d)
+                } else if let Some(id) = h.strip_prefix("trade-").filter(|s| s.len() >= 8 && s.chars().all(|c| c.is_ascii_alphanumeric())) {
+                    Route::Trade(format!("trade-{id}"))
+                } else {
+                    h.strip_prefix("lesson-").and_then(parse_lesson).map(Route::Lesson).unwrap_or(Route::Today)
+                }
+            }
         }
     }
 
-    pub fn tab(self) -> Tab {
+    pub fn tab(&self) -> Tab {
         match self {
             Route::Today | Route::Lesson(_) | Route::GraderLab => Tab::Today,
             Route::Practice | Route::Drill(_) => Tab::Practice,
             Route::Tools | Route::Plan => Tab::Tools,
-            Route::Journal | Route::Readiness => Tab::Journal,
+            Route::Journal | Route::Readiness | Route::Checklist | Route::Review | Route::TradeNew | Route::TradeSkip | Route::Trade(_) => Tab::Journal,
         }
     }
 }
@@ -84,6 +117,10 @@ mod tests {
         assert_eq!(Route::parse("#nonsense"), Route::Today);
         assert_eq!(Route::parse("#lesson-44"), Route::Today);
         assert_eq!(Route::parse("#lesson-39"), Route::Lesson(LessonId::Numbered(39)));
+        assert_eq!(Route::parse("#drill-pips"), Route::Drill(DrillKind::Pips));
+        assert_eq!(Route::parse("#trade-0198abc0123def45"), Route::Trade("trade-0198abc0123def45".into()));
+        assert_eq!(Route::parse("#trade-x"), Route::Today, "too short to be an id");
+        assert_eq!(Route::parse("#trade-new"), Route::TradeNew);
         for id in [LessonId::Numbered(5), LessonId::Advanced(2), LessonId::Indicators] {
             assert_eq!(Route::parse(&lesson_href(id)), Route::Lesson(id));
         }

@@ -1,7 +1,11 @@
+pub mod checklist;
 pub mod home;
 pub mod journal;
 pub mod lab;
 pub mod lesson;
+pub mod plan;
 pub mod practice;
+pub mod review;
 pub mod shell;
 pub mod tools;
+pub mod trade;

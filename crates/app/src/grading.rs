@@ -57,3 +57,10 @@ pub async fn grade(lesson: &Lesson, answer: &str) -> Result<GradeResult, GradeEr
     let value = platform::sample_json(&prompt, "default").await.map_err(GradeError::Platform)?;
     parse_grade(&value).map_err(GradeError::Unreadable)
 }
+
+/// One Adherence Verdict (or a dispute re-judgement) from Claude. Never assumes a pass.
+pub async fn judge(input: &gold_core::adherence::AdherenceInput<'_>) -> Result<gold_core::adherence::AdherenceResult, String> {
+    let prompt = gold_core::adherence::build_adherence_prompt(input);
+    let v = platform::sample_json(&prompt, "default").await.map_err(|e| GradeError::Platform(e).describe().replace("graded", "judged"))?;
+    gold_core::adherence::parse_adherence(&v).map_err(|_| "Claude's verdict didn't come back in the expected shape. Nothing was judged; try again.".to_string())
+}

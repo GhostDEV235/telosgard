@@ -2,6 +2,7 @@
 
 mod catalog;
 mod grading;
+mod journal_data;
 mod platform;
 mod router;
 mod screens;
@@ -34,6 +35,9 @@ fn App() -> impl IntoView {
     provide_context(toasts);
     provide_context(store);
     provide_context(disclaimer);
+    let journal = journal_data::JournalData::new(store);
+    provide_context(journal);
+    journal.watch_and_load(progress);
 
     let theme = RwSignal::new(theme::load());
     Effect::new(move |_| {

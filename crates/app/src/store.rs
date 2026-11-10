@@ -5,6 +5,7 @@ use crate::platform::{self, PlatformError};
 use crate::state::{Progress, Toasts, now};
 use crate::theme::ThemeChoice;
 use gold_core::Millis;
+use gold_core::adherence::SoftResult;
 use gold_core::checklist::PreSessionChecklist;
 use gold_core::course::LessonId;
 use gold_core::gate::{Grade, LessonProgress};
@@ -35,6 +36,7 @@ pub mod kind {
     pub const RUN: &str = "run";
     pub const DRILL: &str = "drill";
     pub const READINESS: &str = "readiness";
+    pub const REVIEW: &str = "review";
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -57,32 +59,50 @@ pub struct Attempt {
     pub at: Millis,
 }
 
-#[allow(dead_code)] // Phase 7
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TradeResult {
     pub exit: Price,
     pub pnl: Usd,
     pub balance_after: Usd,
+    pub closed_at: Millis,
 }
 
-#[allow(dead_code)] // Phase 7
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TradeRecord {
     /// "taken" | "skipped"
     pub status: String,
     pub entry: TradeEntry,
+    /// The Learner's local day of the entry (days since 1970-01-01).
     pub checklist_day: i64,
     pub run: u32,
+    #[serde(default)]
+    pub scenario: Option<String>,
     pub hard_results: Vec<HardRuleResult>,
     pub adherence: Adherence,
+    #[serde(default)]
+    pub soft_results: Vec<SoftResult>,
     pub verdict_summary: Option<String>,
+    #[serde(default)]
+    pub first_summary: Option<String>,
     pub dispute_text: Option<String>,
+    #[serde(default)]
+    pub screenshot: Option<String>,
     pub result: Option<TradeResult>,
 }
 
-#[allow(dead_code)] // Phase 7
+impl TradeRecord {
+    pub fn taken(&self) -> bool {
+        self.status == "taken"
+    }
+    /// Money at risk when placed: 1R for this trade.
+    pub fn risk(&self) -> Option<Usd> {
+        let e = &self.entry;
+        e.stop.map(|s| (e.entry - s).abs().value(e.lots, e.contract_oz)).filter(|u| u.0 > 0)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RunRecord {
@@ -100,7 +120,6 @@ pub struct DrillRecord {
     pub last_at: Millis,
 }
 
-#[allow(dead_code)] // Phase 7
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReadinessRecord {
@@ -125,7 +144,15 @@ pub async fn load_all<T: DeserializeOwned>(kind: &str) -> Result<Vec<(String, T)
     Ok(platform::list::<Stored<T>>(kind).await?.into_iter().map(|(id, s)| (id, s.body)).collect())
 }
 
-/// Repositories for the later phases, kept here so every document shape lives in one file.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReviewNote {
+    /// Monday of the reviewed week (days since 1970-01-01).
+    pub week: i64,
+    pub note: String,
+}
+
+/// Repositories, kept here so every document shape lives in one file.
 #[allow(dead_code)]
 pub mod repo {
     use super::*;
@@ -160,6 +187,15 @@ pub mod repo {
     }
     pub async fn save_attempt(a: &Attempt) -> Result<(), PlatformError> {
         save_doc(&new_id("attempt"), kind::ATTEMPT, a).await
+    }
+    pub async fn checklists() -> Result<Vec<PreSessionChecklist>, PlatformError> {
+        Ok(load_all::<PreSessionChecklist>(kind::CHECKLIST).await?.into_iter().map(|(_, c)| c).collect())
+    }
+    pub async fn reviews() -> Result<Vec<ReviewNote>, PlatformError> {
+        Ok(load_all::<ReviewNote>(kind::REVIEW).await?.into_iter().map(|(_, r)| r).collect())
+    }
+    pub async fn save_review(r: &ReviewNote) -> Result<(), PlatformError> {
+        save_doc(&format!("review-{}", gold_core::time::date_string(r.week)), kind::REVIEW, r).await
     }
     pub async fn readiness() -> Result<ReadinessRecord, PlatformError> {
         Ok(load_doc("readiness").await?.unwrap_or_default())
@@ -333,6 +369,18 @@ impl Store {
         }
         spawn_local(async move {
             if let Err(e) = repo::save_attempt(&a).await {
+                self.report(e);
+            }
+        });
+    }
+
+    /// Runs one save in the background when saving is on; reports failures in the chip and a toast.
+    pub fn persist(self, fut: impl std::future::Future<Output = Result<(), PlatformError>> + 'static) {
+        if !self.enabled() {
+            return;
+        }
+        spawn_local(async move {
+            if let Err(e) = fut.await {
                 self.report(e);
             }
         });
