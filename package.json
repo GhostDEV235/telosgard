@@ -1,0 +1,20 @@
+{
+  "name": "trade_school",
+  "version": "1.0.0",
+  "description": "An interactive Gold (XAUUSD) trading course for a complete beginner. It's built in Rust (Leptos → WebAssembly) with Tailwind and published as a private claude.ai Artifact.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.5",
+    "tailwindcss": "^4.3.5"
+  }
+}

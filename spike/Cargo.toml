@@ -1,0 +1,16 @@
+[package]
+name = "spike"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+leptos = { version = "0.8.23", features = ["csr"] }
+wasm-bindgen = "0.2.130"
+wasm-bindgen-futures = "0.4.80"
+console_error_panic_hook = "0.1.7"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
