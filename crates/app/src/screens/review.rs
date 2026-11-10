@@ -91,7 +91,7 @@ pub fn Review() -> impl IntoView {
             <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
                 <h2 class="text-headline">"Your note"</h2>
                 <p class="mt-1 text-callout text-text-muted">"One thing to keep doing, one thing to stop."</p>
-                <textarea rows="4" class="mt-3 w-full rounded-field bg-bg p-3.5 text-callout" prop:value=move || note.get() on:input=move |ev| note.set(event_target_value(&ev))></textarea>
+                <textarea rows="4" aria-label="Your weekly review note" class="mt-3 w-full rounded-field bg-bg p-3.5 text-callout" prop:value=move || note.get() on:input=move |ev| note.set(event_target_value(&ev))></textarea>
                 <button type="button" class=format!("{PILL} mt-3") on:click=move |_| {
                     journal.save_review(week(), note.get_untracked());
                     toasts.show("Review note saved");

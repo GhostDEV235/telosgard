@@ -93,10 +93,17 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 **Exit check:** an end-to-end scripted run: create plan v1 → log a trade with no checklist (not adherent, no dispute) → save a checklist → log an adherent trade matching a Scenario → log a trade at 17:30 New York (No-Trade Window fail) → log trades until the Daily Loss Limit is hit, then one more (fail) → dispute a Soft Rule verdict → the dashboard and Weekly Review numbers match a hand calculation.
 
-## Phase 8: Ship Wave 1
-- [ ] Accessibility pass (contrast measured, reduced motion, screen-reader labels on charts and the session clock)
-- [ ] Publish the Artifact with capabilities (ARCHITECTURE §5); verify with one `ArtifactData list`
-- [ ] Hand over the link and a 2-minute "how to use this" note
+## Phase 8: Ship Wave 1 ✅
+- [x] Accessibility pass:
+  - contrast measured for every text/background token pair in both themes; one failure fixed (light `up` on `bg` was 4.22 → `#2A6E27`, 4.95)
+  - axe-core 4.10.2 (WCAG 2 A/AA) on 13 screens × both themes, plus populated plan, journal, trade, readiness and an open Explain-Back sheet: one violation (unlabelled review note), fixed
+  - keyboard: visible focus everywhere; sheets now move focus inside when they open and close on Escape
+  - reduced motion respected (CSS + the new loading screen); charts and the session clock have accessible names; colour is never the only signal (▲/▼, ✓/✗, words)
+- [x] Loading screen while the WebAssembly starts (the first visit can take several seconds)
+- [x] Published with capabilities `db`, `user`, `sample{images}`, `assets` (version 8); verified with `ArtifactData list`: the Learner's private folder holds their saved profile (theme, disclaimer acceptance)
+- [x] Handover: the link and a 2-minute "how to use this" note (README)
+
+**Still open (Learner checks):** Phase 4 reload check · Phase 5 grader lab · Phase 7 live verdict and dispute.
 
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:

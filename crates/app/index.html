@@ -19,5 +19,23 @@
     })();
   </script>
 </head>
-<body></body>
+<body>
+  <div id="gs-boot" role="status" aria-live="polite" style="position:fixed;inset:0;display:grid;place-items:center;background:var(--color-bg);color:var(--color-text-muted);font:15px/1.4 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;z-index:60">
+    <div style="display:grid;justify-items:center;gap:12px">
+      <span class="gs-boot-dot" aria-hidden="true" style="width:12px;height:12px;border-radius:999px;background:var(--color-text-muted)"></span>
+      <span>Loading Gold School…</span>
+    </div>
+  </div>
+  <style>
+    @keyframes gs-pulse { 0%,100% { opacity:.35; transform:scale(.8) } 50% { opacity:1; transform:scale(1) } }
+    .gs-boot-dot { animation: gs-pulse 1.2s ease-in-out infinite }
+    @media (prefers-reduced-motion: reduce) { .gs-boot-dot { animation: none } }
+  </style>
+  <script>
+    addEventListener("TrunkApplicationStarted", function () {
+      var b = document.getElementById("gs-boot");
+      if (b) b.remove();
+    });
+  </script>
+</body>
 </html>

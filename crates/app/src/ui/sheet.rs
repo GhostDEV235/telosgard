@@ -17,6 +17,22 @@ pub fn Sheet(
             open.set(false);
         }
     });
+    // Move keyboard focus into the sheet when it opens (first field, else the first button).
+    Effect::new(move |_| {
+        if open.get() {
+            request_animation_frame(|| {
+                let doc = document();
+                let target = doc
+                    .query_selector("[role=dialog] textarea, [role=dialog] input")
+                    .ok()
+                    .flatten()
+                    .or_else(|| doc.query_selector("[role=dialog] button").ok().flatten());
+                if let Some(el) = target.and_then(|e| wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(e).ok()) {
+                    let _ = el.focus();
+                }
+            });
+        }
+    });
     view! {
         <Show when=move || open.get()>
             <div class="fixed inset-0 z-40 flex items-end justify-center md:items-center md:p-6">

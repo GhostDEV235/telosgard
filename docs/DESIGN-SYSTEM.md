@@ -37,7 +37,7 @@
 | `text-muted` | `#4E5F4B` | Secondary text | 6.25 on surface / 5.43 on bg ✅ |
 | `line` | `#C7CBB8` | Borders, dividers, chip backgrounds | — |
 | `locked` | `#3D4337` @ 12% alpha | Locked card tint | — |
-| `up` | `#2F7A2C` | Bullish / profit | 4.86 on surface ✅ (use on surface, not bg) |
+| `up` | `#2A6E27` | Bullish / profit | 5.70 on surface / 4.95 on bg ✅ (darkened from #2F7A2C in Phase 8: that was 4.22 on bg) |
 | `down` | `#9E4232` | Bearish / loss | 5.84 on surface ✅ |
 | `gold` | `#7A5C14` (text) / `#D4B062` (fills, icons) | Achievements | 5.69 on surface ✅ |
 
