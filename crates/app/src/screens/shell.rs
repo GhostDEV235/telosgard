@@ -13,14 +13,7 @@ const DISCLAIMER_KEY: &str = "gs-disclaimer";
 #[component]
 pub fn Shell() -> impl IntoView {
     let route = expect_context::<RwSignal<Route>>();
-    let accepted = window()
-        .local_storage()
-        .ok()
-        .flatten()
-        .and_then(|s| s.get_item(DISCLAIMER_KEY).ok().flatten())
-        .is_some();
-    let disclaimer = DisclaimerOpen(RwSignal::new(!accepted));
-    provide_context(disclaimer);
+    let disclaimer = expect_context::<DisclaimerOpen>();
     let appearance = RwSignal::new(false);
     provide_context(AppearanceOpen(appearance));
 
@@ -42,6 +35,11 @@ pub fn Shell() -> impl IntoView {
         <AppearanceSheet open=appearance />
         <Disclaimer open=disclaimer.0 />
     }
+}
+
+/// Fast first-paint hint; the profile document is the source of truth once loaded.
+pub fn disclaimer_accepted_locally() -> bool {
+    window().local_storage().ok().flatten().and_then(|s| s.get_item(DISCLAIMER_KEY).ok().flatten()).is_some()
 }
 
 #[derive(Clone, Copy)]
@@ -167,11 +165,14 @@ fn AppearanceSheet(open: RwSignal<bool>) -> impl IntoView {
 
 #[component]
 fn Disclaimer(open: RwSignal<bool>) -> impl IntoView {
+    let store = expect_context::<crate::store::Store>();
     let accept = move |_| {
+        let at = crate::state::now();
         if let Some(s) = window().local_storage().ok().flatten() {
-            let _ = s.set_item(DISCLAIMER_KEY, &crate::state::now().to_string());
+            let _ = s.set_item(DISCLAIMER_KEY, &at.to_string());
         }
         open.set(false);
+        store.update_profile(move |p| p.disclaimer_accepted_at = Some(at));
     };
     view! {
         <Sheet open=open title="Before you start" dismissible=false>

@@ -14,7 +14,8 @@
 
 ## Phase 1: Proof of concept ✅ *(go/no-go on ADR 0001)*
 - [x] **WASM loads** in the claude.ai viewer (Learner confirmed the counter works)
-- [ ] **Bridge → sample** and **Bridge → db/user** (tests 2a, 2b, 3): *waiting on the Learner's results; needed before Phase 4*
+- [x] **Bridge → db/user:** confirmed by the published app loading the Learner's profile (Phase 4)
+- [ ] **Bridge → sample** (test 2b): first real use is Explain-Back grading in Phase 5
 - [x] **YouTube:** iframes and thumbnails are blocked by the platform → link-out VideoCards
 - [x] **Bundle size:** spike 37 KB gzipped; full app 175 KB gzipped
 
@@ -46,9 +47,13 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 **Exit check:** `cargo test --workspace` green; every new Hard Rule has a pass case, a fail case and a boundary case; Home shows 8 stages + Live + Advanced with the new titles.
 
 ## Phase 4: Platform bridge & persistence
-- [ ] `bridge.js` + `platform::{sample_json, user_id, db_*}` with typed errors
-- [ ] `store::` repositories: profile, progress, attempts, plans, journal, checklists, drills, readiness runs
-- [ ] Degraded mode: banners when `use()` resolves `null`; content is still fully readable
+- [x] `bridge.js` (JSON-string results, one retry on `unavailable`, 12 s timeout for storage, 90 s for Claude) + `platform::{init, get, set, delete, list, sample_json}` with typed `PlatformError`
+- [x] `store::` repositories: profile, progress, attempts, plans, trades, checklists, runs, drills, readiness; every document `kind`-tagged
+- [x] Race-safe saves: a lesson save merges with what's stored (`LessonProgress::merge`, tested in `gold-core`); progress made before the load finishes is saved once it lands
+- [x] Wired now: lesson progress, theme + disclaimer in `profile`, drill totals. Attempts, plans, trades, checklists and runs are wired in Phases 5 and 7
+- [x] Degraded mode: a status chip on Home (Connecting / Saved / Not saving in this view / sign in / couldn't save); with no platform the app renders all content (checked locally, no console errors)
+- [x] Published with capabilities `db`, `user`, `sample{images}`, `assets`; the live page reports "Progress saved to your account"
+- [ ] **Learner check:** pass the Lesson 1 quiz (or answer a drill), reload, and confirm it's still there
 
 **Exit check:** in the published preview, progress survives a reload, and with the platform absent the app still renders all content.
 
@@ -95,4 +100,4 @@ One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave:
 - Wave 7: ATR stop placement and sizing speed drill (target: size from any stop in under 30 seconds)
 
 ## Open items
-1. Tests 2a, 2b and 3 on the PoC page (Claude round trip, db save/reload): needed before Phase 4.
+1. The Learner's reload check for Phase 4.

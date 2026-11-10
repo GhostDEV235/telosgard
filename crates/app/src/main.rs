@@ -1,9 +1,11 @@
 //! Gold School front-end. See docs/ARCHITECTURE.md.
 
 mod catalog;
+mod platform;
 mod router;
 mod screens;
 mod state;
+mod store;
 mod theme;
 mod ui;
 
@@ -23,16 +25,31 @@ fn App() -> impl IntoView {
         window().scroll_to_with_x_and_y(0.0, 0.0);
     });
 
-    provide_context(state::Progress::new());
-    provide_context(state::Toasts::new());
+    let progress = state::Progress::new();
+    let toasts = state::Toasts::new();
+    let store = store::Store::new(toasts);
+    let disclaimer = state::DisclaimerOpen(RwSignal::new(!screens::shell::disclaimer_accepted_locally()));
+    provide_context(progress);
+    provide_context(toasts);
+    provide_context(store);
+    provide_context(disclaimer);
 
     let theme = RwSignal::new(theme::load());
     Effect::new(move |_| {
         let t = theme.get();
         theme::apply(t);
         theme::save(t);
+        let name = match t {
+            theme::ThemeChoice::System => "system",
+            theme::ThemeChoice::Dark => "dark",
+            theme::ThemeChoice::Light => "light",
+        };
+        store.update_profile(move |p| p.theme = name.to_string());
     });
     provide_context(theme);
+
+    // Content renders immediately; saved progress arrives when the platform answers.
+    store.start(progress, theme, disclaimer);
 
     view! { <screens::shell::Shell /> }
 }

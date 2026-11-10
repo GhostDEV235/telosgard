@@ -114,7 +114,7 @@ The platform's rule is that a path with an even number of segments is a document
 | `plan-v<N>` | plan | `version`, `createdAt`, `hardRules{…}`, `softRules{setup, extra[]}` |
 | `checklist-<YYYY-MM-DD>` | checklist | local `date`, `events[{name, tier, atUtc}]`, `asianHigh`, `asianLow`, `mood`, `bias`, `zones[]`, `scenarios[]`, `risk{perTradePct, dailyLimitR, plannedSizes[]}` |
 | `trade-<ulid>` | journal | `status` (`taken`/`skipped`), trade fields, `checklistDate`, `planVersion`, `run`, `hardResults[]`, `verdict{adherent, reasons[], at}`, `dispute?{text, verdict, at}`, `result?{exit, pnl, balanceAfter}` |
-| `drill-<id>` | drill | `bestScore`, `attempts`, `lastAt` |
+| `drill-<id>` | drill | `answered`, `correct`, `lastAt` (all-time totals) |
 | `run-<N>` | run | `number`, `startedAt`, `startingBalance`, `endedAt?`, `endReason?` (`breach`). Max total loss is measured against the run's starting balance |
 | `readiness` | readiness | `reachedAt?` (written once; unlocks the Live and Advanced Tracks permanently) |
 
@@ -126,7 +126,7 @@ The platform's rule is that a path with an even number of segments is a document
 ```js
 {
   sample: { images: true },      // grading; images let Claude see an optional trade screenshot
-  db:     { rules: [ { path: "data/users/{self}", write: "interact" } ] },
+  db:     {},                    // data/users/<id>/ is private to its owner by default; no rules needed
   user:   {},                    // id() for the private path
   assets: {}                     // trade screenshots
 }

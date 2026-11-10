@@ -45,6 +45,19 @@ impl LessonProgress {
     pub fn is_passed(&self) -> bool {
         self.passed_at.is_some()
     }
+    /// Combines a stored copy with this (newer, local) one, so a save that raced the initial load
+    /// can never lose progress: best quiz score, earliest pass, and the newest grade.
+    pub fn merge(&self, stored: &LessonProgress) -> LessonProgress {
+        let earliest = match (self.passed_at, stored.passed_at) {
+            (Some(a), Some(b)) => Some(a.min(b)),
+            (a, b) => a.or(b),
+        };
+        LessonProgress {
+            quiz_best: self.quiz_best.max(stored.quiz_best),
+            grade: self.grade.or(stored.grade),
+            passed_at: earliest,
+        }
+    }
     fn mark_if_passed(&mut self, at: Millis) {
         if self.passed_at.is_none() && self.quiz_met() && self.explain_back_met() {
             self.passed_at = Some(at);
@@ -120,5 +133,22 @@ mod tests {
         p.record_quiz(10, 4);
         assert!(p.is_passed());
         assert_eq!(p.passed_at, Some(2));
+    }
+
+    #[test]
+    fn merging_never_loses_progress() {
+        let stored = LessonProgress { quiz_best: Some(90), grade: Some(Grade::GotIt), passed_at: Some(5) };
+        // A fresh session that started before the load finished and scored 40.
+        let local = LessonProgress { quiz_best: Some(40), grade: None, passed_at: None };
+        let m = local.merge(&stored);
+        assert_eq!(m, LessonProgress { quiz_best: Some(90), grade: Some(Grade::GotIt), passed_at: Some(5) });
+    }
+
+    #[test]
+    fn merging_keeps_the_newest_grade_and_earliest_pass() {
+        let stored = LessonProgress { quiz_best: Some(80), grade: Some(Grade::Almost), passed_at: Some(9) };
+        let local = LessonProgress { quiz_best: Some(100), grade: Some(Grade::GotIt), passed_at: Some(7) };
+        assert_eq!(local.merge(&stored), LessonProgress { quiz_best: Some(100), grade: Some(Grade::GotIt), passed_at: Some(7) });
+        assert_eq!(LessonProgress::default().merge(&LessonProgress::default()), LessonProgress::default());
     }
 }

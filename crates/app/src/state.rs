@@ -23,6 +23,12 @@ impl Progress {
     pub fn get(&self, id: LessonId) -> LessonProgress {
         self.lessons.with(|m| m.get(&id).cloned().unwrap_or_default())
     }
+    pub fn get_untracked(&self, id: LessonId) -> LessonProgress {
+        self.lessons.with_untracked(|m| m.get(&id).cloned().unwrap_or_default())
+    }
+    pub fn entries_untracked(&self) -> Vec<(LessonId, LessonProgress)> {
+        self.lessons.with_untracked(|m| m.iter().map(|(k, v)| (*k, v.clone())).collect())
+    }
     pub fn passed(&self, id: LessonId) -> bool {
         self.lessons.with(|m| m.get(&id).is_some_and(|p| p.is_passed()))
     }

@@ -60,8 +60,10 @@ fn not_written() -> impl IntoView {
 fn reader(id: LessonId, d: &'static LessonDraft) -> impl IntoView {
     let progress = expect_context::<Progress>();
     let toasts = expect_context::<Toasts>();
+    let store = expect_context::<crate::store::Store>();
     let on_quiz = move |score: u8| {
         progress.update(id, |p| p.record_quiz(score, now()));
+        store.save_lesson(progress, id);
         if progress.passed(id) {
             toasts.show("Lesson passed ✓");
         }

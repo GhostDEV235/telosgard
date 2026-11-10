@@ -56,6 +56,7 @@ pub fn DirectionDrill() -> impl IntoView {
     let candles = Memo::new(move |_| round(seed.get()));
     let answer = RwSignal::new(None::<CandleDirection>);
     let score = RwSignal::new((0u32, 0u32));
+    let store = expect_context::<crate::store::Store>();
     let last = move || candles.with(|cs| *cs.last().expect("non-empty"));
 
     let pick = move |dir: CandleDirection| {
@@ -64,6 +65,7 @@ pub fn DirectionDrill() -> impl IntoView {
         }
         answer.set(Some(dir));
         let right = check_direction(&last(), dir);
+        store.record_drill("direction", right);
         score.update(|(r, t)| {
             *t += 1;
             if right {
@@ -108,6 +110,13 @@ pub fn DirectionDrill() -> impl IntoView {
             <p class="mt-2 text-callout text-text-muted">
                 "Look at the highlighted candle. Did buyers or sellers win it? Hollow candles closed higher; filled candles closed lower."
             </p>
+            {move || {
+                store
+                    .drills
+                    .with(|m| m.get("direction").cloned())
+                    .filter(|d| d.answered > 0)
+                    .map(|d| view! { <p class="tabular mt-1 text-footnote text-text-muted">{format!("All time: {} of {} right", d.correct, d.answered)}</p> })
+            }}
             <section class="mt-5 rounded-card bg-surface p-4 shadow-card md:p-5">
                 <CandleChart
                     candles=Signal::derive(move || candles.get())

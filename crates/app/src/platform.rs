@@ -1,0 +1,144 @@
+//! Rust side of `bridge.js`: typed async calls over JSON strings (ARCHITECTURE §4).
+
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen(module = "/bridge.js")]
+extern "C" {
+    #[wasm_bindgen(js_name = init)]
+    async fn js_init() -> JsValue;
+    #[wasm_bindgen(js_name = dbGet)]
+    async fn js_get(doc: &str) -> JsValue;
+    #[wasm_bindgen(js_name = dbSet)]
+    async fn js_set(doc: &str, json: &str) -> JsValue;
+    #[wasm_bindgen(js_name = dbDelete)]
+    async fn js_delete(doc: &str) -> JsValue;
+    #[wasm_bindgen(js_name = dbList)]
+    async fn js_list(kind: &str) -> JsValue;
+    #[wasm_bindgen(js_name = sampleJson)]
+    async fn js_sample(prompt: &str, tier: &str) -> JsValue;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PlatformError {
+    /// The capability isn't granted or isn't available in this view (preview, signed out, declined).
+    NotGranted,
+    /// Transient: network or platform. Already retried once in the bridge.
+    Unavailable,
+    /// Access withdrawn while the page was open. Terminal for this page load.
+    Revoked,
+    /// A storage cap is full.
+    Quota(String),
+    /// Too many calls; slow down.
+    RateLimited,
+    /// A bad request or a stored document that doesn't match the expected shape. A bug, not the Learner's fault.
+    Invalid(String),
+    /// Claude declined or couldn't answer.
+    Claude(String),
+}
+
+impl PlatformError {
+    fn from_code(code: &str, message: String) -> PlatformError {
+        match code {
+            "not_granted" | "capability_disabled" | "capability_removed" | "not_declared" | "sampling_disabled" | "session_expired" => PlatformError::NotGranted,
+            "revoked" => PlatformError::Revoked,
+            "quota_exceeded" => PlatformError::Quota(message),
+            "resource_exhausted" | "rate_limited" => PlatformError::RateLimited,
+            "invalid_argument" | "transform_error" | "invalid_request" | "prompt_too_large" => PlatformError::Invalid(message),
+            "refused" => PlatformError::Claude(message),
+            _ => PlatformError::Unavailable,
+        }
+    }
+
+    /// Short, plain-language text for a toast or banner.
+    pub fn describe(&self) -> String {
+        match self {
+            PlatformError::NotGranted => "Saving isn't available in this view.".into(),
+            PlatformError::Unavailable => "Couldn't reach claude.ai. Check your connection and try again.".into(),
+            PlatformError::Revoked => "Access to this page changed. Reload to continue.".into(),
+            PlatformError::Quota(_) => "Storage is full. Nothing new can be saved.".into(),
+            PlatformError::RateLimited => "Too many requests. Wait a moment and try again.".into(),
+            PlatformError::Invalid(m) => format!("Something went wrong saving ({m})."),
+            PlatformError::Claude(m) => format!("Claude couldn't answer ({m})."),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct Envelope {
+    ok: bool,
+    value: Option<Value>,
+    code: Option<String>,
+    message: Option<String>,
+}
+
+fn unwrap(v: JsValue) -> Result<Value, PlatformError> {
+    let text = v.as_string().ok_or_else(|| PlatformError::Invalid("bridge returned a non-string".into()))?;
+    let env: Envelope = serde_json::from_str(&text).map_err(|e| PlatformError::Invalid(e.to_string()))?;
+    if env.ok {
+        Ok(env.value.unwrap_or(Value::Null))
+    } else {
+        Err(PlatformError::from_code(env.code.as_deref().unwrap_or(""), env.message.unwrap_or_default()))
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Caps {
+    /// Storage usable: db granted AND a signed-in viewer to own the private folder.
+    pub db: bool,
+    pub sample: bool,
+    /// The `user` capability answered (so a missing id means signed out, not "no platform").
+    pub user: bool,
+    pub signed_in: bool,
+}
+
+pub async fn init() -> Result<Caps, PlatformError> {
+    let v = unwrap(js_init().await)?;
+    serde_json::from_value(v).map_err(|e| PlatformError::Invalid(e.to_string()))
+}
+
+pub async fn get<T: DeserializeOwned>(doc: &str) -> Result<Option<T>, PlatformError> {
+    match unwrap(js_get(doc).await)? {
+        Value::Null => Ok(None),
+        v => serde_json::from_value(v).map(Some).map_err(|e| PlatformError::Invalid(format!("{doc}: {e}"))),
+    }
+}
+
+pub async fn set<T: Serialize>(doc: &str, body: &T) -> Result<(), PlatformError> {
+    let json = serde_json::to_string(body).map_err(|e| PlatformError::Invalid(e.to_string()))?;
+    unwrap(js_set(doc, &json).await).map(|_| ())
+}
+
+#[allow(dead_code)] // used by the journal in Phase 7
+pub async fn delete(doc: &str) -> Result<(), PlatformError> {
+    unwrap(js_delete(doc).await).map(|_| ())
+}
+
+#[derive(Deserialize)]
+struct Listed {
+    id: String,
+    data: Value,
+}
+
+/// Every document of one kind. Documents that don't match `T` are skipped (and logged), never fatal.
+pub async fn list<T: DeserializeOwned>(kind: &str) -> Result<Vec<(String, T)>, PlatformError> {
+    let rows: Vec<Listed> = serde_json::from_value(unwrap(js_list(kind).await)?).map_err(|e| PlatformError::Invalid(e.to_string()))?;
+    Ok(rows
+        .into_iter()
+        .filter_map(|r| match serde_json::from_value(r.data) {
+            Ok(t) => Some((r.id, t)),
+            Err(e) => {
+                leptos::logging::warn!("skipping {}: {e}", r.id);
+                None
+            }
+        })
+        .collect())
+}
+
+#[allow(dead_code)] // used by grading in Phase 5
+pub async fn sample_json(prompt: &str, tier: &str) -> Result<Value, PlatformError> {
+    unwrap(js_sample(prompt, tier).await)
+}

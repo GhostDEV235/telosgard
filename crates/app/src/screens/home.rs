@@ -42,15 +42,35 @@ fn hero_art() -> impl IntoView {
     }
 }
 
+/// Where the Learner's progress is going. Content never depends on this; only saving does.
+#[component]
+fn SaveStatus() -> impl IntoView {
+    use crate::store::{LocalReason, SaveState, Store};
+    let store = expect_context::<Store>();
+    move || {
+        let (text, tone) = match store.state.get() {
+            SaveState::Connecting => ("Connecting…", "text-text-muted"),
+            SaveState::Saving => ("Saving…", "text-text-muted"),
+            SaveState::Saved => ("✓ Progress saved to your account", "text-text-muted"),
+            SaveState::Local(LocalReason::SignedOut) => ("Not saving: sign in to claude.ai to keep your progress", "text-text"),
+            SaveState::Local(LocalReason::NoStorage) => ("Not saving in this view · lessons still work", "text-text"),
+            SaveState::Failed => ("⚠ Couldn't save just now · will retry on your next change", "text-down"),
+        };
+        view! {
+            <p role="status" class=format!("mt-2 inline-block rounded-full border border-line/50 px-3 py-1 text-footnote {tone}")>
+                {text}
+            </p>
+        }
+    }
+}
+
 #[component]
 pub fn Home() -> impl IntoView {
     let progress = expect_context::<Progress>();
     view! {
         <main class="gutter mx-auto max-w-[1040px] pb-8">
             <LargeTitle title="Today" eyebrow=today_eyebrow() />
-            <p class="mt-2 inline-block rounded-full border border-line/50 px-3 py-1 text-footnote text-text-muted">
-                "Preview build · progress resets when you reload"
-            </p>
+            <SaveStatus />
 
             {move || {
                 progress
