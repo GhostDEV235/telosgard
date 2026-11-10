@@ -1,6 +1,6 @@
 //! One question at a time; questions and options reshuffle on every attempt (FR-2.4).
 
-use crate::catalog::QuizQ;
+use gold_content::QuizQ;
 use crate::state::now;
 use crate::ui::controls::{PILL, PILL_GHOST};
 use gold_core::drills::Rng;

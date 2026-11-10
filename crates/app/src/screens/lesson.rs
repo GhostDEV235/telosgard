@@ -1,8 +1,8 @@
 //! Lesson reader: text → videos → quiz → Explain-Back → gate (CURRICULUM authoring order).
 
-use crate::catalog::{self, LessonDraft};
+use crate::catalog;
 use crate::grading;
-use crate::rubrics;
+use gold_content::Lesson;
 use crate::state::{Progress, Toasts, now};
 use crate::store::{Attempt, SaveState, Store, repo};
 use gold_core::gate::Grade;
@@ -27,8 +27,8 @@ pub fn LessonScreen(id: LessonId) -> impl IntoView {
             {move || {
                 if !progress.unlocked(id) {
                     locked(id).into_any()
-                } else if let Some(d) = catalog::draft(id) {
-                    reader(id, d).into_any()
+                } else if let Some(l) = content_for(id) {
+                    reader(id, l).into_any()
                 } else {
                     not_written().into_any()
                 }
@@ -52,6 +52,13 @@ fn locked(id: LessonId) -> impl IntoView {
     }
 }
 
+pub fn content_for(id: LessonId) -> Option<&'static Lesson> {
+    match id {
+        LessonId::Numbered(n) => gold_content::lesson(n),
+        _ => None,
+    }
+}
+
 fn not_written() -> impl IntoView {
     view! {
         <section class="mt-6 rounded-card bg-surface p-5 shadow-card">
@@ -63,33 +70,32 @@ fn not_written() -> impl IntoView {
     }
 }
 
-fn reader(id: LessonId, d: &'static LessonDraft) -> impl IntoView {
+fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
     let progress = expect_context::<Progress>();
     let toasts = expect_context::<Toasts>();
     let store = expect_context::<crate::store::Store>();
     let on_quiz = move |score: u8| {
+        let was_passed = progress.passed(id);
         progress.update(id, |p| p.record_quiz(score, now()));
         store.save_lesson(progress, id);
-        if progress.passed(id) {
-            toasts.show("Lesson passed ✓");
+        if !was_passed && progress.passed(id) {
+            toasts.show("🏅 Lesson passed");
         }
     };
     view! {
-        <p class="mt-3 inline-block rounded-full border border-line/50 px-3 py-1 text-footnote text-text-muted">
-            "Draft for design review · final text arrives in Phase 6"
-        </p>
-        <p class="mt-4 text-callout text-text-muted">"By the end, you'll be able to " {d.objective}</p>
+        <p class="mt-3 text-footnote text-text-muted">{format!("About {} minutes of reading", l.read_minutes)}</p>
+        <p class="mt-3 text-callout text-text-muted">"By the end, you'll be able to " {l.objective}</p>
 
         <article class="mt-8 grid gap-5">
-            <p class="text-title2">{d.hook}</p>
-            {d.body.iter().map(|p| view! { <p class="text-body">{*p}</p> }).collect_view()}
-            <Callout kind=CalloutKind::Analogy text=d.analogy />
-            <Callout kind=CalloutKind::Example text=d.example />
-            <Callout kind=CalloutKind::Mistake text=d.mistake />
+            <p class="text-title2">{l.hook}</p>
+            <div class="lesson-prose" inner_html=l.body_html></div>
+            <Callout kind=CalloutKind::Analogy text=l.analogy />
+            <Callout kind=CalloutKind::Example text=l.example />
+            <Callout kind=CalloutKind::Mistake text=l.mistake />
             <section class="rounded-card bg-surface p-5 shadow-card">
                 <h2 class="text-headline">"Key takeaways"</h2>
                 <ul class="mt-3 grid gap-2">
-                    {d.takeaways
+                    {l.takeaways
                         .iter()
                         .map(|t| {
                             view! {
@@ -104,22 +110,45 @@ fn reader(id: LessonId, d: &'static LessonDraft) -> impl IntoView {
             </section>
         </article>
 
-        <h2 class="mt-10 text-title2">"Watch"</h2>
-        <div class="mt-3 grid gap-3">{d.videos.iter().map(|v| view! { <VideoCard video=v /> }).collect_view()}</div>
+        {(!l.videos.is_empty())
+            .then(|| {
+                view! {
+                    <h2 class="mt-10 text-title2">"Watch"</h2>
+                    <div class="mt-3 grid gap-3">{l.videos.iter().map(|v| view! { <VideoCard video=v /> }).collect_view()}</div>
+                }
+            })}
 
         <h2 class="mt-10 text-title2">"Check your understanding"</h2>
         <div class="mt-3">
-            <QuizCard questions=d.quiz on_done=on_quiz />
+            <QuizCard questions=l.quiz on_done=on_quiz />
         </div>
 
         <h2 class="mt-10 text-title2">"Explain it back"</h2>
         <div class="mt-3">
-            <ExplainBack id=id prompt=d.explain_prompt />
+            <ExplainBack id=id prompt=l.explain.prompt />
         </div>
 
         <div class="mt-10">
             <GateStatus id=id />
         </div>
+
+        <details class="mt-10 text-footnote text-text-muted">
+            <summary class="press min-h-11 cursor-pointer py-2">"Sources for this lesson"</summary>
+            <ul class="mt-2 grid gap-2">
+                {l.sources
+                    .iter()
+                    .map(|s| {
+                        view! {
+                            <li>
+                                <a href=s.url target="_blank" rel="noopener noreferrer" class="underline underline-offset-2">{s.name}</a>
+                                {format!(" · checked {}", s.checked)}
+                                <span class="block">{s.claim}</span>
+                            </li>
+                        }
+                    })
+                    .collect_view()}
+            </ul>
+        </details>
     }
 }
 
@@ -151,7 +180,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
     let progress = expect_context::<Progress>();
     let store = expect_context::<Store>();
     let toasts = expect_context::<Toasts>();
-    let rubric = rubrics::rubric(id);
+    let lesson = content_for(id);
     let open = RwSignal::new(false);
     let text = RwSignal::new(String::new());
     let phase = RwSignal::new(Phase::Writing);
@@ -173,14 +202,14 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
     });
 
     let submit = move |_| {
-        let Some(rubric) = rubric else {
+        let Some(lesson) = lesson else {
             phase.set(Phase::Failed("This lesson doesn't have a grading rubric yet.".into()));
             return;
         };
         let answer = text.get_untracked();
         phase.set(Phase::Grading);
         spawn_local(async move {
-            match grading::grade(rubric, &answer).await {
+            match grading::grade(lesson, &answer).await {
                 Ok(res) => {
                     let was_passed = progress.passed(id);
                     let at = now();

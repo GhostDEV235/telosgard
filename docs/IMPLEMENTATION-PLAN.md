@@ -66,14 +66,15 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 **Exit check:** for all 11 Stage 1 lessons, correct → Got it, gap → Almost, misconception → Almost or Not yet.
 
-## Phase 6: Content (Stage 1, L1–11)
-- [ ] `crates/content` with `build.rs` validation + pre-rendering (ARCHITECTURE §7)
-- [ ] Write lessons 1–11 per CURRICULUM's authoring rules (prices near the current level; times in UTC/NY rendered locally)
-- [ ] **Fact check:** every factual claim checked against a primary source (CURRICULUM rule 8) with the source and date recorded in the lesson file; the outside plan's links are leads only
-- [ ] Find and **verify** 1–2 videos per lesson (open each, record title, channel and the date checked)
-- [ ] Stage 1 Chart Drills defined (incl. "pick the order type")
+## Phase 6: Content (Stage 1, L1–11) ✅
+- [x] `crates/content` with `build.rs` validation + Markdown pre-rendering (ARCHITECTURE §7); 4 tests; a planted rule break fails the build
+- [x] Lessons 1–11 written per CURRICULUM's authoring rules (prices near 4,100; ~5 min each at 130 wpm)
+- [x] **Fact check:** each lesson lists its sources with the date checked. Confirmed pages: MT5 Help (order types, execution, trade), SIX ISO 4217 list (XAU = 959), LBMA (USD per troy ounce), World Gold Council (demand), FCA (CFD leverage 30:1–2:1; high-risk investments), NFA BASIC, ASIC registers, MT5 platform (demo). Unconfirmable claims were dropped or reworded: troy-ounce grams, CME's 100-oz contract (site unreachable; 100 oz is stated as the course's working assumption), FCA's 20:1 for gold
+- [x] 15 videos, 1–2 per lesson, each confirmed via YouTube oEmbed on 2026-11-10 (title, channel)
+- [x] Stage 1 drill kinds tagged per lesson (`candle_direction`, `bid_ask`, `dollar_distance`, `pip_convert`, `order_type`); the players arrive in Phase 7
+- [x] App reads lessons, rubrics and grader fixtures from `gold-content`; the Phase 3 Lesson 1 draft and `rubrics.rs` are gone
 
-**Exit check:** the build passes validation; each lesson takes 5–8 minutes to read; every fact has a recorded source; every video link was opened and confirmed within the last 7 days.
+**Exit check:** the build passes validation; each lesson takes 5–8 minutes to read; every fact has a recorded source; every video link was opened and confirmed within the last 7 days. *(Met 2026-11-10.)*
 
 ## Phase 7: Tools
 - [ ] Position-size calculator (standalone + embedded in the journal form)

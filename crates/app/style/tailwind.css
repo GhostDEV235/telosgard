@@ -116,3 +116,22 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Lesson body rendered from Markdown (crates/content). */
+@layer components {
+  .lesson-prose { display: grid; gap: 16px; font-size: var(--text-body); line-height: var(--text-body--line-height); }
+  .lesson-prose h3 { font-size: var(--text-title2); line-height: var(--text-title2--line-height); font-weight: 600; margin-top: 12px; }
+  .lesson-prose strong { font-weight: 650; }
+  .lesson-prose ul, .lesson-prose ol { display: grid; gap: 8px; padding-left: 1.4em; }
+  .lesson-prose ul { list-style: disc; }
+  .lesson-prose ol { list-style: decimal; }
+  .lesson-prose li::marker { color: var(--color-text-muted); }
+  .lesson-prose em { font-style: italic; }
+  .lesson-prose blockquote {
+    background: var(--color-surface); border-radius: var(--radius-btn); padding: 14px 16px;
+    font-variant-numeric: tabular-nums; font-weight: 600; box-shadow: var(--shadow-card);
+  }
+  .lesson-prose table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: var(--text-callout); display: block; overflow-x: auto; }
+  .lesson-prose th, .lesson-prose td { text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--color-line) 40%, transparent); white-space: nowrap; }
+  .lesson-prose th { color: var(--color-text-muted); font-weight: 600; font-size: var(--text-footnote); }
+}

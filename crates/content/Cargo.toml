@@ -1,0 +1,13 @@
+[package]
+name = "gold-content"
+description = "Gold School lesson content, validated and compiled into Rust data at build time."
+edition.workspace = true
+version.workspace = true
+
+[lib]
+name = "gold_content"
+
+[build-dependencies]
+serde = { workspace = true }
+toml = "=1.2.1"
+pulldown-cmark = { version = "=0.13.6", default-features = false, features = ["html"] }

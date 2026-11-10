@@ -2,8 +2,9 @@
 //! No automatic retry on an unreadable reply (the platform asks pages not to); the UI offers "Try again".
 
 use crate::platform::{self, PlatformError};
-use crate::rubrics::Rubric;
-use gold_core::grading::{GradeParseError, GradeResult, build_prompt, parse_grade};
+use gold_content::{Expect, Lesson};
+use gold_core::gate::Grade;
+use gold_core::grading::{GradeParseError, GradeResult, GradingInput, build_prompt, parse_grade};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GradeError {
@@ -23,8 +24,36 @@ impl GradeError {
     }
 }
 
-pub async fn grade(rubric: &Rubric, answer: &str) -> Result<GradeResult, GradeError> {
-    let prompt = build_prompt(&rubric.input(answer));
+pub fn input<'a>(l: &'a Lesson, answer: &'a str) -> GradingInput<'a> {
+    GradingInput {
+        title: l.title,
+        objective: l.objective,
+        prompt: l.explain.prompt,
+        analogy: l.analogy,
+        must_include: l.explain.must_include,
+        misconceptions: l.explain.misconceptions,
+        answer,
+    }
+}
+
+pub fn accepts(e: Expect, g: Grade) -> bool {
+    match e {
+        Expect::GotIt => g == Grade::GotIt,
+        Expect::Almost => g == Grade::Almost,
+        Expect::AlmostOrNotYet => g != Grade::GotIt,
+    }
+}
+
+pub fn expect_label(e: Expect) -> &'static str {
+    match e {
+        Expect::GotIt => "Got it",
+        Expect::Almost => "Almost",
+        Expect::AlmostOrNotYet => "Almost / Not yet",
+    }
+}
+
+pub async fn grade(lesson: &Lesson, answer: &str) -> Result<GradeResult, GradeError> {
+    let prompt = build_prompt(&input(lesson, answer));
     let value = platform::sample_json(&prompt, "default").await.map_err(GradeError::Platform)?;
     parse_grade(&value).map_err(GradeError::Unreadable)
 }

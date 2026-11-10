@@ -4,7 +4,7 @@
 
 use crate::grading;
 use crate::platform;
-use crate::rubrics::STAGE_1;
+use gold_content::LESSONS;
 use crate::screens::shell::SubBar;
 use crate::state::{Toasts, now};
 use crate::ui::controls::PILL;
@@ -43,7 +43,7 @@ pub fn GraderLab() -> impl IntoView {
     let toasts = expect_context::<Toasts>();
     let results = RwSignal::new(Vec::<Outcome>::new());
     let running = RwSignal::new(false);
-    let total = STAGE_1.len() * 3;
+    let total: usize = LESSONS.iter().map(|l| l.explain.fixtures.len()).sum();
 
     let run = move |_| {
         if running.get_untracked() {
@@ -52,15 +52,16 @@ pub fn GraderLab() -> impl IntoView {
         running.set(true);
         results.set(Vec::new());
         spawn_local(async move {
-            'outer: for r in STAGE_1.iter() {
-                for (k, (answer, expect)) in r.fixtures.iter().enumerate() {
+            'outer: for r in LESSONS.iter() {
+                for (k, fx) in r.explain.fixtures.iter().enumerate() {
+                    let (answer, expect) = (fx.answer, fx.expect);
                     let outcome = match grading::grade(r, answer).await {
                         Ok(g) => Outcome {
-                            lesson: r.lesson,
+                            lesson: r.id,
                             fixture: KINDS[k],
-                            expected: expect.label(),
+                            expected: grading::expect_label(expect),
                             grade: Some(g.grade),
-                            as_expected: expect.accepts(g.grade),
+                            as_expected: grading::accepts(expect, g.grade),
                             feedback: Some(g.feedback),
                             gap: g.gap,
                             reteach: g.reteach,
@@ -70,9 +71,9 @@ pub fn GraderLab() -> impl IntoView {
                             let stop = matches!(e, grading::GradeError::Platform(platform::PlatformError::NotGranted | platform::PlatformError::RateLimited));
                             results.update(|v| {
                                 v.push(Outcome {
-                                    lesson: r.lesson,
+                                    lesson: r.id,
                                     fixture: KINDS[k],
-                                    expected: expect.label(),
+                                    expected: grading::expect_label(expect),
                                     grade: None,
                                     as_expected: false,
                                     feedback: None,

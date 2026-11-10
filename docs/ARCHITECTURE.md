@@ -159,43 +159,39 @@ RETURN JSON: {"grade":"got_it"|"almost"|"not_yet","feedback":string,"gap":string
 
 ## 7. Content pipeline
 
-Each lesson is one Markdown file with TOML front matter:
+Each lesson is one file, `crates/content/lessons/NN-slug.md`: TOML front matter between `+++` lines, then the explanation in Markdown. The front matter holds every other part of the lesson, so the reader always renders the CURRICULUM order (hook → explanation → analogy → example → common mistake → takeaways → videos → quiz → Explain-Back → gate → sources):
 
-```markdown
-+++
+```toml
 id = 5
 stage = 1
-title = "Bid, Ask & Spread"
-objective = "Explain why you always buy slightly higher than you could sell, and what that costs."
-analogy_tag = "airport currency booth"
+title = "Bid, ask & spread"
+objective = "…"            # completes "By the end, you'll be able to …"
+hook = "…"
+analogy = "…"
+analogy_tag = "airport currency booth"   # a Not yet re-teach must use a different one
+example = "…"
+mistake = "…"
+takeaways = ["…", "…", "…"]
+drills = ["bid_ask"]
 
-[[videos]]
-url = "https://www.youtube.com/watch?v=…"   # verified before merge
-channel = "…"
-watch_for = "How the spread appears as two prices on the order ticket"
-start = "1:20"
-fallback_search = "bid ask spread explained beginner"
+[[videos]]                  # 0–2; opened and confirmed (oEmbed) before commit
+id = "r1N22WzhzPM"          # YouTube id; the app builds the link
+title = "…"  channel = "…"  duration = "7:53"
+watch_for = "…"  fallback_search = "…"  checked = "2026-11-10"
 
-[[quiz]]
-q = "Gold shows Bid 2650.20 / Ask 2650.50. What is the spread as a Dollar Move?"
-options = ["$0.30", "$30", "$3", "3 pips"]
-answer = 0
-why = "2650.50 − 2650.20 = $0.30."
+[[sources]]                 # ≥ 1; primary or official pages only (CURRICULUM rule 8)
+claim = "…"  name = "…"  url = "https://…"  checked = "2026-11-10"
+
+[[quiz]]                    # 5–8
+q = "…"  options = ["…", "…"]  answer = 0  why = "…"
 
 [explain_back]
-prompt = "In your own words: why do you start every trade slightly 'in the red'?"
-must_include = ["you buy at the ask and sell at the bid", "the ask is higher than the bid", "the difference is the spread, a cost paid on entry"]
-misconceptions = ["the spread is a fee charged only when you close", "the spread is the same at all times"]
-
-[[drills]]
-kind = "dollar_distance"
-seed = 501
-+++
-
-Lesson body in Markdown…
+prompt = "…"  must_include = ["…"]  misconceptions = ["…"]
+[[explain_back.fixtures]]   # exactly 3: got_it, almost, almost_or_not_yet (grader-lab tuning)
+answer = "…"  expect = "got_it"
 ```
 
-`build.rs` validates every file (5 ≤ quiz questions ≤ 8, `answer` in range, at least 2 `must_include` items, a video URL host of `youtube.com`/`youtu.be`, no word "pip" in the body unless the lesson is about pips) and **fails the build** on any error. It then emits `generated.rs` containing `static LESSONS: &[Lesson]` with the body pre-rendered to HTML.
+`build.rs` rejects unknown fields and **fails the build** when a lesson breaks a rule: id/filename mismatch, 3–5 takeaways, 5–8 quiz questions with `answer` in range, 2–4 `must_include` and 1–3 misconceptions, the fixture order, ≤ 2 videos with an 11-character id and a checked date, ≥ 1 https source with a checked date, a known drill kind, the word "pip" outside Lesson 6, or a reading time outside 5–8 minutes (estimated at 130 words a minute). It renders the Markdown body (tables enabled) to HTML and writes `generated.rs` with `static LESSONS: &[Lesson]`. The app reads lessons, rubrics and grader fixtures from there; nothing about a written lesson lives in the app crate.
 
 ## 8. Navigation
 

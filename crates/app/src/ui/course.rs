@@ -1,6 +1,7 @@
 //! StageCard, LessonRow, GateStatus, VideoCard, Callout.
 
-use crate::catalog::{self, Section, VideoRef};
+use crate::catalog::{self, Section};
+use gold_content::Video;
 use crate::router::lesson_href;
 use crate::state::Progress;
 use crate::ui::controls::{PILL, PillLink};
@@ -186,10 +187,10 @@ pub fn GateStatus(id: LessonId) -> impl IntoView {
 }
 
 #[component]
-pub fn VideoCard(video: &'static VideoRef) -> impl IntoView {
+pub fn VideoCard(video: &'static Video) -> impl IntoView {
     view! {
         <a
-            href=video.url
+            href=video.url()
             target="_blank"
             rel="noopener noreferrer"
             class="press flex items-start gap-4 rounded-card bg-surface p-4 shadow-card hover:bg-raised"
@@ -197,7 +198,7 @@ pub fn VideoCard(video: &'static VideoRef) -> impl IntoView {
             <span class="grid size-14 shrink-0 place-items-center rounded-btn bg-fill text-title2 text-on-fill" aria-hidden="true">"▶"</span>
             <span class="min-w-0 flex-1">
                 <span class="block text-headline">{video.title}</span>
-                <span class="block text-footnote text-text-muted">{video.channel} " · opens YouTube"</span>
+                <span class="block text-footnote text-text-muted">{video.channel} " · " {video.duration} " · opens YouTube"</span>
                 <span class="mt-1.5 block text-callout"><span class="font-semibold">"Watch for: "</span>{video.watch_for}</span>
             </span>
             <span class="text-text-muted" aria-hidden="true">"↗"</span>
