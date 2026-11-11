@@ -206,6 +206,7 @@ pub fn WidgetLab() -> impl IntoView {
         <SubBar back="#today" back_label="Today" title="Widget lab" />
         <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
             <h1 class="text-title1">"Widget lab"</h1>
+            <MomentLab />
             <div class="mt-4 grid gap-6">
                 {gold_content::WIDGETS
                     .iter()
@@ -288,5 +289,32 @@ pub fn QuestionStats() -> impl IntoView {
                     .into_any()
             }}
         </main>
+    }
+}
+
+/// Replays the Milestone moments for review (Phase 15). Nothing here touches progress.
+#[component]
+fn MomentLab() -> impl IntoView {
+    use crate::ui::moments::{Badge, BigMoment, Moments};
+    let moments = expect_context::<Moments>();
+    let replay = RwSignal::new(0u32);
+    view! {
+        <section class="mt-4 rounded-card bg-surface p-5 shadow-card" aria-label="Milestone moments">
+            <p class="text-eyebrow text-text-muted">"Milestone moments (preview)"</p>
+            <div class="mt-3 flex items-center gap-4 rounded-btn bg-gold-fill p-4 text-on-gold">
+                {move || { replay.get(); view! { <Badge size=44 /> } }}
+                <p class="text-headline">"Lesson passed"</p>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-3">
+                <button type="button" class=crate::ui::controls::PILL_GHOST on:click=move |_| replay.update(|n| *n += 1)>"Replay lesson passed"</button>
+                <button type="button" class=crate::ui::controls::PILL_GHOST on:click=move |_| moments.big.set(Some(BigMoment::Stage {
+                    eyebrow: "Stage 1",
+                    title: "Foundations",
+                    lessons: 12,
+                    next: Some((gold_core::course::LessonId::Numbered(13), "Sessions & Timing")),
+                }))>"Stage complete"</button>
+                <button type="button" class=crate::ui::controls::PILL_GHOST on:click=move |_| moments.big.set(Some(BigMoment::Readiness))>"Live Readiness"</button>
+            </div>
+        </section>
     }
 }

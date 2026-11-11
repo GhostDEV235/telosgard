@@ -180,6 +180,7 @@ fn CourseOutline() -> impl IntoView {
 #[component]
 pub fn JournalPanel() -> impl IntoView {
     let journal = expect_context::<JournalData>();
+    let route = expect_context::<RwSignal<Route>>();
     view! {
         <aside aria-label="Readiness at a glance" class="sticky top-0 hidden h-dvh w-[272px] shrink-0 overflow-y-auto border-l border-hairline bg-bg px-4 xl:w-[300px] xl:px-5 py-6 lg:block">
             <p class="text-eyebrow text-text-muted">"Live Readiness"</p>
@@ -187,7 +188,10 @@ pub fn JournalPanel() -> impl IntoView {
                 Some((run, p)) => view! {
                     <p class="mt-1 text-footnote text-text-muted">{format!("Run {} · started with {}", run.run.number, run.run.starting_balance)}</p>
                     <dl class="mt-4 grid gap-3">
-                        <Stat label="Trades counted" value=format!("{} / 50", p.counted) />
+                        <div class="flex items-baseline justify-between gap-3 border-b border-hairline pb-2">
+                            <dt class="text-footnote text-text-muted">"Trades counted"</dt>
+                            <dd class="tabular text-callout font-semibold"><crate::ui::moments::CountUp value=p.counted as i64 fmt=|v| format!("{v} / 50") /></dd>
+                        </div>
                         <Stat label="Followed the plan" value=if p.counted == 0 { "—".to_string() } else { p.adherence.to_string() } />
                         <Stat label="Days" value=format!("{} / 56", p.days) />
                         <Stat label="Drawdown" value=format!("{} of {}", p.drawdown, p.max_loss) />
@@ -207,9 +211,11 @@ pub fn JournalPanel() -> impl IntoView {
                         <span class=if done { "text-up" } else { "text-text-muted" } aria-hidden="true">{if done { "✓" } else { "○" }}</span>
                         {if done { "Pre-Session Checklist done" } else { "Pre-Session Checklist not done yet" }}
                     </p>
-                    <a href="#checklist" class="mt-1 inline-block min-h-11 py-2 text-callout underline underline-offset-4">
-                        {if done { "Review checklist" } else { "Start checklist" }}
-                    </a>
+                    {(route.get() != Route::Checklist).then(|| view! {
+                        <a href="#checklist" class="mt-1 inline-block min-h-11 py-2 text-callout underline underline-offset-4">
+                            {if done { "Review checklist" } else { "Start checklist" }}
+                        </a>
+                    })}
                 }
             }}
         </aside>

@@ -182,8 +182,10 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 **Exit check:** every route works at 1440 / 1024 / 768 / 390 with no horizontal scroll; keyboard order follows sidebar → canvas → panel; axe clean.
 
 ### Phase 15: Screens and motion
-- [ ] Screen-by-screen polish (Today, lesson reader, quiz and Explain-Back, Practice and drills, Tools, Plan, Checklist, Journal, trade, Weekly Review, Readiness) to the v2 spec
-- [ ] Motion: the quiet layer everywhere; steps slide a few pixels; progress bars fill; **Milestone** moments (lesson passed on the Gate card, stage complete, Live Readiness); count-up numbers on stats; screen transitions on the canvas. Never for a profitable trade. All off under reduced motion
+- [x] Screen-by-screen polish (Today, lesson reader, quiz and Explain-Back, Practice and drills, Tools, Plan, Checklist, Journal, trade, Weekly Review, Readiness) to the v2 spec
+- [x] Motion: the quiet layer everywhere; steps slide a few pixels; progress bars fill; **Milestone** moments (lesson passed on the Gate card, stage complete, Live Readiness); count-up numbers on stats; screen transitions on the canvas. Never for a profitable trade. All off under reduced motion
+
+*Built 2026-11-11 (awaiting the Learner's review): `ui/moments.rs` (Moments context, Badge with a drawn ring and a green/gold burst on the Gate card, a full-canvas card for stage complete and Live Readiness, CountUp). Moments fire only from the Learner's own action (quiz or Explain-Back passing the Gate; the readiness write), never on load. Steps slide in the direction travelled; routes fade up; Readiness rings fill on arrival; count-ups on the quiz score, hit rate, Readiness, Weekly Review tiles, the progress card and the Journal panel. Screens: Today gets a two-column top (next lesson | progress + session clock) and the real lesson time; Practice cards equal height, in lesson order; lesson section headings in Newsreader; the Journal panel hides its checklist link on the checklist. `#widget-lab` replays all three moments. axe clean on 10 screens and the overlay, both themes; phone widths without horizontal scroll; bundle 604 KB gz. Published as Artifact version 20.*
 
 **Exit check:** each screen reviewed by the Learner on the published Artifact; reduced motion shows every final state.
 

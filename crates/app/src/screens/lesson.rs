@@ -165,7 +165,9 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
     let all = StoredValue::new(screens(l));
     let n = all.with_value(Vec::len);
     let ui = expect_context::<LessonUi>();
+    let moments = expect_context::<crate::ui::moments::Moments>();
     let pos = ui.pos;
+    let forward = RwSignal::new(true);
     pos.set(0);
     ui.lesson.set(Some(l.id));
     let this = l.id;
@@ -185,9 +187,11 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
         store.save_lesson(progress, id);
         if !was_passed && progress.passed(id) {
             toasts.show("🏅 Lesson passed");
+            moments.lesson_passed(progress, id);
         }
     };
     let go = move |to: usize| {
+        forward.set(to >= pos.get_untracked());
         pos.set(to);
         if let Some(el) = document().get_element_by_id("lesson-stepper") {
             el.scroll_into_view();
@@ -218,8 +222,12 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
             <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-bg" role="progressbar" aria-label="Lesson progress" aria-valuemin="1" aria-valuemax=n aria-valuenow=move || pos.get() + 1>
                 <div class="h-full rounded-full bg-text-muted transition-[width]" style=move || format!("width:{}%", (pos.get() + 1) * 100 / n)></div>
             </div>
-            <div class="anim-fade mt-5 min-h-48" aria-live="polite">
-                {move || all.with_value(|v| screen_view(l, v[pos.get()], ask))}
+            <div class="mt-5 min-h-48" aria-live="polite">
+                {move || {
+                    let p = pos.get();
+                    let class = if forward.get_untracked() { "anim-step-next" } else { "anim-step-prev" };
+                    view! { <div class=class>{all.with_value(|v| screen_view(l, v[p], ask))}</div> }
+                }}
             </div>
             <div class="mt-6 flex items-center justify-between gap-3">
                 <button type="button" class=PILL_GHOST disabled=move || pos.get() == 0 on:click=move |_| go(pos.get_untracked().saturating_sub(1))>"‹ Back"</button>
@@ -233,7 +241,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
 
         <Show when=move || reached_end.get() || returning>
             <div id="lesson-quiz" class="scroll-mt-20">
-                <h2 class="mt-10 text-title2">"Check your understanding"</h2>
+                <h2 class="mt-10 font-display text-title2 font-medium">"Check your understanding"</h2>
                 <div class="mt-3">
                     <QuizCard questions=l.quiz.iter().map(|q| QuizItem::course(l.id, q)).collect() on_done=on_quiz />
                 </div>
@@ -242,7 +250,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
                 <MorePractice lesson=l />
             </Show>
 
-            <h2 class="mt-10 text-title2">"Explain it back"</h2>
+            <h2 class="mt-10 font-display text-title2 font-medium">"Explain it back"</h2>
             <div class="mt-3">
                 <ExplainBack id=id prompt=l.explain.prompt />
             </div>
@@ -588,6 +596,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
     let progress = expect_context::<Progress>();
     let store = expect_context::<Store>();
     let toasts = expect_context::<Toasts>();
+    let moments = expect_context::<crate::ui::moments::Moments>();
     let lesson = content_for(id);
     let open = RwSignal::new(false);
     let text = RwSignal::new(String::new());
@@ -637,6 +646,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                     store.save_attempt(attempt);
                     if !was_passed && progress.passed(id) {
                         toasts.show("🏅 Lesson passed");
+                        moments.lesson_passed(progress, id);
                     }
                     phase.set(Phase::Done(res));
                 }

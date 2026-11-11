@@ -7,3 +7,4 @@ pub mod course;
 pub mod quiz;
 pub mod sheet;
 pub mod widgets;
+pub mod moments;

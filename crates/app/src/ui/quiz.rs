@@ -201,7 +201,7 @@ pub fn QuizCard(
         let passed = score >= QUIZ_PASS_PERCENT;
         view! {
             <p class="text-eyebrow text-text-muted">{if practice { "Practice result" } else { "Quiz result" }}</p>
-            <p class="tabular mt-2 text-large">{format!("{score}%")}</p>
+            <p class="tabular mt-2 text-large"><crate::ui::moments::CountUp value=score as i64 fmt=|v| format!("{v}%") /></p>
             <p class="text-callout text-text-muted">{format!("{} of {n} right", correct.get())}</p>
             {if practice {
                 view! { <p class="mt-3 text-callout">"Practice only: it doesn't change your Gate."</p> }.into_any()

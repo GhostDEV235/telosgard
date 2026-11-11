@@ -89,10 +89,16 @@ pub fn Ring(
     /// 0.0–1.0
     #[prop(into)]
     value: Signal<f64>,
-    #[prop(into)] caption: Signal<String>,
     label: &'static str,
+    /// The figure under the ring (a CountUp, usually).
+    children: Children,
 ) -> impl IntoView {
-    let v = move || value.get().clamp(0.0, 1.0);
+    // The arc fills from empty once it arrives (a CSS transition; off under reduced motion).
+    let arrived = RwSignal::new(false);
+    request_animation_frame(move || {
+        let _ = arrived.try_set(true);
+    });
+    let v = move || if arrived.get() { value.get().clamp(0.0, 1.0) } else { 0.0 };
     view! {
         <div class="flex flex-col items-center gap-1.5 text-center">
             <svg viewBox="0 0 100 100" class="size-22 -rotate-90" aria-hidden="true">
@@ -105,12 +111,13 @@ pub fn Ring(
                     stroke-width="11"
                     stroke-linecap="round"
                     class=move || { if v() >= 1.0 { "stroke-gold-fill" } else { "stroke-text-muted" } }
-                    opacity=move || { if v() > 0.0 { "1" } else { "0" } }
+                    opacity=move || { if value.get() > 0.0 { "1" } else { "0" } }
                     stroke-dasharray=format!("{CIRC} {CIRC}")
                     stroke-dashoffset=move || CIRC * (1.0 - v())
+                    style="transition: stroke-dashoffset 900ms var(--ease-enter)"
                 />
             </svg>
-            <p class="tabular text-headline">{caption}</p>
+            <p class="tabular text-headline">{children()}</p>
             <p class="text-footnote text-text-muted">{label}</p>
         </div>
     }

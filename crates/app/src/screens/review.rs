@@ -6,6 +6,7 @@ use crate::screens::journal::pnl_text;
 use crate::screens::shell::SubBar;
 use crate::screens::trade::rule_name;
 use crate::state::Toasts;
+use crate::ui::moments::CountUp;
 use crate::ui::controls::{PILL, Segmented};
 use gold_core::clock::week_start;
 use gold_core::journal::local_day;
@@ -48,7 +49,7 @@ pub fn Review() -> impl IntoView {
         (weekly_review(&entries), lessons)
     };
 
-    let tile = |label: &'static str, value: String, tone: &'static str| {
+    let tile = |label: &'static str, value: AnyView, tone: &'static str| {
         view! {
             <div class="rounded-btn bg-bg p-3">
                 <p class="text-footnote text-text-muted">{label}</p>
@@ -56,6 +57,7 @@ pub fn Review() -> impl IntoView {
             </div>
         }
     };
+    let count = |v: i64| view! { <CountUp value=v fmt=|v| v.to_string() /> }.into_any();
 
     view! {
         <SubBar back="#journal" back_label="Journal" title="Weekly Review" />
@@ -70,17 +72,21 @@ pub fn Review() -> impl IntoView {
                 let (r, lessons) = stats();
                 let (net, tone) = pnl_text(r.net);
                 let (exp, exp_tone) = match r.expectancy {
-                    Some(x) => (x.to_string(), if x.0 > 0 { "text-up" } else if x.0 < 0 { "text-down" } else { "" }),
-                    None => ("—".to_string(), ""),
+                    Some(x) => (
+                        view! { <CountUp value=x.0 fmt=|v| gold_core::journal::RMultiple(v).to_string() /> }.into_any(),
+                        if x.0 > 0 { "text-up" } else if x.0 < 0 { "text-down" } else { "" },
+                    ),
+                    None => ("—".into_any(), ""),
                 };
+                let dash = || "—".into_any();
                 view! {
                     <section class="mt-4 grid grid-cols-2 gap-3 rounded-card bg-surface p-5 shadow-card sm:grid-cols-3">
-                        {tile("Trades taken", r.taken.to_string(), "")}
-                        {tile("Skipped setups", r.skipped.to_string(), "")}
-                        {tile("Broke the plan", r.not_adherent.to_string(), if r.not_adherent > 0 { "text-down" } else { "" })}
-                        {tile("Win rate", if r.closed == 0 { "—".into() } else { r.win_rate.to_string() }, "")}
+                        {tile("Trades taken", count(r.taken as i64), "")}
+                        {tile("Skipped setups", count(r.skipped as i64), "")}
+                        {tile("Broke the plan", count(r.not_adherent as i64), if r.not_adherent > 0 { "text-down" } else { "" })}
+                        {tile("Win rate", if r.closed == 0 { dash() } else { view! { <CountUp value=r.win_rate.0 as i64 fmt=|v| gold_core::money::Percent(v as u32).to_string() /> }.into_any() }, "")}
                         {tile("Expectancy (per trade)", exp, exp_tone)}
-                        {tile("Net (closed)", if r.closed == 0 { "—".into() } else { net }, if r.closed == 0 { "" } else { tone })}
+                        {tile("Net (closed)", if r.closed == 0 { dash() } else { net.into_any() }, if r.closed == 0 { "" } else { tone })}
                     </section>
                     <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
                         <h2 class="text-headline">"Rules broken"</h2>

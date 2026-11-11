@@ -18,6 +18,7 @@ pub fn Shell() -> impl IntoView {
     provide_context(AppearanceOpen(appearance));
     provide_context(crate::screens::lesson::TutorLog(RwSignal::new(Vec::new())));
     provide_context(crate::screens::lesson::LessonUi::new());
+    provide_context(crate::ui::moments::Moments::new());
 
     // Wide screens (DESIGN-SYSTEM §4.1): sidebar | dot-grid canvas holding the screen as a frame | panel.
     let panel = move || match route.get() {
@@ -31,7 +32,8 @@ pub fn Shell() -> impl IntoView {
         <div class="min-h-dvh min-w-0 flex-1 pb-[calc(84px+env(safe-area-inset-bottom,0px))] lg:canvas-grid lg:px-5 lg:pt-5 lg:pb-10 xl:px-8">
             <p class="hidden pb-2 text-footnote text-text-muted lg:block" aria-hidden="true">{move || crate::screens::workspace::frame_label(&route.get())}</p>
             <div class="lg:frame">
-            {move || match route.get() {
+            // Screen transitions: each route arrives with a short fade-up (off under reduced motion).
+            {move || view! { <div class="anim-route">{match route.get() {
                 Route::Today => view! { <Home /> }.into_any(),
                 Route::Lesson(id) => view! { <LessonScreen id=id /> }.into_any(),
                 Route::Practice => view! { <practice::Practice /> }.into_any(),
@@ -50,7 +52,7 @@ pub fn Shell() -> impl IntoView {
                 Route::TradeNew => view! { <crate::screens::trade::TradeNew /> }.into_any(),
                 Route::TradeSkip => view! { <crate::screens::trade::TradeSkip /> }.into_any(),
                 Route::Trade(id) => view! { <crate::screens::trade::TradeDetail id=id /> }.into_any(),
-            }}
+            }}</div> }}
             <RiskFooter />
             </div>
         </div>
@@ -58,6 +60,7 @@ pub fn Shell() -> impl IntoView {
         </div>
         <TabBar />
         <Toast />
+        <crate::ui::moments::BigMomentOverlay />
         <AppearanceSheet open=appearance />
         <Disclaimer open=disclaimer.0 />
     }

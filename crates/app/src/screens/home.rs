@@ -42,6 +42,43 @@ fn hero_art() -> impl IntoView {
     }
 }
 
+fn minutes_line(id: gold_core::course::LessonId) -> String {
+    match id {
+        gold_core::course::LessonId::Numbered(n) => match gold_content::lesson(n) {
+            Some(l) => format!("About {} minutes, step by step, then a short quiz and an Explain-Back.", l.read_minutes),
+            None => "Written when you get close to it, using what worked for you so far.".into(),
+        },
+        _ => "A short lesson, then a quiz and an Explain-Back.".into(),
+    }
+}
+
+/// Lessons passed across the core course and in the current stage, counting up on arrival.
+#[component]
+fn ProgressCard() -> impl IntoView {
+    use crate::ui::moments::CountUp;
+    let progress = expect_context::<Progress>();
+    move || {
+        let core: Vec<_> = (1..=gold_core::course::LAST_CORE).map(gold_core::course::LessonId::Numbered).collect();
+        let passed = core.iter().filter(|l| progress.passed(**l)).count() as i64;
+        let total = core.len() as i64;
+        let focus = progress.up_next().unwrap_or(gold_core::course::LessonId::Numbered(1));
+        let stage = SECTIONS.iter().find(|s| s.lessons.iter().any(|(l, _)| *l == focus)).unwrap_or(&SECTIONS[0]);
+        let in_stage = stage.lessons.iter().filter(|(l, _)| progress.passed(*l)).count();
+        let pct = if total == 0 { 0 } else { passed * 100 / total };
+        view! {
+            <section class="rounded-card bg-surface p-5 shadow-card" aria-label="Your progress">
+                <p class="text-eyebrow text-text-muted">"Your progress"</p>
+                <p class="tabular mt-1 font-display text-title1"><CountUp value=passed fmt=|v| v.to_string() /><span class="text-title2 text-text-muted">{format!(" / {total}")}</span></p>
+                <p class="text-callout text-text-muted">"core lessons passed"</p>
+                <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-bg" aria-hidden="true">
+                    <div class="h-full rounded-full bg-gold-fill transition-[width] duration-700" style=format!("width:{pct}%")></div>
+                </div>
+                <p class="mt-3 text-footnote text-text-muted">{format!("{} · {} · {in_stage} of {} passed", stage.eyebrow, stage.title, stage.lessons.len())}</p>
+            </section>
+        }
+    }
+}
+
 /// Where the Learner's progress is going. Content never depends on this; only saving does.
 #[component]
 fn SaveStatus() -> impl IntoView {
@@ -72,17 +109,18 @@ pub fn Home() -> impl IntoView {
             <LargeTitle title="Today" eyebrow=today_eyebrow() />
             <SaveStatus />
 
+            <div class="mt-6 grid items-start gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
             {move || {
                 progress
                     .up_next()
                     .map(|id| {
                         view! {
-                            <article class="mt-6 overflow-hidden rounded-card bg-fill text-on-fill">
+                            <article class="overflow-hidden rounded-card bg-fill text-on-fill">
                                 <div class="flex flex-wrap items-end justify-between gap-4 p-6 pb-5">
                                     <div class="min-w-0 max-w-md">
                                         <p class="text-eyebrow opacity-80">"Up next · " {catalog::eyebrow(id)}</p>
                                         <h2 class="mt-2 text-title1">{catalog::title(id)}</h2>
-                                        <p class="mt-2 text-callout opacity-85">"About 5–8 minutes of reading, then a short quiz and an Explain-Back."</p>
+                                        <p class="mt-2 text-callout opacity-85">{minutes_line(id)}</p>
                                     </div>
                                     <div class="opacity-90">{hero_art()}</div>
                                 </div>
@@ -96,7 +134,11 @@ pub fn Home() -> impl IntoView {
                     })
             }}
 
-            <div class="mt-6 max-w-xl"><crate::ui::clock::SessionClock /></div>
+            <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-1">
+                <ProgressCard />
+                <crate::ui::clock::SessionClock />
+            </div>
+            </div>
 
             <h2 class="mt-9 text-title2">"Your course"</h2>
             <div class="mt-3 grid items-start gap-5 md:grid-cols-2">

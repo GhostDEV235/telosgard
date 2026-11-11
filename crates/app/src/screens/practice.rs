@@ -19,9 +19,9 @@ struct DrillInfo {
 
 const DRILLS: [DrillInfo; 6] = [
     DrillInfo { kind: DrillKind::Calibration, title: "Can you call the next candle?", blurb: "Ten charts: predict up or down, then see your hit rate.", lesson: "Lesson 2" },
+    DrillInfo { kind: DrillKind::Distance, title: "Measure the move", blurb: "Turn two prices into a Dollar Move.", lesson: "Lesson 4" },
     DrillInfo { kind: DrillKind::Direction, title: "Bullish or bearish?", blurb: "Read a candle's direction from its open and close.", lesson: "Lesson 5" },
     DrillInfo { kind: DrillKind::BidAsk, title: "Spot the spread", blurb: "Find the bid, the ask, and the cost of getting in.", lesson: "Lesson 6" },
-    DrillInfo { kind: DrillKind::Distance, title: "Measure the move", blurb: "Turn two prices into a Dollar Move.", lesson: "Lesson 4" },
     DrillInfo { kind: DrillKind::Pips, title: "Translate the pips", blurb: "Convert someone else's “pips” into dollars.", lesson: "Lesson 7" },
     DrillInfo { kind: DrillKind::Orders, title: "Pick the order", blurb: "Market, limit or stop: match the order to the intent.", lesson: "Lesson 10" },
 ];
@@ -41,11 +41,11 @@ pub fn Practice() -> impl IntoView {
                     .map(|d| {
                         let slug = d.kind.slug();
                         view! {
-                            <a href=format!("#drill-{slug}") class="lift block rounded-card bg-surface p-5 shadow-card">
+                            <a href=format!("#drill-{slug}") class="lift flex h-full flex-col rounded-card bg-surface p-5 shadow-card">
                                 <span class="block text-eyebrow text-text-muted">{d.lesson}</span>
                                 <span class="mt-1 block text-headline">{d.title}</span>
                                 <span class="mt-1 block text-callout text-text-muted">{d.blurb}</span>
-                                <span class="tabular mt-4 block text-footnote font-semibold">
+                                <span class="tabular mt-auto block pt-4 text-footnote font-semibold">
                                     {move || {
                                         store
                                             .drills
@@ -465,7 +465,7 @@ pub fn CalibrationDrill() -> impl IntoView {
             >
                 <section class="anim-fade mt-5 rounded-card bg-surface p-5 shadow-card" aria-live="polite">
                     <p class="text-eyebrow text-text-muted">"Your hit rate"</p>
-                    <p class="tabular mt-2 text-large">{move || hit_rate(right.get(), ROUND_LEN as u32).to_string()}</p>
+                    <p class="tabular mt-2 text-large">{move || view! { <crate::ui::moments::CountUp value=hit_rate(right.get(), ROUND_LEN as u32).0 as i64 fmt=|v| gold_core::money::Percent(v as u32).to_string() /> }}</p>
                     <p class="tabular text-callout text-text-muted">{move || format!("{} of {ROUND_LEN} called right", right.get())}</p>
                     <p class="mt-4 text-callout">
                         "These charts move at random, so anyone lands around 50% over many rounds; a high or low score here is luck. Real charts aren't much kinder: nobody can reliably call the next candle."

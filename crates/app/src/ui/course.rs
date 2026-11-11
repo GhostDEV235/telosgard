@@ -141,6 +141,7 @@ pub fn LessonRow(id: LessonId, title: &'static str) -> impl IntoView {
 #[component]
 pub fn GateStatus(id: LessonId) -> impl IntoView {
     let progress = expect_context::<Progress>();
+    let moments = expect_context::<crate::ui::moments::Moments>();
     let pill = |met: bool| {
         if met {
             "rounded-full bg-gold-fill px-3 py-1.5 text-footnote font-semibold text-on-gold"
@@ -157,7 +158,12 @@ pub fn GateStatus(id: LessonId) -> impl IntoView {
         <section class="rounded-card bg-surface p-5 shadow-card" aria-labelledby="gate-h">
             <Show when=move || progress.passed(id)>
                 <div class="anim-fade mb-4 flex items-center gap-3 rounded-btn bg-gold-fill p-4 text-on-gold" role="status">
-                    <span class="text-title2" aria-hidden="true">"🏅"</span>
+                    // The lesson-passed Milestone plays here when it was just earned; otherwise a still badge.
+                    {move || if moments.lesson.get() == Some(id) {
+                        view! { <crate::ui::moments::Badge size=44 /> }.into_any()
+                    } else {
+                        view! { <span class="text-title2" aria-hidden="true">"🏅"</span> }.into_any()
+                    }}
                     <div>
                         <p class="text-headline">"Lesson passed"</p>
                         <p class="text-callout">"You understood it and explained it back. The next lesson is open."</p>

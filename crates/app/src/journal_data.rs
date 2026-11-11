@@ -237,15 +237,16 @@ impl JournalData {
         Some((run.clone(), run.run.progress(&summaries, plan.hard.max_total_loss)))
     }
 
-    /// Writes the permanent unlock once.
-    pub fn mark_ready(self, progress: Progress) {
+    /// Writes the permanent unlock once. True when this call reached it (the Milestone moment).
+    pub fn mark_ready(self, progress: Progress) -> bool {
         if self.readiness.with_untracked(|r| r.reached_at.is_some()) {
-            return;
+            return false;
         }
         let rec = ReadinessRecord { reached_at: Some(now()) };
         self.readiness.set(rec.clone());
         progress.readiness.set(true);
         self.store.persist(async move { repo::save_readiness(&rec).await });
+        true
     }
 
     pub fn save_review(self, week: i64, note: String) {

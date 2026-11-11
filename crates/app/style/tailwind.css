@@ -164,8 +164,38 @@ body::before {
 @utility anim-fade { animation: fade-in 200ms ease-out; }
 @utility anim-toast { animation: toast-in 250ms cubic-bezier(.2,.8,.2,1); }
 
+/* Phase 15 motion. Steps slide a few px in the direction travelled; routes fade up; Milestones draw. */
+@keyframes step-next { from { transform: translateX(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes step-prev { from { transform: translateX(-12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes route-in { from { transform: translateY(4px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes moment-in { from { transform: scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes draw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@keyframes burst {
+  0% { transform: rotate(var(--a)) translateY(0) scale(.6); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: rotate(var(--a)) translateY(calc(var(--r, 40px) * -1)) scale(1); opacity: 0; }
+}
+@utility anim-step-next { animation: step-next var(--m-slide) var(--ease-enter); }
+@utility anim-step-prev { animation: step-prev var(--m-slide) var(--ease-enter); }
+@utility anim-route { animation: route-in 200ms var(--ease-enter); }
+@utility moment-in { animation: moment-in 300ms var(--ease-enter); }
+@layer components {
+  .moment-ring, .moment-tick { stroke-dasharray: 100; }
+  .moment-ring { animation: draw 600ms var(--ease-enter) both; }
+  .moment-tick { animation: draw 360ms var(--ease-enter) 420ms both; }
+  .moment-burst { position: absolute; inset: 0; pointer-events: none; }
+  .moment-burst i {
+    position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 999px;
+    background: var(--color-gold-fill); opacity: 0;
+    animation: burst 700ms var(--ease-enter) calc(450ms + var(--d)) both;
+  }
+  .moment-burst i:nth-child(even) { background: var(--color-up); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+  .moment-ring, .moment-tick { stroke-dashoffset: 0 !important; }
+  .moment-burst { display: none; }
   .press:hover, .press:active, .lift:hover, .lift:active { transform: none !important; }
 }
 
