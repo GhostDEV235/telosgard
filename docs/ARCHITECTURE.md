@@ -90,9 +90,10 @@ trade_school/
 ### The Worker (`cloudflare/`)
 - One Worker with **static assets**: `crates/app/dist` is served as files; the Worker runs only for `/api/*` (`run_worker_first`).
 - **Identity:** the `Cf-Access-Jwt-Assertion` header, verified with `jose` against the Access team's keys, issuer and audience; `sub` is the user id. `DEV_USER` (from `.dev.vars`) stands in only for requests to localhost.
-- **Routes:** `GET /api/me`; `GET /api/docs?kind=`; `GET|PUT|DELETE /api/docs/:id`; `POST /api/files`, `GET /api/files/:id`; `POST /api/claude/json|text` (Phase 19).
+- **Routes:** `GET /api/me`; `GET /api/docs?kind=`; `GET|PUT|DELETE /api/docs/:id`; `POST /api/files`, `GET /api/files/:id`; `POST /api/claude/json|text`.
+- **Claude** (`src/claude.ts`, official `@anthropic-ai/sdk`): the app sends `{prompt, tier}`; the Worker calls `claude-opus-5-5` with adaptive thinking, effort by tier (quick → low, default → medium, complex → high), a short system line per mode, an output cap (JSON 16,000, text 4,000 tokens) and server-side refusal fallbacks (`fallbacks: "default"`). JSON replies are parsed (code fences tolerated); a refusal, a cut-short or unreadable reply, or an API error becomes an error code (`refused`, `invalid_json`, `rate_limited`, `not_granted`, `unavailable`), never a made-up answer. Each call is logged in D1 `claude_calls` (user, time, mode, ok, tokens), which also enforces a per-user cap (`CLAUDE_DAILY_LIMIT`, default 300 per 24 h). The key is the Worker secret `ANTHROPIC_API_KEY`; without it the route answers `not_granted`. Prompts are built per request with the Learner's own words in them, so prompt caching isn't used.
 - **Storage:** D1 table `docs (user_id, doc_id, kind, body, updated_at)`, primary key `(user_id, doc_id)`, index `(user_id, kind)`; `files` table for screenshot ownership; images in R2 under `<user_id>/<id>`.
-- **Tests:** Vitest with `@cloudflare/vitest-plugin` (Workers runtime, local D1 and R2): identity, isolation between users, validation, files.
+- **Tests:** Vitest with `@cloudflare/vitest-plugin` (Workers runtime, local D1 and R2): identity, isolation between users, validation, files, and the Claude route against a fake client (model, effort, fallbacks, JSON parsing, refusals, cap and logging).
 
 ## 5. Data model (D1 `docs` table; formerly the Artifact DB)
 

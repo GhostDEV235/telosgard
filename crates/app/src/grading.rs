@@ -16,7 +16,7 @@ impl GradeError {
     pub fn describe(&self) -> String {
         match self {
             GradeError::Platform(PlatformError::NotGranted) => {
-                "Claude grading isn't available here. Allow Claude for this page (or sign in), then try again. Nothing was graded.".into()
+                "Claude grading isn't available right now: you may be signed out, or Claude isn't set up on the server yet. Nothing was graded.".into()
             }
             GradeError::Platform(e) => format!("{} Nothing was graded.", e.describe()),
             GradeError::Unreadable(_) => "Claude's reply didn't come back in the expected shape. Nothing was graded; try again.".into(),
@@ -97,7 +97,7 @@ pub async fn ask_step(l: &Lesson, step: usize, question: &str) -> Result<(String
     };
     match platform::sample_text(&build_tutor_prompt(&input), "default").await {
         Ok(r) => clean_answer(&r.text).map(|a| (a, r.truncated)).ok_or_else(|| "Claude sent back an empty answer. Try asking again.".to_string()),
-        Err(PlatformError::NotGranted) => Err("Asking Claude isn't available here. Allow Claude for this page (or sign in), then try again.".into()),
+        Err(PlatformError::NotGranted) => Err("Asking Claude isn't available right now: you may be signed out, or Claude isn't set up on the server yet.".into()),
         Err(e) => Err(e.describe()),
     }
 }

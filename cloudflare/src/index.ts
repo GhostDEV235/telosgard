@@ -8,15 +8,25 @@
 //   DELETE /api/docs/:id
 //   POST   /api/files              ← an image body (≤ 8 MB)  → { id, url }
 //   GET    /api/files/:id          → the image, to its owner only
-//   POST   /api/claude/(json|text) → Phase 19
+//   POST   /api/claude/(json|text) ← { prompt, tier } → { value } | { text, truncated }
 
+import Anthropic from "@anthropic-ai/sdk";
 import { identify, type AuthEnv, type Identity } from "./auth";
+import { askClaude, ClaudeError, parseTier, type MessagesClient, type Mode } from "./claude";
 
 export interface Env extends AuthEnv {
   DB: D1Database;
   FILES: R2Bucket;
   ASSETS: Fetcher;
+  /** Worker secret (`wrangler secret put ANTHROPIC_API_KEY`); `.dev.vars` locally. */
+  ANTHROPIC_API_KEY?: string;
+  /** Claude calls per user per 24 hours (default 300). */
+  CLAUDE_DAILY_LIMIT?: string;
 }
+
+/** Builds the Anthropic client; tests swap it for a fake. */
+export type ClientFactory = (env: Env) => MessagesClient;
+const realClient: ClientFactory = (env) => new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 1 });
 
 const DOC_ID = /^[A-Za-z0-9._-]{1,128}$/;
 const KIND = /^[a-z][a-z0-9_-]{0,31}$/;
@@ -31,18 +41,22 @@ const fail = (status: number, code: string, message: string) => json({ code, mes
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    return handle(request, env, realClient);
+  },
+} satisfies ExportedHandler<Env>;
+
+export async function handle(request: Request, env: Env, makeClient: ClientFactory): Promise<Response> {
     const url = new URL(request.url);
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
     try {
-      return await route(request, env, url);
+      return await route(request, env, url, makeClient);
     } catch (e) {
       console.error("api error", e);
       return fail(500, "unavailable", "Something went wrong on the server.");
     }
-  },
-} satisfies ExportedHandler<Env>;
+}
 
-async function route(request: Request, env: Env, url: URL): Promise<Response> {
+async function route(request: Request, env: Env, url: URL, makeClient: ClientFactory): Promise<Response> {
   const who = await identify(request, env);
   const path = url.pathname.slice("/api/".length).split("/").filter(Boolean);
   const method = request.method;
@@ -54,7 +68,9 @@ async function route(request: Request, env: Env, url: URL): Promise<Response> {
 
   if (path[0] === "docs") return docs(request, env, who, path.slice(1), url);
   if (path[0] === "files") return files(request, env, who, path.slice(1));
-  if (path[0] === "claude") return fail(501, "not_granted", "Claude isn't connected yet.");
+  if (path[0] === "claude" && path.length === 2 && (path[1] === "json" || path[1] === "text") && method === "POST") {
+    return claude(request, env, who, path[1], makeClient);
+  }
   return fail(404, "invalid_argument", "No such route.");
 }
 
@@ -128,4 +144,34 @@ async function files(request: Request, env: Env, who: Identity, rest: string[]):
     return new Response(obj.body, { headers: { "content-type": owned.content_type, "cache-control": "private, max-age=3600" } });
   }
   return fail(404, "invalid_argument", "No such route.");
+}
+
+async function claude(request: Request, env: Env, who: Identity, mode: Mode, makeClient: ClientFactory): Promise<Response> {
+  if (!env.ANTHROPIC_API_KEY) return fail(503, "not_granted", "Claude isn't set up on the server yet.");
+  let body: { prompt?: unknown; tier?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return fail(400, "invalid_argument", "The body must be JSON.");
+  }
+  if (typeof body.prompt !== "string") return fail(400, "invalid_argument", "A prompt is required.");
+
+  const limit = Number(env.CLAUDE_DAILY_LIMIT ?? "300") || 300;
+  const since = Date.now() - 24 * 3600 * 1000;
+  const used = await env.DB.prepare("SELECT COUNT(*) AS n FROM claude_calls WHERE user_id = ?1 AND at > ?2").bind(who.userId, since).first<{ n: number }>();
+  if ((used?.n ?? 0) >= limit) return fail(429, "rate_limited", `You've reached today's limit of ${limit} Claude requests. It resets over the next 24 hours.`);
+
+  const log = (ok: boolean, input = 0, output = 0) =>
+    env.DB.prepare("INSERT INTO claude_calls (user_id, at, mode, ok, input_tokens, output_tokens) VALUES (?1, ?2, ?3, ?4, ?5, ?6)")
+      .bind(who.userId, Date.now(), mode, ok ? 1 : 0, input, output)
+      .run();
+  try {
+    const r = await askClaude(makeClient(env), mode, body.prompt, parseTier(body.tier));
+    await log(true, r.usage.input, r.usage.output);
+    return json(mode === "json" ? { value: r.value } : { text: r.text, truncated: !!r.truncated });
+  } catch (e) {
+    await log(false);
+    if (e instanceof ClaudeError) return fail(e.status, e.code, e.message);
+    throw e;
+  }
 }

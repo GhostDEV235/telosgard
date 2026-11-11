@@ -225,8 +225,10 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 **Exit check:** the whole app works against `wrangler dev` with a local D1: progress, plan, checklist, journal, delete, screenshots.
 
 ### Phase 19: Claude through the Worker
-- [ ] `POST /api/claude/json` and `/api/claude/text`: fixed model and output cap per call type (grading, verdict, practice, tutor), API key as a Worker secret, per-user rate limit, errors mapped to the bridge's codes (never a made-up answer)
+- [x] `POST /api/claude/json` and `/api/claude/text`: fixed model and output cap per call type (grading, verdict, practice, tutor), API key as a Worker secret, per-user rate limit, errors mapped to the bridge's codes (never a made-up answer)
 - [ ] The grader lab re-run against the new path (36 fixtures)
+
+*2026-11-11: `src/claude.ts` with `@anthropic-ai/sdk` 1.3.0; model `claude-opus-5-5` (the current default; effort low / medium / high by tier), adaptive thinking, output caps, server-side refusal fallbacks (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`); usage log and daily cap in D1 (`0002_claude_calls.sql`). 7 new tests (16 in total) with a fake client; checked in Chrome that without a key the Explain-Back says grading isn't available and grades nothing. Still open: the grader lab against the real API once the Learner has put their key in `cloudflare/.dev.vars`.*
 
 **Exit check:** grading, verdicts, practice and Ask Claude work through the Worker; grader lab 36/36.
 
