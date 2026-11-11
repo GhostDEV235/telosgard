@@ -36,6 +36,7 @@ pub enum Route {
     Readiness,
     GraderLab,
     WidgetLab,
+    QuestionStats,
     Checklist,
     Review,
     TradeNew,
@@ -67,6 +68,7 @@ impl Route {
             "readiness" => Route::Readiness,
             "grader-lab" => Route::GraderLab,
             "widget-lab" => Route::WidgetLab,
+            "question-stats" => Route::QuestionStats,
             _ => {
                 if let Some(d) = h.strip_prefix("drill-").and_then(|s| DrillKind::ALL.into_iter().find(|k| k.slug() == s)) {
                     Route::Drill(d)
@@ -81,7 +83,7 @@ impl Route {
 
     pub fn tab(&self) -> Tab {
         match self {
-            Route::Today | Route::Lesson(_) | Route::GraderLab | Route::WidgetLab => Tab::Today,
+            Route::Today | Route::Lesson(_) | Route::GraderLab | Route::WidgetLab | Route::QuestionStats => Tab::Today,
             Route::Practice | Route::Drill(_) => Tab::Practice,
             Route::Tools | Route::Plan => Tab::Tools,
             Route::Journal | Route::Readiness | Route::Checklist | Route::Review | Route::TradeNew | Route::TradeSkip | Route::Trade(_) => Tab::Journal,

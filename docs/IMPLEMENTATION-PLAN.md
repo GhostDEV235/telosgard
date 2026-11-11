@@ -129,11 +129,13 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 **Exit check:** `cargo test --workspace` green (124); the build rejects a step over 60 words; all 12 Stage 1 lessons render step by step with working widgets; grader lab 36 of 36 as expected. *(Met 2026-11-10.)*
 
 ### Phase 10: Retention (Spaced Review, Confidence, Question Records)
-- [ ] `gold-core` `retention` module, test-first: `QuestionRecord { answered, wrong, guessed_right, last_at }`; `record(answer_correct, confidence)`; `pick_review(records, eligible_lessons, n, seed) -> Vec<QuestionId>` weighted towards wrong (×3) and right-but-guessing (×2), only from **passed** lessons other than the current one, deterministic for a seed; a question answered right while "Sure" twice in a row drops out
-- [ ] Quiz: a **Sure / Guessing** choice per answer (before the answer is revealed). A right answer counts towards the Gate either way (decided 2026-11-10)
-- [ ] Storage: one `qrec-<lesson>` document per lesson (question id → record); written after each quiz and review
-- [ ] **Spaced Review** card at the start of each lesson (2–3 questions; skipped when there's nothing eligible); practice only
-- [ ] Question stats view for course tuning: per question, answered / wrong % / guessed %, readable by Claude Code through `ArtifactData` on `data/users/me`
+- [x] `gold-core` `retention` module, test-first: `QuestionRecord { answered, wrong, guessed_right, last_at }`; `record(answer_correct, confidence)`; `pick_review(records, eligible_lessons, n, seed) -> Vec<QuestionId>` weighted towards wrong (×3) and right-but-guessing (×2), only from **passed** lessons other than the current one, deterministic for a seed; a question answered right while "Sure" twice in a row drops out
+- [x] Quiz: a **Sure / Guessing** choice per answer (before the answer is revealed). A right answer counts towards the Gate either way (decided 2026-11-10)
+- [x] Storage: one `qrec-<lesson>` document per lesson (question id → record); written after each quiz and review
+- [x] **Spaced Review** card at the start of each lesson (2–3 questions; skipped when there's nothing eligible); practice only
+- [x] Question stats view for course tuning: per question, answered / wrong % / guessed %, readable by Claude Code through `ArtifactData` on `data/users/me`
+
+*Done 2026-11-11: 9 retention tests (133 in total); records in `qrec-NN` docs; stats at the hidden `#question-stats`; Spaced Review checked on the live Artifact (version 13).*
 
 **Exit check:** retention tests green (weighting, eligibility, determinism, drop-out rule); a guessed right answer still passes the Gate and reappears in the next lesson's Spaced Review.
 

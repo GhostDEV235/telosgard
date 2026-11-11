@@ -220,3 +220,73 @@ pub fn WidgetLab() -> impl IntoView {
         </main>
     }
 }
+
+/// Question Records per lesson, for course tuning (FR-13.1). The same data is in `qrec-NN` docs,
+/// which Claude Code reads through ArtifactData.
+#[component]
+pub fn QuestionStats() -> impl IntoView {
+    let store = expect_context::<crate::store::Store>();
+    view! {
+        <SubBar back="#today" back_label="Today" title="Question stats" />
+        <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
+            <h1 class="text-title1">"Question stats"</h1>
+            <p class="mt-1 text-callout text-text-muted">"Per question: times answered, % wrong, % tagged Guessing. Learned = right while Sure twice in a row."</p>
+            {move || {
+                let recs = store.qrecs.get();
+                let mut lessons: Vec<u8> = recs.keys().copied().collect();
+                lessons.sort();
+                if lessons.is_empty() {
+                    return view! { <p class="mt-6 text-callout">"No answers recorded yet."</p> }.into_any();
+                }
+                lessons
+                    .into_iter()
+                    .map(|n| {
+                        let l = gold_content::lesson(n);
+                        let m = recs.get(&n).cloned().unwrap_or_default();
+                        let rows = m
+                            .iter()
+                            .map(|(id, r)| {
+                                let (a, w, g) = r.stats();
+                                let text = l
+                                    .and_then(|l| l.quiz.iter().chain(l.recall.iter()).find(|q| q.id == id))
+                                    .map(|q| q.q)
+                                    .unwrap_or("(no longer in the lesson)");
+                                view! {
+                                    <tr class="border-t border-line/30 align-top">
+                                        <td class="tabular py-2 pr-2">{id.clone()}</td>
+                                        <td class="py-2 pr-2">{text}</td>
+                                        <td class="tabular py-2 pr-2 text-right">{a}</td>
+                                        <td class="tabular py-2 pr-2 text-right">{format!("{w}%")}</td>
+                                        <td class="tabular py-2 pr-2 text-right">{format!("{g}%")}</td>
+                                        <td class="py-2 text-right">{if r.retired() { "✓" } else { "" }}</td>
+                                    </tr>
+                                }
+                            })
+                            .collect_view();
+                        view! {
+                            <section class="mt-6">
+                                <h2 class="text-headline">{format!("Lesson {n}: {}", l.map(|l| l.title).unwrap_or(""))}</h2>
+                                <div class="mt-2 overflow-x-auto">
+                                    <table class="w-full text-footnote">
+                                        <thead class="text-text-muted">
+                                            <tr>
+                                                <th scope="col" class="py-1 pr-2 text-left">"Id"</th>
+                                                <th scope="col" class="py-1 pr-2 text-left">"Question"</th>
+                                                <th scope="col" class="py-1 pr-2 text-right">"Answered"</th>
+                                                <th scope="col" class="py-1 pr-2 text-right">"Wrong"</th>
+                                                <th scope="col" class="py-1 pr-2 text-right">"Guessing"</th>
+                                                <th scope="col" class="py-1 text-right">"Learned"</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>{rows}</tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        }
+                    })
+                    .collect_view()
+                    .into_any()
+            }}
+        </main>
+    }
+}

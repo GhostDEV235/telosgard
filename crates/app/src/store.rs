@@ -13,6 +13,8 @@ use gold_core::journal::{Adherence, HardRuleResult, TradeEntry};
 use gold_core::money::{Price, Usd};
 use gold_core::plan::TradingPlan;
 use gold_core::readiness::ReadinessRun;
+use gold_core::retention::{Confidence, QuestionKey, QuestionRecord};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde::de::DeserializeOwned;
@@ -37,6 +39,19 @@ pub mod kind {
     pub const DRILL: &str = "drill";
     pub const READINESS: &str = "readiness";
     pub const REVIEW: &str = "review";
+    pub const QREC: &str = "qrec";
+}
+
+/// One lesson's Question Records (`qrec-01`): question id → record.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QrecDoc {
+    pub lesson: u8,
+    pub questions: BTreeMap<String, QuestionRecord>,
+}
+
+pub fn qrec_doc_id(lesson: u8) -> String {
+    format!("qrec-{lesson:02}")
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -234,12 +249,16 @@ pub struct Store {
     toasts: Toasts,
     pub state: RwSignal<SaveState>,
     pub profile: RwSignal<Option<Profile>>,
-    pub drills: RwSignal<std::collections::HashMap<String, DrillRecord>>,
+    pub drills: RwSignal<HashMap<String, DrillRecord>>,
+    /// Question Records by lesson number.
+    pub qrecs: RwSignal<HashMap<u8, BTreeMap<String, QuestionRecord>>>,
+    /// Lessons whose Question Records changed since the last save.
+    qrec_dirty: RwSignal<BTreeSet<u8>>,
 }
 
 impl Store {
     pub fn new(toasts: Toasts) -> Store {
-        Store { toasts, state: RwSignal::new(SaveState::Connecting), profile: RwSignal::new(None), drills: RwSignal::new(Default::default()) }
+        Store { toasts, state: RwSignal::new(SaveState::Connecting), profile: RwSignal::new(None), drills: RwSignal::new(Default::default()), qrecs: RwSignal::new(Default::default()), qrec_dirty: RwSignal::new(Default::default()) }
     }
 
     fn enabled(&self) -> bool {
@@ -272,11 +291,12 @@ impl Store {
                 let profile = load_doc::<Profile>("profile").await?;
                 let lessons = load_all::<LessonProgress>(kind::PROGRESS).await?;
                 let drills = load_all::<DrillRecord>(kind::DRILL).await?;
-                Ok::<_, PlatformError>((profile, lessons, drills))
+                let qrecs = load_all::<QrecDoc>(kind::QREC).await?;
+                Ok::<_, PlatformError>((profile, lessons, drills, qrecs))
             }
             .await;
             match loaded {
-                Ok((profile, lessons, drills)) => {
+                Ok((profile, lessons, drills, qrecs)) => {
                     // Merge stored progress into anything done while loading; remember what needs saving.
                     let mut stored_map = std::collections::HashMap::new();
                     for (doc_id, stored) in lessons {
@@ -293,6 +313,17 @@ impl Store {
                             e.answered += d.answered;
                             e.correct += d.correct;
                             e.last_at = e.last_at.max(d.last_at);
+                        }
+                    });
+                    // Answers given while connecting were never saved: stored first, then those on top.
+                    self.qrecs.update(|m| {
+                        for (_, doc) in qrecs {
+                            let mem = m.remove(&doc.lesson).unwrap_or_default();
+                            let mut merged = doc.questions;
+                            for (q, r) in mem {
+                                merged.entry(q).or_default().absorb(&r);
+                            }
+                            m.insert(doc.lesson, merged);
                         }
                     });
                     let fresh = profile.is_none();
@@ -318,6 +349,7 @@ impl Store {
                     for id in dirty {
                         self.save_lesson(progress, id);
                     }
+                    self.flush_qrecs();
                 }
                 Err(e) => self.report(e),
             }
@@ -408,5 +440,32 @@ impl Store {
                 self.report(e);
             }
         });
+    }
+
+    /// Records one answer in memory; `flush_qrecs` saves it (after each quiz and review).
+    pub fn record_answer(self, key: &QuestionKey, correct: bool, confidence: Confidence) {
+        self.qrecs.update(|m| m.entry(key.lesson).or_default().entry(key.id.clone()).or_default().record(correct, confidence, now()));
+        self.qrec_dirty.update(|d| {
+            d.insert(key.lesson);
+        });
+    }
+
+    /// Saves every lesson whose Question Records changed. Kept dirty until storage connects.
+    pub fn flush_qrecs(self) {
+        if !self.enabled() {
+            return;
+        }
+        let lessons = std::mem::take(&mut *self.qrec_dirty.write());
+        for lesson in lessons {
+            let doc = QrecDoc { lesson, questions: self.qrecs.with_untracked(|m| m.get(&lesson).cloned().unwrap_or_default()) };
+            spawn_local(async move {
+                if let Err(e) = save_doc(&qrec_doc_id(lesson), kind::QREC, &doc).await {
+                    self.qrec_dirty.update(|d| {
+                        d.insert(lesson);
+                    });
+                    self.report(e);
+                }
+            });
+        }
     }
 }

@@ -140,7 +140,7 @@ fn screen_view(l: &'static Lesson, s: Screen) -> AnyView {
             <p class="text-eyebrow uppercase text-text-muted">"Recall · from memory"</p>
             <p class="mt-1 text-callout text-text-muted">"Three quick questions before the quiz. Practice only."</p>
             <div class="mt-3">
-                <QuizCard questions=l.recall.iter().map(QuizItem::from).collect() on_done=|_| {} practice=true />
+                <QuizCard questions=l.recall.iter().map(|q| QuizItem::course(l.id, q)).collect() on_done=|_| {} practice=true />
             </div>
         }
         .into_any(),
@@ -188,6 +188,8 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
             <button type="button" class="press mt-2 min-h-11 text-callout underline underline-offset-4" on:click=move |_| to_quiz()>"Skip to the quiz ›"</button>
         })}
 
+        <SpacedReview current=l.id />
+
         <section id="lesson-stepper" class="mt-6 scroll-mt-20 rounded-card bg-surface p-5 shadow-card" aria-label="Lesson steps">
             <div class="flex items-center justify-between gap-3">
                 <p class="tabular text-eyebrow uppercase text-text-muted">{move || format!("Step {} of {n}", pos.get() + 1)}</p>
@@ -212,7 +214,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
             <div id="lesson-quiz" class="scroll-mt-20">
                 <h2 class="mt-10 text-title2">"Check your understanding"</h2>
                 <div class="mt-3">
-                    <QuizCard questions=l.quiz.iter().map(QuizItem::from).collect() on_done=on_quiz />
+                    <QuizCard questions=l.quiz.iter().map(|q| QuizItem::course(l.id, q)).collect() on_done=on_quiz />
                 </div>
             </div>
             <Show when=move || quiz_done.get()>
@@ -246,6 +248,55 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
                     .collect_view()}
             </ul>
         </details>
+    }
+}
+
+/// Spaced Review (FR-13.2): up to three questions from earlier passed lessons, picked once storage
+/// has answered (so retired questions are known) and stable for the day. Practice only.
+#[component]
+fn SpacedReview(current: u8) -> impl IntoView {
+    use gold_core::retention::{QuestionKey, pick_review};
+    let progress = expect_context::<Progress>();
+    let store = expect_context::<Store>();
+    let ready = Memo::new(move |_| !matches!(store.state.get(), SaveState::Connecting));
+    let skipped = RwSignal::new(false);
+    let picks = Memo::new(move |_| {
+        if !ready.get() {
+            return Vec::new();
+        }
+        // Picked once: answering (or passing this lesson) must not reshuffle a review in progress.
+        untrack(|| {
+        let passed: Vec<u8> = (1..=gold_core::course::LAST_CORE)
+            .filter(|n| progress.passed(LessonId::Numbered(*n)))
+            .collect();
+        let recs = store.qrecs.get_untracked();
+        let questions: Vec<(QuestionKey, &'static gold_content::QuizQ)> = passed
+            .iter()
+            .filter_map(|n| gold_content::lesson(*n))
+            .flat_map(|l| l.quiz.iter().chain(l.recall.iter()).map(move |q| (QuestionKey::new(l.id, q.id), q)))
+            .collect();
+        let pool: Vec<_> = questions.iter().map(|(k, _)| (k.clone(), recs.get(&k.lesson).and_then(|m| m.get(&k.id)))).collect();
+        let seed = (now() / gold_core::DAY_MS) as u64 * 1000 + current as u64;
+        pick_review(&pool, &passed, current, 3, seed)
+            .into_iter()
+            .filter_map(|k| questions.iter().find(|(qk, _)| *qk == k).map(|(_, q)| QuizItem::course(k.lesson, q)))
+            .collect::<Vec<_>>()
+        })
+    });
+    move || {
+        let items = picks.get();
+        (!items.is_empty() && !skipped.get()).then(|| view! {
+            <section class="mt-6" aria-label="Spaced Review">
+                <div class="flex items-baseline justify-between gap-3">
+                    <h2 class="text-headline">"A quick look back"</h2>
+                    <button type="button" class="press min-h-11 text-callout underline underline-offset-4" on:click=move |_| skipped.set(true)>"Skip"</button>
+                </div>
+                <p class="mt-1 text-callout text-text-muted">"Questions from earlier lessons, mostly ones you missed or guessed. Practice only."</p>
+                <div class="mt-3">
+                    <QuizCard questions=items on_done=|_| {} practice=true label="Spaced Review" />
+                </div>
+            </section>
+        })
     }
 }
 

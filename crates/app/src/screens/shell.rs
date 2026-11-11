@@ -31,6 +31,7 @@ pub fn Shell() -> impl IntoView {
                 Route::Readiness => view! { <journal::Readiness /> }.into_any(),
                 Route::GraderLab => view! { <crate::screens::lab::GraderLab /> }.into_any(),
                 Route::WidgetLab => view! { <crate::screens::lab::WidgetLab /> }.into_any(),
+                Route::QuestionStats => view! { <crate::screens::lab::QuestionStats /> }.into_any(),
                 Route::Checklist => view! { <crate::screens::checklist::Checklist /> }.into_any(),
                 Route::Review => view! { <crate::screens::review::Review /> }.into_any(),
                 Route::TradeNew => view! { <crate::screens::trade::TradeNew /> }.into_any(),
