@@ -60,7 +60,7 @@ pub fn Widget(kind: &'static str) -> impl IntoView {
     };
     view! {
         <figure class=BOX>
-            <figcaption class="text-eyebrow text-text-muted">"Try it · illustrative prices"</figcaption>
+            <figcaption class="text-eyebrow text-eyebrow-ink">"Try it · illustrative prices"</figcaption>
             {body}
         </figure>
     }

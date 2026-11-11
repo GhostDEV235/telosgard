@@ -300,7 +300,7 @@ fn MomentLab() -> impl IntoView {
     let replay = RwSignal::new(0u32);
     view! {
         <section class="mt-4 rounded-card bg-surface p-5 shadow-card" aria-label="Milestone moments">
-            <p class="text-eyebrow text-text-muted">"Milestone moments (preview)"</p>
+            <p class="text-eyebrow text-eyebrow-ink">"Milestone moments (preview)"</p>
             <div class="mt-3 flex items-center gap-4 rounded-btn bg-gold-fill p-4 text-on-gold">
                 {move || { replay.get(); view! { <Badge size=44 /> } }}
                 <p class="text-headline">"Lesson passed"</p>

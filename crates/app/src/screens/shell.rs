@@ -86,13 +86,19 @@ pub struct AppearanceOpen(pub RwSignal<bool>);
 
 /// Large-title header used by the four top-level tabs.
 #[component]
-pub fn LargeTitle(title: &'static str, #[prop(into, default = String::new())] eyebrow: String) -> impl IntoView {
+pub fn LargeTitle(
+    title: &'static str,
+    #[prop(into, default = String::new())] eyebrow: String,
+    /// The italic accent phrase that ends the headline (DESIGN-SYSTEM v3).
+    #[prop(optional)]
+    accent: Option<&'static str>,
+) -> impl IntoView {
     let appearance = expect_context::<AppearanceOpen>().0;
     view! {
         <header class="flex items-end justify-between gap-4 pt-4">
             <div class="min-w-0">
-                <p class="text-eyebrow text-text-muted">{eyebrow}</p>
-                <h1 class="text-large">{title}</h1>
+                <p class="text-eyebrow text-eyebrow-ink">{eyebrow}</p>
+                <h1 class="text-large">{title}{accent.map(|a| view! { " " <em>{a}</em> })}</h1>
             </div>
             <button
                 type="button"

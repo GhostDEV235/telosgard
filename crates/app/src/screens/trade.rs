@@ -534,7 +534,7 @@ pub fn TradeDetail(id: String) -> impl IntoView {
                                             class=move || if emotion.get() == Some(em) {
                                                 "press min-h-11 rounded-full bg-fill px-4 text-callout font-semibold text-on-fill"
                                             } else {
-                                                "press min-h-11 rounded-full bg-bg px-4 text-callout text-text-muted"
+                                                "press min-h-11 rounded-full border border-line bg-surface px-4 text-callout text-text-muted"
                                             }
                                         >{em.label()}</button>
                                     }).collect_view()}

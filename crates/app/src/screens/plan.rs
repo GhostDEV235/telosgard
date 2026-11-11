@@ -51,7 +51,7 @@ fn PlanSummary(plan: TradingPlan) -> impl IntoView {
     let extra = plan.soft.extra.clone();
     view! {
         <section class="rounded-card bg-surface p-5 shadow-card">
-            <p class="text-eyebrow text-text-muted">{format!("Version {} · saved {}", plan.version, local_label(plan.created_at))}</p>
+            <p class="text-eyebrow text-eyebrow-ink">{format!("Version {} · saved {}", plan.version, local_label(plan.created_at))}</p>
             <h2 class="mt-3 text-headline">"Hard Rules · checked by calculation"</h2>
             <dl class="mt-2 divide-y divide-line/30">
                 {rows
@@ -154,7 +154,7 @@ pub fn Plan() -> impl IntoView {
     let form = move || {
         view! {
             <section class="grid gap-4 rounded-card bg-surface p-5 shadow-card">
-                <p class="text-eyebrow text-text-muted">"Hard Rules"</p>
+                <p class="text-eyebrow text-eyebrow-ink">"Hard Rules"</p>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <NumberField label="Max risk per trade" suffix="%" value=max_risk />
                     <NumberField label="Max total loss (of the run's start)" suffix="%" value=max_loss />
@@ -171,7 +171,7 @@ pub fn Plan() -> impl IntoView {
                     </div>
                 </div>
                 <p class="text-footnote text-text-muted">"Always on, not editable: a stop-loss on every trade, the No-Trade Windows, and a Pre-Session Checklist on any day you trade."</p>
-                <p class="mt-2 text-eyebrow text-text-muted">"Soft Rules"</p>
+                <p class="mt-2 text-eyebrow text-eyebrow-ink">"Soft Rules"</p>
                 <label class="block">
                     <span class="text-footnote font-semibold text-text-muted">"Your setup"</span>
                     <textarea rows="4" class="mt-1.5 w-full rounded-field bg-bg p-3.5 text-callout" prop:value=move || setup.get() on:input=move |ev| setup.set(event_target_value(&ev))></textarea>

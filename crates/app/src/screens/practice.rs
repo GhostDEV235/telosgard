@@ -31,7 +31,7 @@ pub fn Practice() -> impl IntoView {
     let store = expect_context::<crate::store::Store>();
     view! {
         <main class="gutter mx-auto max-w-[1040px] pb-8">
-            <LargeTitle title="Practice" />
+            <LargeTitle title="Practice," accent="without pressure." />
             <p class="mt-2 max-w-xl text-callout text-text-muted">
                 "Quick drills on illustrative prices and charts. They train your eye and never count towards a Gate."
             </p>
@@ -42,7 +42,7 @@ pub fn Practice() -> impl IntoView {
                         let slug = d.kind.slug();
                         view! {
                             <a href=format!("#drill-{slug}") class="lift flex h-full flex-col rounded-card bg-surface p-5 shadow-card">
-                                <span class="block text-eyebrow text-text-muted">{d.lesson}</span>
+                                <span class="block text-eyebrow text-eyebrow-ink">{d.lesson}</span>
                                 <span class="mt-1 block text-headline">{d.title}</span>
                                 <span class="mt-1 block text-callout text-text-muted">{d.blurb}</span>
                                 <span class="tabular mt-auto block pt-4 text-footnote font-semibold">
@@ -438,7 +438,7 @@ pub fn CalibrationDrill() -> impl IntoView {
             <Show
                 when=move || done.get()
                 fallback=move || view! {
-                    <p class="tabular mt-4 text-eyebrow text-text-muted">{move || format!("Chart {} of {ROUND_LEN}", idx.get() + 1)}</p>
+                    <p class="tabular mt-4 text-eyebrow text-eyebrow-ink">{move || format!("Chart {} of {ROUND_LEN}", idx.get() + 1)}</p>
                     <section class="mt-2 rounded-card bg-surface p-4 shadow-card md:p-5">
                         <CandleChart candles=shown highlight=highlight label="Illustrative candlestick chart; predict the next candle" />
                     </section>
@@ -464,7 +464,7 @@ pub fn CalibrationDrill() -> impl IntoView {
                 }
             >
                 <section class="anim-fade mt-5 rounded-card bg-surface p-5 shadow-card" aria-live="polite">
-                    <p class="text-eyebrow text-text-muted">"Your hit rate"</p>
+                    <p class="text-eyebrow text-eyebrow-ink">"Your hit rate"</p>
                     <p class="tabular mt-2 text-large">{move || view! { <crate::ui::moments::CountUp value=hit_rate(right.get(), ROUND_LEN as u32).0 as i64 fmt=|v| telosgard_core::money::Percent(v as u32).to_string() /> }}</p>
                     <p class="tabular text-callout text-text-muted">{move || format!("{} of {ROUND_LEN} called right", right.get())}</p>
                     <p class="mt-4 text-callout">

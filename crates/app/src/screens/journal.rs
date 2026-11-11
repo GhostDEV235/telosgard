@@ -15,14 +15,14 @@ use leptos::prelude::*;
 
 pub fn verdict_chip(t: &TradeRecord) -> (&'static str, &'static str) {
     if !t.taken() {
-        return ("Skipped", "border border-line text-text-muted");
+        return ("Skipped", "bg-raised text-text-muted");
     }
     match t.adherence {
-        Adherence::Pending => ("Awaiting verdict", "border border-line text-text-muted"),
-        Adherence::DisputePending { .. } => ("Dispute pending", "border border-line text-text-muted"),
+        Adherence::Pending => ("Awaiting verdict", "bg-warn-bg text-warn-ink"),
+        Adherence::DisputePending { .. } => ("Dispute pending", "bg-warn-bg text-warn-ink"),
         _ => match t.adherence.final_adherent() {
-            Some(true) => ("✓ Followed plan", "border border-up text-up"),
-            _ => ("✗ Broke plan", "border border-down text-down"),
+            Some(true) => ("✓ Followed plan", "bg-ok-bg text-ok-ink"),
+            _ => ("✗ Broke plan", "bg-bad-bg text-bad-ink"),
         },
     }
 }
@@ -38,7 +38,7 @@ fn ReadinessCard() -> impl IntoView {
         if journal.current_plan().is_none() {
             return view! {
                 <a href="#plan" class="lift block rounded-card bg-surface p-5 shadow-card">
-                    <p class="text-eyebrow text-text-muted">"Live Readiness"</p>
+                    <p class="text-eyebrow text-eyebrow-ink">"Live Readiness"</p>
                     <p class="mt-1 text-headline">"Write your Trading Plan first ›"</p>
                     <p class="mt-1 text-callout text-text-muted">"Every Demo Trade is judged against it."</p>
                 </a>
@@ -50,7 +50,7 @@ fn ReadinessCard() -> impl IntoView {
             <a href="#readiness" class="lift block rounded-card bg-surface p-5 shadow-card">
                 <div class="flex items-center justify-between gap-3">
                     <div>
-                        <p class="text-eyebrow text-text-muted">"Live Readiness"</p>
+                        <p class="text-eyebrow text-eyebrow-ink">"Live Readiness"</p>
                         <p class="tabular mt-1 text-headline">{format!("{counted} of {REQUIRED_TRADES} trades counted")}</p>
                     </div>
                     <span class="text-title2 text-text-muted" aria-hidden="true">"›"</span>
@@ -70,12 +70,12 @@ pub fn Journal() -> impl IntoView {
     let day = today();
     view! {
         <main class="gutter mx-auto max-w-[1040px] pb-8">
-            <LargeTitle title="Journal" />
+            <LargeTitle title="Your journal," accent="kept honest." />
             <div class="mt-6 grid items-start gap-5 md:grid-cols-2">
                 <div class="grid gap-5">
                     <ReadinessCard />
                     <section class="rounded-card bg-surface p-5 shadow-card">
-                        <p class="text-eyebrow text-text-muted">"Today"</p>
+                        <p class="text-eyebrow text-eyebrow-ink">"Today"</p>
                         {move || {
                             if journal.checklist(day).is_some() {
                                 view! { <p class="mt-1 text-headline text-up">"✓ Pre-Session Checklist saved"</p> }.into_any()
@@ -216,14 +216,14 @@ pub fn Readiness() -> impl IntoView {
                     </div>
                 </section>
             })}
-            <p class="mt-6 text-eyebrow text-text-muted">{format!("Readiness Run {} · started with {}", run.run.number, run.run.starting_balance)}</p>
+            <p class="mt-6 text-eyebrow text-eyebrow-ink">{format!("Readiness Run {} · started with {}", run.run.number, run.run.starting_balance)}</p>
             <section class="mt-2 grid grid-cols-3 gap-2 rounded-card bg-surface p-5 shadow-card">
                 <Ring value=p.counted as f64 / REQUIRED_TRADES as f64 label="Trades"><CountUp value=p.counted as i64 fmt=|v| format!("{v}/{REQUIRED_TRADES}") /></Ring>
                 <Ring value=pct_adh / (REQUIRED_ADHERENCE.0 as f64 / 10_000.0) label="Followed plan">{if p.counted == 0 { "—".into_any() } else { view! { <CountUp value=p.adherence.0 as i64 fmt=|v| telosgard_core::money::Percent(v as u32).to_string() /> }.into_any() }}</Ring>
                 <Ring value=p.days as f64 / REQUIRED_DAYS as f64 label="Days"><CountUp value=p.days fmt=|v| format!("{v}/{REQUIRED_DAYS}") /></Ring>
             </section>
             <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
-                <p class="text-eyebrow text-text-muted">"Max total loss"</p>
+                <p class="text-eyebrow text-eyebrow-ink">"Max total loss"</p>
                 <p class="tabular mt-1 text-headline">{format!("{} drawdown of {} allowed", p.drawdown, p.max_loss)}</p>
                 <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-bg">
                     <div class="h-full rounded-full bg-down" style=format!("width:{drawdown_pct}%")></div>

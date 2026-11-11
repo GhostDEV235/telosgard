@@ -105,7 +105,7 @@ pub fn BigMomentOverlay() -> impl IntoView {
                     <div class="anim-fade absolute inset-0 bg-scrim" aria-hidden="true" on:click=move |_| close()></div>
                     <div role="dialog" aria-modal="true" aria-labelledby="moment-h" class="moment-in relative w-full max-w-md rounded-card bg-surface p-8 text-center shadow-sheet">
                         <div class="text-gold"><Badge size=88 /></div>
-                        <p class="mt-5 text-eyebrow text-text-muted">{eyebrow}</p>
+                        <p class="mt-5 text-eyebrow text-eyebrow-ink">{eyebrow}</p>
                         <h2 id="moment-h" class="mt-1 font-display text-title1">{title}</h2>
                         <p class="mt-3 text-callout text-text-muted">{body}</p>
                         <div class="mt-6 flex flex-wrap justify-center gap-3">

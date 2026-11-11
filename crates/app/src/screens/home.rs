@@ -67,7 +67,7 @@ fn ProgressCard() -> impl IntoView {
         let pct = if total == 0 { 0 } else { passed * 100 / total };
         view! {
             <section class="rounded-card bg-surface p-5 shadow-card" aria-label="Your progress">
-                <p class="text-eyebrow text-text-muted">"Your progress"</p>
+                <p class="text-eyebrow text-eyebrow-ink">"Your progress"</p>
                 <p class="tabular mt-1 font-display text-title1"><CountUp value=passed fmt=|v| v.to_string() /><span class="text-title2 text-text-muted">{format!(" / {total}")}</span></p>
                 <p class="text-callout text-text-muted">"core lessons passed"</p>
                 <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-bg" aria-hidden="true">
@@ -106,7 +106,7 @@ pub fn Home() -> impl IntoView {
     let progress = expect_context::<Progress>();
     view! {
         <main class="gutter mx-auto max-w-[1040px] pb-8">
-            <LargeTitle title="Today" eyebrow=today_eyebrow() />
+            <LargeTitle title="Today," accent="one step at a time." eyebrow=today_eyebrow() />
             <SaveStatus />
 
             <div class="mt-6 grid items-start gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
@@ -125,7 +125,7 @@ pub fn Home() -> impl IntoView {
                                     <div class="opacity-90">{hero_art()}</div>
                                 </div>
                                 <div class="px-6 pb-6">
-                                    <a href=lesson_href(id) class="press inline-flex min-h-11 items-center rounded-btn bg-on-fill px-6 text-callout font-semibold text-fill">
+                                    <a href=lesson_href(id) class="press inline-flex min-h-11 items-center rounded-full bg-accent px-6 text-callout font-semibold text-on-accent">
                                         "Start lesson ›"
                                     </a>
                                 </div>
@@ -146,7 +146,7 @@ pub fn Home() -> impl IntoView {
             </div>
 
             <section class="mt-9 rounded-card bg-surface p-5 shadow-card">
-                <p class="text-eyebrow text-text-muted">"Your setup"</p>
+                <p class="text-eyebrow text-eyebrow-ink">"Your setup"</p>
                 <h2 class="mt-1 text-headline">"TradingView for charts, MT5 demo for trades"</h2>
                 <p class="mt-1 text-callout text-text-muted">
                     "You won't need either until Stage 3. When you do, the lesson walks you through it."

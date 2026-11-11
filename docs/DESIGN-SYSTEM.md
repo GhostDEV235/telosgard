@@ -1,8 +1,32 @@
-# Design System: Telosgard (v2)
+# Design System: Telosgard (v3)
 
-> **v2 (Wave 1.75, 2026-11-11):** a polished design file in the Learner's green palette, blended with the structure of Figma's own workspace. Calm and content-first, as before; more precise.
-> Palette from the Learner's reference image (#0F1F17 · #1E3A2E · #3E5A3F · #6B7F67 · #C7CBB8 · #3D4337).
-> All contrast ratios below were measured (WCAG 2.x formula). AA body text needs ≥ 4.5:1.
+> **v3 (Wave 1.9, 2026-11-11):** the Learner's reference look. **Light-first**: a warm off-white ground, deep teal-green ink and an **ochre** accent; white cards with soft shadows; **pill** buttons (ochre primary, outlined secondary); **Newsreader** headlines ending in an *italic accent phrase* in teal ("Today, *one step at a time.*"); **Plus Jakarta Sans** for the interface; **small-caps eyebrows** in dark ochre; **tinted status chips** (green done, amber due, red needs action). Dark mode is built from the original greens with a gold accent. The workspace layout (§4.1), motion (§4.2) and Milestone moments carry over from v2.
+>
+> v3 reverses three v2 choices at the Learner's request: tracked capitals for eyebrows (v2: sentence case), pill buttons (v2: one 10px rectangle), light-first (v2: dark-first). Sections below that still describe v2 values are superseded by §0.
+
+## 0. v3 tokens (source of truth: `crates/app/style/tailwind.css`)
+
+| Token | Light (default) | Dark | Use |
+|---|---|---|---|
+| `bg` | `#F3F5F2` | `#0F1F17` | Ground, frames |
+| `surface` | `#FFFFFF` | `#1E3A2E` | Cards, sheets, panels' inputs |
+| `raised` | `#EEF2EC` | `#24443A` | Hover, quiet fills, neutral chip |
+| `fill` / `on-fill` | `#1F4A45` / `#F4F5EF` | `#3E5A3F` / `#F4F5EF` | Featured block (Up next), selected segment, progress bars |
+| `accent` / `on-accent` | `#D9A549` / `#1A2B27` | `#D4B062` / `#13221B` | The primary pill |
+| `text` | `#1C3531` | `#C7CBB8` | Ink |
+| `text-muted` | `#55675F` | `#9DAD98` | Secondary text |
+| `eyebrow-ink` | `#875812` | `#D4B062` | Small-caps eyebrows |
+| `accent-ink` | `#2C5A55` | `#9CC9B9` | The italic accent phrase |
+| `ok-bg` / `ok-ink` | `#E2EFE5` / `#2E6A3D` | `#2E513A` / `#A6DBA1` | Chips: done, followed plan, Got it |
+| `warn-bg` / `warn-ink` | `#F7EBD2` / `#7E530E` | `#3B4D36` / `#E6C987` | Chips: awaiting, Almost |
+| `bad-bg` / `bad-ink` | `#F6E2DE` / `#9A3A2C` | `#3E4638` / `#F2A897` | Chips: broke plan, Not yet |
+| `canvas` / `grid` | `#E8ECE6` / ink at 10% | `#0A1711` / text at 11% | Workspace dot grid |
+
+**Measured contrast (WCAG 2.x), lowest per text token across bg / surface / raised / canvas:** light: text 10.96, muted 5.03, eyebrow 5.12, accent-ink 6.51, up 5.23, down 5.36, gold 5.22; on-accent on accent 6.65; on-fill on fill 9.02; chips 5.46 / 5.68 / 5.59. Dark: text 6.45, muted 4.52, eyebrow 5.19, accent-ink 5.84; on-accent on accent 8.01; chips 5.64 / 5.68 / 5.06.
+
+**Type:** Newsreader for every `h1` and the Large Title / Title 1 sizes (regular 400, an `<em>` inside is the teal italic accent); Plus Jakarta Sans (400–700) everywhere else. Large Title 42/46, Title 1 34/40, Title 2 22/28 600, Headline 17/24 600, Body 17/29, Callout 16/25, Footnote 13/19, Eyebrow 12/16 600, +0.08em, uppercase.
+
+**Shape:** cards and frames 18 px, rows and fields 12 px, buttons and chips full pills. Light cards: hairline ring + `0 1px 2px` + `0 10px 30px` soft shadow (ink at 4% / 7%); dark: hairline ring only.
 
 ## 1. Principles
 1. **Content is the hero.** Generous whitespace, one idea per card, no decoration that doesn't carry meaning.

@@ -144,9 +144,9 @@ pub fn GateStatus(id: LessonId) -> impl IntoView {
     let moments = expect_context::<crate::ui::moments::Moments>();
     let pill = |met: bool| {
         if met {
-            "rounded-full bg-gold-fill px-3 py-1.5 text-footnote font-semibold text-on-gold"
+            "rounded-full bg-ok-bg px-3 py-1.5 text-footnote font-semibold text-ok-ink"
         } else {
-            "rounded-full border border-line px-3 py-1.5 text-footnote font-semibold text-text-muted"
+            "rounded-full bg-raised px-3 py-1.5 text-footnote font-semibold text-text-muted"
         }
     };
     let next = match id {
@@ -228,7 +228,7 @@ pub fn Callout(kind: CalloutKind, text: &'static str) -> impl IntoView {
     };
     view! {
         <aside class="rounded-card border-l-4 border-fill bg-surface p-5 shadow-card">
-            <p class="text-eyebrow text-text-muted">{label}</p>
+            <p class="text-eyebrow text-eyebrow-ink">{label}</p>
             <p class="mt-2 text-callout">{text}</p>
         </aside>
     }

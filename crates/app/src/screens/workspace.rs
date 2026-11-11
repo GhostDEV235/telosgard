@@ -80,7 +80,7 @@ pub fn Sidebar() -> impl IntoView {
                 </ul>
             </nav>
             <div class="mx-5 mt-5 mb-2 border-t border-hairline"></div>
-            <p id="outline-h" class="px-5 pb-1 text-eyebrow text-text-muted">"Course"</p>
+            <p id="outline-h" class="px-5 pb-1 text-eyebrow text-eyebrow-ink">"Course"</p>
             <nav aria-labelledby="outline-h" class="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
                 <CourseOutline />
             </nav>
@@ -183,7 +183,7 @@ pub fn JournalPanel() -> impl IntoView {
     let route = expect_context::<RwSignal<Route>>();
     view! {
         <aside aria-label="Readiness at a glance" class="sticky top-0 hidden h-dvh w-[272px] shrink-0 overflow-y-auto border-l border-hairline bg-bg px-4 xl:w-[300px] xl:px-5 py-6 lg:block">
-            <p class="text-eyebrow text-text-muted">"Live Readiness"</p>
+            <p class="text-eyebrow text-eyebrow-ink">"Live Readiness"</p>
             {move || match journal.readiness_progress() {
                 Some((run, p)) => view! {
                     <p class="mt-1 text-footnote text-text-muted">{format!("Run {} · started with {}", run.run.number, run.run.starting_balance)}</p>
@@ -203,7 +203,7 @@ pub fn JournalPanel() -> impl IntoView {
             }}
             <a href="#readiness" class="mt-3 inline-block min-h-11 py-2 text-callout underline underline-offset-4">"Open Live Readiness"</a>
             <div class="my-5 border-t border-hairline"></div>
-            <p class="text-eyebrow text-text-muted">"Today"</p>
+            <p class="text-eyebrow text-eyebrow-ink">"Today"</p>
             {move || {
                 let done = journal.checklist(today()).is_some();
                 view! {

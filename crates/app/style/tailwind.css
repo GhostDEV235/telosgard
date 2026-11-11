@@ -1,50 +1,57 @@
 @import "tailwindcss";
 @source "../src";
 
-/* Tokens: docs/DESIGN-SYSTEM.md. Dark-first: dark values on bare :root, light under the two guarded blocks. */
+/* Tokens: docs/DESIGN-SYSTEM.md v3. Light-first (the Learner's reference look): light values on bare
+   :root; dark (the original greens) under the two guarded blocks. */
 @theme static {
-  --color-bg: #0F1F17;
-  --color-surface: #1E3A2E;
-  --color-raised: #24443A;
-  --color-fill: #3E5A3F;
+  --color-bg: #F3F5F2;            /* warm off-white ground */
+  --color-surface: #FFFFFF;       /* cards */
+  --color-raised: #EEF2EC;        /* hover, quiet fills */
+  --color-fill: #1F4A45;          /* deep teal: featured blocks, selected segments */
   --color-on-fill: #F4F5EF;
-  --color-text: #C7CBB8;
-  --color-text-muted: #9DAD98;
-  --color-line: #6B7F67;
-  --color-locked: #3D4337;
-  --color-up: #7FC97A;
-  --color-down: #E8826B;
-  --color-gold: #D4B062;
-  --color-gold-fill: #D4B062;
-  --color-on-gold: #0F1F17;
-  --color-scrim: rgb(5 12 9 / 0.6);
+  --color-accent: #D9A549;        /* ochre: the primary pill */
+  --color-on-accent: #1A2B27;
+  --color-text: #1C3531;          /* deep teal-green ink */
+  --color-text-muted: #55675F;
+  --color-eyebrow-ink: #875812;   /* small-caps eyebrows */
+  --color-accent-ink: #2C5A55;    /* the italic accent phrase in a headline */
+  --color-line: #C9D0C8;
+  --color-locked: #E8EBE5;
+  --color-up: #2A6E27;
+  --color-down: #9E4232;
+  --color-gold: #7A5C14;
+  --color-gold-fill: #D9A549;
+  --color-on-gold: #1A2B27;
+  --color-scrim: rgb(20 35 32 / 0.35);
+  --color-ok-bg: #E2EFE5;  --color-ok-ink: #2E6A3D;
+  --color-warn-bg: #F7EBD2; --color-warn-ink: #7E530E;
+  --color-bad-bg: #F6E2DE;  --color-bad-ink: #9A3A2C;
 
-  /* v2 (Wave 1.75): a 1px hairline ring instead of a drop shadow in dark; ring + a whisper of shadow in light. */
-  --color-hairline: rgb(199 203 184 / 0.13);
-  --color-grid: rgb(199 203 184 / 0.11);
-  --color-canvas: #0A1711;
-  --shadow-card: 0 0 0 1px var(--color-hairline);
-  --shadow-lift: 0 0 0 1px rgb(199 203 184 / 0.22), 0 10px 24px rgb(0 0 0 / 0.22);
-  --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(0 0 0 / 0.45);
+  --color-hairline: rgb(28 53 49 / 0.12);
+  --color-grid: rgb(28 53 49 / 0.10);
+  --color-canvas: #E8ECE6;
+  --shadow-card: 0 0 0 1px var(--color-hairline), 0 1px 2px rgb(28 53 49 / .04), 0 10px 30px rgb(28 53 49 / .07);
+  --shadow-lift: 0 0 0 1px rgb(28 53 49 / .18), 0 14px 34px rgb(28 53 49 / .12);
+  --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(28 53 49 / .16);
 
-  /* One radius family ("soft"): frames and cards 16, controls and buttons 10, chips full. */
-  --radius-card: 16px;
-  --radius-btn: 10px;
-  --radius-field: 10px;
+  /* Radius family: cards and frames 18, rows and fields 12; buttons and chips are pills (rounded-full). */
+  --radius-card: 18px;
+  --radius-btn: 12px;
+  --radius-field: 12px;
 
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
   --font-display: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
 
-  /* Display sizes are set in Newsreader (h1 and .font-display); everything else in Inter. Nothing under 13px. */
-  --text-large: 38px;   --text-large--line-height: 44px;   --text-large--font-weight: 500;  --text-large--letter-spacing: -0.015em;
-  --text-title1: 32px;  --text-title1--line-height: 38px;  --text-title1--font-weight: 500; --text-title1--letter-spacing: -0.01em;
+  /* Display sizes in Newsreader (h1 and .font-display); everything else in Plus Jakarta Sans. */
+  --text-large: 42px;   --text-large--line-height: 46px;   --text-large--font-weight: 400;  --text-large--letter-spacing: -0.02em;
+  --text-title1: 34px;  --text-title1--line-height: 40px;  --text-title1--font-weight: 400; --text-title1--letter-spacing: -0.015em;
   --text-title2: 22px;  --text-title2--line-height: 28px;  --text-title2--font-weight: 600; --text-title2--letter-spacing: -0.01em;
   --text-headline: 17px; --text-headline--line-height: 24px; --text-headline--font-weight: 600; --text-headline--letter-spacing: -0.01em;
-  --text-body: 17px;    --text-body--line-height: 28px;
-  --text-callout: 16px; --text-callout--line-height: 24px;
-  --text-footnote: 13px; --text-footnote--line-height: 18px;
-  /* "Label": sentence case, 13px, 500, no tracking (replaces the tracked-capitals eyebrow). */
-  --text-eyebrow: 13px; --text-eyebrow--line-height: 18px; --text-eyebrow--font-weight: 500; --text-eyebrow--letter-spacing: 0;
+  --text-body: 17px;    --text-body--line-height: 29px;
+  --text-callout: 16px; --text-callout--line-height: 25px;
+  --text-footnote: 13px; --text-footnote--line-height: 19px;
+  /* Eyebrow: small capitals, tracked, 12px / 600 (uppercase is applied with the class). */
+  --text-eyebrow: 12px; --text-eyebrow--line-height: 16px; --text-eyebrow--font-weight: 600; --text-eyebrow--letter-spacing: 0.08em;
 }
 
 /* Motion tokens (borrowed from taste-skill motion.md): no curve overshoots. */
@@ -54,29 +61,35 @@
   --ease-enter: cubic-bezier(.22, 1, .36, 1);
 }
 
-:root { color-scheme: dark; }
+:root { color-scheme: light; }
 
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    color-scheme: light;
-    --color-bg: #E4E6DA; --color-surface: #F4F5EF; --color-raised: #FFFFFF; --color-text: #0F1F17;
-    --color-text-muted: #4E5F4B; --color-line: #C7CBB8; --color-locked: #DEE0D9;
-    --color-up: #2A6E27; --color-down: #9E4232; --color-gold: #7A5C14; --color-scrim: rgb(15 31 23 / 0.35);
-    --color-hairline: rgb(15 31 23 / 0.12); --color-grid: rgb(15 31 23 / 0.10); --color-canvas: #D8DBCE;
-    --shadow-card: 0 0 0 1px var(--color-hairline), 0 1px 2px rgb(15 31 23 / .05);
-    --shadow-lift: 0 0 0 1px rgb(15 31 23 / .2), 0 10px 24px rgb(15 31 23 / .08);
-    --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(15 31 23 / .18);
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-bg: #0F1F17; --color-surface: #1E3A2E; --color-raised: #24443A; --color-fill: #3E5A3F; --color-on-fill: #F4F5EF;
+    --color-accent: #D4B062; --color-on-accent: #13221B; --color-text: #C7CBB8; --color-text-muted: #9DAD98;
+    --color-eyebrow-ink: #D4B062; --color-accent-ink: #9CC9B9; --color-line: #6B7F67; --color-locked: #3D4337;
+    --color-up: #7FC97A; --color-down: #E8826B; --color-gold: #D4B062; --color-gold-fill: #D4B062; --color-on-gold: #0F1F17;
+    --color-scrim: rgb(5 12 9 / 0.6);
+    --color-ok-bg: #2E513A; --color-ok-ink: #A6DBA1; --color-warn-bg: #3B4D36; --color-warn-ink: #E6C987; --color-bad-bg: #3E4638; --color-bad-ink: #F2A897;
+    --color-hairline: rgb(199 203 184 / 0.13); --color-grid: rgb(199 203 184 / 0.11); --color-canvas: #0A1711;
+    --shadow-card: 0 0 0 1px var(--color-hairline);
+    --shadow-lift: 0 0 0 1px rgb(199 203 184 / 0.22), 0 10px 24px rgb(0 0 0 / 0.22);
+    --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(0 0 0 / 0.45);
   }
 }
-:root[data-theme="light"] {
-  color-scheme: light;
-  --color-bg: #E4E6DA; --color-surface: #F4F5EF; --color-raised: #FFFFFF; --color-text: #0F1F17;
-  --color-text-muted: #4E5F4B; --color-line: #C7CBB8; --color-locked: #DEE0D9;
-  --color-up: #2A6E27; --color-down: #9E4232; --color-gold: #7A5C14; --color-scrim: rgb(15 31 23 / 0.35);
-  --color-hairline: rgb(15 31 23 / 0.12); --color-grid: rgb(15 31 23 / 0.10); --color-canvas: #D8DBCE;
-  --shadow-card: 0 0 0 1px var(--color-hairline), 0 1px 2px rgb(15 31 23 / .05);
-  --shadow-lift: 0 0 0 1px rgb(15 31 23 / .2), 0 10px 24px rgb(15 31 23 / .08);
-  --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(15 31 23 / .18);
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #0F1F17; --color-surface: #1E3A2E; --color-raised: #24443A; --color-fill: #3E5A3F; --color-on-fill: #F4F5EF;
+  --color-accent: #D4B062; --color-on-accent: #13221B; --color-text: #C7CBB8; --color-text-muted: #9DAD98;
+  --color-eyebrow-ink: #D4B062; --color-accent-ink: #9CC9B9; --color-line: #6B7F67; --color-locked: #3D4337;
+  --color-up: #7FC97A; --color-down: #E8826B; --color-gold: #D4B062; --color-gold-fill: #D4B062; --color-on-gold: #0F1F17;
+  --color-scrim: rgb(5 12 9 / 0.6);
+  --color-ok-bg: #2E513A; --color-ok-ink: #A6DBA1; --color-warn-bg: #3B4D36; --color-warn-ink: #E6C987; --color-bad-bg: #3E4638; --color-bad-ink: #F2A897;
+  --color-hairline: rgb(199 203 184 / 0.13); --color-grid: rgb(199 203 184 / 0.11); --color-canvas: #0A1711;
+  --shadow-card: 0 0 0 1px var(--color-hairline);
+  --shadow-lift: 0 0 0 1px rgb(199 203 184 / 0.22), 0 10px 24px rgb(0 0 0 / 0.22);
+  --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(0 0 0 / 0.45);
 }
 
 /* Un-layered on purpose: the artifact viewer wraps the page in its own un-layered reset (light
@@ -91,7 +104,6 @@ body {
   font-family: var(--font-sans);
   font-size: 17px;
   line-height: 1.5;
-  font-feature-settings: "cv05"; /* Inter: lower-case l with a tail, so l, 1 and I differ in prices */
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
@@ -103,8 +115,11 @@ body::before {
 
 @layer base {
   h1, h2, h3 { text-wrap: balance; }
-  /* The two display sizes are always Newsreader, whatever element carries them. */
+  /* The two display sizes are always Newsreader, whatever element carries them; an <em> inside a
+     display heading is the italic accent phrase in teal. Eyebrows are small capitals. */
   h1, .text-large, .text-title1 { font-family: var(--font-display); }
+  h1 em, .font-display em, .text-large em, .text-title1 em { font-style: italic; color: var(--color-accent-ink); }
+  .text-eyebrow { text-transform: uppercase; }
   button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   :focus-visible { outline: 2px solid var(--color-text); outline-offset: 2px; transition: none; }
   /* Text links rest on a faint underline and darken it on hover. */

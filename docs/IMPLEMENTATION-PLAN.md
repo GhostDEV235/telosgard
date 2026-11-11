@@ -201,6 +201,40 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 **Exit check:** all checks pass and are recorded here. ✅
 
+## Wave 1.9: Telosgard on Cloudflare, and the new look *(decided 2026-11-11)*
+
+> The Learner asked for Postgres, Cloudflare deployment and the look of a reference screenshot (warm off-white, deep teal-green ink, an ochre accent, pill buttons, serif headlines with an italic accent phrase, small-caps eyebrows, white cards with soft shadows, tinted status chips). Decisions: **Cloudflare only** (Pages, a Worker, **D1**, R2, **Access**); the claude.ai Artifact is frozen at version 21. Cloudflare has no Postgres of its own, so D1 (SQLite) is used ([ADR 0003](adr/0003-cloudflare-pages-d1-access.md)). Fonts: **Newsreader** (display, with italic accents) and **Plus Jakarta Sans** (interface), the closest Google Fonts to the screenshot.
+
+### Phase 17: The new look ✅
+- [x] `DESIGN-SYSTEM.md` v3: light-first warm palette (off-white ground, deep teal-green ink, ochre accent), dark mode redesigned from the original greens; Plus Jakarta Sans + Newsreader; pill buttons (ochre primary, outlined secondary); small-caps eyebrows in ochre; white cards with soft shadows; tinted status chips; contrast measured for every pairing
+- [x] Applied app-wide, keeping the workspace layout, the motion and the Milestone moments
+
+*Done 2026-11-11: fonts identified by setting the reference sentence in 8 sans and 4 serif candidates (Plus Jakarta Sans and Newsreader matched); tokens rewritten light-first with dark from the original greens; pills, ochre eyebrows, tinted chips, teal progress bars, italic accent titles ("Today, one step at a time." · "Practice, without pressure." · "Tools for the plan." · "Your journal, kept honest."). 16 routes × 4 widths × 2 themes: axe clean, no overflow. Not published: the Artifact is frozen; it ships with Phase 20.*
+
+**Exit check:** every screen in the new look at 1440 / 1024 / 768 / 390, both themes; axe clean.
+
+### Phase 18: Cloudflare backend (local first)
+- [ ] `cloudflare/`: Pages Functions in TypeScript with a D1 binding: `GET/PUT/DELETE /api/docs/:id`, `GET /api/docs?kind=`, `GET /api/me`; identity from the Access JWT (verified against the team's keys), with a local-dev identity under `wrangler dev`
+- [ ] D1 schema and migrations: `docs (user_id, doc_id, kind, body, updated_at)`, primary key `(user_id, doc_id)`, index on `(user_id, kind)`
+- [ ] R2 for chart screenshots (`POST /api/assets`, served from `/api/assets/:id` to the owner only)
+- [ ] `bridge.js` Cloudflare twin with the same exports; the Rust app unchanged apart from asset URLs
+- [ ] Tests for the Worker (Vitest with the Workers pool): auth required, one user can't read another's documents, list by kind
+
+**Exit check:** the whole app works against `wrangler dev` with a local D1: progress, plan, checklist, journal, delete, screenshots.
+
+### Phase 19: Claude through the Worker
+- [ ] `POST /api/claude/json` and `/api/claude/text`: fixed model and output cap per call type (grading, verdict, practice, tutor), API key as a Worker secret, per-user rate limit, errors mapped to the bridge's codes (never a made-up answer)
+- [ ] The grader lab re-run against the new path (36 fixtures)
+
+**Exit check:** grading, verdicts, practice and Ask Claude work through the Worker; grader lab 36/36.
+
+### Phase 20: Deploy and move the data
+- [ ] The Learner's one-time steps, guided: Cloudflare account and `wrangler login`, the Anthropic key as a secret, Access on the site
+- [ ] Deploy to Pages; copy the Learner's existing documents from the Artifact database into D1 (read with ArtifactData, imported by a script); the Artifact gets a note pointing to the new address
+- [ ] Phase 16's checks repeated on the deployed site
+
+**Exit check:** the Learner signs in through Access on the live site and sees their own progress.
+
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:
 - Wave 2: session drills ("which session is it?", "is this a No-Trade Window?")

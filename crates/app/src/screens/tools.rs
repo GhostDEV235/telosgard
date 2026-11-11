@@ -31,7 +31,7 @@ pub fn Tools() -> impl IntoView {
 
     view! {
         <main class="gutter mx-auto max-w-[1040px] pb-8">
-            <LargeTitle title="Tools" />
+            <LargeTitle title="Tools for" accent="the plan." />
             <h2 class="mt-7 text-title2">"Position size"</h2>
             <p class="mt-1 max-w-xl text-callout text-text-muted">
                 "How many lots can you trade so that, if your stop-loss is hit, you lose only the share of your account you chose?"
@@ -58,7 +58,7 @@ pub fn Tools() -> impl IntoView {
                         Some(Sizing::Ok { lots, risk, risk_pct }) => {
                             let stop = stop_v().unwrap_or_default();
                             view! {
-                                <p class="text-eyebrow text-text-muted">"Trade size"</p>
+                                <p class="text-eyebrow text-eyebrow-ink">"Trade size"</p>
                                 <p class="tabular mt-1 text-[56px] leading-[1.05] font-bold tracking-tight">
                                     {lots.to_string()} <span class="text-title2 font-semibold text-text-muted">" lots"</span>
                                 </p>
@@ -81,7 +81,7 @@ pub fn Tools() -> impl IntoView {
                         }
                         Some(Sizing::TooSmall { min_lot_risk, min_lot_risk_pct }) => {
                             view! {
-                                <p class="text-eyebrow text-text-muted">"Trade size"</p>
+                                <p class="text-eyebrow text-eyebrow-ink">"Trade size"</p>
                                 <p class="mt-1 text-title1 text-down">"▼ Too small to trade safely"</p>
                                 <p class="mt-3 text-callout">
                                     "Even the smallest size, 0.01 lots, would lose " <strong>{min_lot_risk.to_string()}</strong> " ("
@@ -95,7 +95,7 @@ pub fn Tools() -> impl IntoView {
                         }
                         None => {
                             view! {
-                                <p class="text-eyebrow text-text-muted">"Trade size"</p>
+                                <p class="text-eyebrow text-eyebrow-ink">"Trade size"</p>
                                 <p class="mt-2 text-callout text-text-muted">"Fix the highlighted field to see your size."</p>
                             }
                                 .into_any()

@@ -25,7 +25,7 @@ pub fn LessonScreen(id: LessonId) -> impl IntoView {
     view! {
         <crate::screens::shell::SubBar back="#today" back_label="Today" title=title />
         <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
-            <p class="text-eyebrow text-text-muted">{catalog::eyebrow(id)}</p>
+            <p class="text-eyebrow text-eyebrow-ink">{catalog::eyebrow(id)}</p>
             <h1 class="mt-1 text-title1">{title}</h1>
             {move || {
                 if !unlocked.get() {
@@ -99,7 +99,7 @@ pub fn screens(l: &Lesson) -> Vec<Screen> {
 fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> AnyView {
     match s {
         Screen::Hook => view! {
-            <p class="text-eyebrow text-text-muted">"Start with a question"</p>
+            <p class="text-eyebrow text-eyebrow-ink">"Start with a question"</p>
             <p class="mt-2 text-title2">{l.hook}</p>
             <p class="mt-3 text-callout text-text-muted">"Have a guess in your head, then tap Next."</p>
         }
@@ -148,7 +148,7 @@ fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> A
         }
         .into_any(),
         Screen::Recall => view! {
-            <p class="text-eyebrow text-text-muted">"Recall · from memory"</p>
+            <p class="text-eyebrow text-eyebrow-ink">"Recall · from memory"</p>
             <p class="mt-1 text-callout text-text-muted">"Three quick questions before the quiz. Practice only."</p>
             <div class="mt-3">
                 <QuizCard questions=l.recall.iter().map(|q| QuizItem::course(l.id, q)).collect() on_done=|_| {} practice=true />
@@ -217,10 +217,10 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
 
         <section id="lesson-stepper" class="mt-6 scroll-mt-20 rounded-card bg-surface p-5 shadow-card" aria-label="Lesson steps">
             <div class="flex items-center justify-between gap-3">
-                <p class="tabular text-eyebrow text-text-muted">{move || format!("Step {} of {n}", pos.get() + 1)}</p>
+                <p class="tabular text-eyebrow text-eyebrow-ink">{move || format!("Step {} of {n}", pos.get() + 1)}</p>
             </div>
             <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-bg" role="progressbar" aria-label="Lesson progress" aria-valuemin="1" aria-valuemax=n aria-valuenow=move || pos.get() + 1>
-                <div class="h-full rounded-full bg-text-muted transition-[width]" style=move || format!("width:{}%", (pos.get() + 1) * 100 / n)></div>
+                <div class="h-full rounded-full bg-fill transition-[width]" style=move || format!("width:{}%", (pos.get() + 1) * 100 / n)></div>
             </div>
             <div class="mt-5 min-h-48" aria-live="polite">
                 {move || {
@@ -485,10 +485,10 @@ pub fn LessonPanel(id: LessonId) -> impl IntoView {
             </li>
         };
         Some(view! {
-            <p class="text-eyebrow text-text-muted">"Progress"</p>
+            <p class="text-eyebrow text-eyebrow-ink">"Progress"</p>
             <p class="tabular mt-1 text-callout">{move || format!("Step {} of {n}", ui.pos.get().min(n - 1) + 1)}</p>
             <div class="mt-2 h-1 overflow-hidden rounded-full bg-surface" aria-hidden="true">
-                <div class="h-full rounded-full bg-text-muted transition-[width] duration-200" style=move || format!("width:{}%", (ui.pos.get().min(n - 1) + 1) * 100 / n)></div>
+                <div class="h-full rounded-full bg-fill transition-[width] duration-200" style=move || format!("width:{}%", (ui.pos.get().min(n - 1) + 1) * 100 / n)></div>
             </div>
             <ol class="mt-3 grid grid-cols-1 gap-px">
                 {all.with_value(|v| v.iter().enumerate().map(|(i, s)| {
@@ -512,7 +512,7 @@ pub fn LessonPanel(id: LessonId) -> impl IntoView {
                 }).collect_view())}
             </ol>
             <div class="my-5 border-t border-hairline"></div>
-            <p class="text-eyebrow text-text-muted">"To unlock the next lesson"</p>
+            <p class="text-eyebrow text-eyebrow-ink">"To unlock the next lesson"</p>
             {move || {
                 let p = progress.get(id);
                 view! {
@@ -524,10 +524,10 @@ pub fn LessonPanel(id: LessonId) -> impl IntoView {
                 }
             }}
             <div class="my-5 border-t border-hairline"></div>
-            <p class="text-eyebrow text-text-muted">"Ask Claude"</p>
+            <p class="text-eyebrow text-eyebrow-ink">"Ask Claude"</p>
             <div class="mt-2"><AskBody lesson=l step=step input_id="ask-panel-q" /></div>
             <div class="my-5 border-t border-hairline"></div>
-            <p class="text-eyebrow text-text-muted">"Sources"</p>
+            <p class="text-eyebrow text-eyebrow-ink">"Sources"</p>
             <ul class="mt-2 grid gap-2 text-footnote text-text-muted">
                 {l.sources.iter().map(|s| view! {
                     <li>
@@ -555,9 +555,9 @@ enum Phase {
 
 fn grade_chip(g: Grade) -> impl IntoView {
     let (label, class) = match g {
-        Grade::GotIt => ("✓ Got it", "bg-gold-fill text-on-gold"),
-        Grade::Almost => ("Almost", "border border-text-muted text-text"),
-        Grade::NotYet => ("Not yet", "border border-line text-text-muted"),
+        Grade::GotIt => ("✓ Got it", "bg-ok-bg text-ok-ink"),
+        Grade::Almost => ("Almost", "bg-warn-bg text-warn-ink"),
+        Grade::NotYet => ("Not yet", "bg-bad-bg text-bad-ink"),
     };
     view! { <span class=format!("inline-block rounded-full px-3 py-1 text-footnote font-semibold {class}")>{label}</span> }
 }
@@ -567,7 +567,7 @@ fn suggestion_view(s: String) -> impl IntoView {
     let parts = telosgard_core::grading::marked_segments(&s);
     view! {
         <div class="mt-3 rounded-btn border-l-4 border-fill bg-surface p-3.5">
-            <p class="text-eyebrow text-text-muted">"Your answer, with the missing piece added"</p>
+            <p class="text-eyebrow text-eyebrow-ink">"Your answer, with the missing piece added"</p>
             <p class="mt-1.5 text-callout">
                 {parts
                     .into_iter()
@@ -676,7 +676,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                 Grade::Almost => res.gap.clone().map(|gap| {
                     view! {
                         <div class="mt-3 rounded-btn border-l-4 border-fill bg-surface p-3.5">
-                            <p class="text-eyebrow text-text-muted">"What's missing"</p>
+                            <p class="text-eyebrow text-eyebrow-ink">"What's missing"</p>
                             <p class="mt-1 text-callout">{gap}</p>
                         </div>
                     }
@@ -685,7 +685,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                 Grade::NotYet => res.reteach.clone().map(|r| {
                     view! {
                         <div class="mt-3 rounded-btn border-l-4 border-fill bg-surface p-3.5">
-                            <p class="text-eyebrow text-text-muted">"💡 Another way to see it"</p>
+                            <p class="text-eyebrow text-eyebrow-ink">"💡 Another way to see it"</p>
                             <p class="mt-1 text-callout">{r}</p>
                         </div>
                     }
@@ -733,7 +733,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                         let reteach = (a.grade == Grade::NotYet).then_some(a.reteach.clone()).flatten();
                         view! {
                             <div class="anim-fade mt-4 rounded-btn bg-bg p-4">
-                                <p class="text-eyebrow text-text-muted">{format!("Your last answer · {}", short_date(a.at))}</p>
+                                <p class="text-eyebrow text-eyebrow-ink">{format!("Your last answer · {}", short_date(a.at))}</p>
                                 <p class="mt-1.5 text-callout">{a.feedback.clone()}</p>
                                 {(a.grade == Grade::Almost).then_some(a.gap.clone()).flatten().map(|g| view! {
                                     <p class="mt-2 text-callout"><span class="font-semibold">"What's missing: "</span>{g}</p>
@@ -857,7 +857,7 @@ fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
                 round.get().map(|(n, items)| {
                     view! {
                         <div>
-                            <p class="mb-2 text-eyebrow text-text-muted">{format!("Practice round {n} · written by Claude")}</p>
+                            <p class="mb-2 text-eyebrow text-eyebrow-ink">{format!("Practice round {n} · written by Claude")}</p>
                             <QuizCard questions=items on_done=move |_| asking.set(true) practice=true />
                         </div>
                     }
