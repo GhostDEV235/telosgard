@@ -148,7 +148,7 @@ pub fn QuizCard(
         let why = q.why.clone();
         view! {
             <div class="flex items-center justify-between gap-3">
-                <p class="text-eyebrow uppercase text-text-muted">
+                <p class="text-eyebrow text-text-muted">
                     {match (label, practice) {
                         (Some(l), _) => format!("{l} · "),
                         (None, true) => "Practice · ".into(),
@@ -200,7 +200,7 @@ pub fn QuizCard(
         let score = quiz_score(correct.get(), n as u32);
         let passed = score >= QUIZ_PASS_PERCENT;
         view! {
-            <p class="text-eyebrow uppercase text-text-muted">{if practice { "Practice result" } else { "Quiz result" }}</p>
+            <p class="text-eyebrow text-text-muted">{if practice { "Practice result" } else { "Quiz result" }}</p>
             <p class="tabular mt-2 text-large">{format!("{score}%")}</p>
             <p class="text-callout text-text-muted">{format!("{} of {n} right", correct.get())}</p>
             {if practice {

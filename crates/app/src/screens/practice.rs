@@ -41,8 +41,8 @@ pub fn Practice() -> impl IntoView {
                     .map(|d| {
                         let slug = d.kind.slug();
                         view! {
-                            <a href=format!("#drill-{slug}") class="press block rounded-card bg-surface p-5 shadow-card hover:bg-raised">
-                                <span class="block text-eyebrow uppercase text-text-muted">{d.lesson}</span>
+                            <a href=format!("#drill-{slug}") class="lift block rounded-card bg-surface p-5 shadow-card">
+                                <span class="block text-eyebrow text-text-muted">{d.lesson}</span>
                                 <span class="mt-1 block text-headline">{d.title}</span>
                                 <span class="mt-1 block text-callout text-text-muted">{d.blurb}</span>
                                 <span class="tabular mt-4 block text-footnote font-semibold">
@@ -438,7 +438,7 @@ pub fn CalibrationDrill() -> impl IntoView {
             <Show
                 when=move || done.get()
                 fallback=move || view! {
-                    <p class="tabular mt-4 text-eyebrow uppercase text-text-muted">{move || format!("Chart {} of {ROUND_LEN}", idx.get() + 1)}</p>
+                    <p class="tabular mt-4 text-eyebrow text-text-muted">{move || format!("Chart {} of {ROUND_LEN}", idx.get() + 1)}</p>
                     <section class="mt-2 rounded-card bg-surface p-4 shadow-card md:p-5">
                         <CandleChart candles=shown highlight=highlight label="Illustrative candlestick chart; predict the next candle" />
                     </section>
@@ -464,7 +464,7 @@ pub fn CalibrationDrill() -> impl IntoView {
                 }
             >
                 <section class="anim-fade mt-5 rounded-card bg-surface p-5 shadow-card" aria-live="polite">
-                    <p class="text-eyebrow uppercase text-text-muted">"Your hit rate"</p>
+                    <p class="text-eyebrow text-text-muted">"Your hit rate"</p>
                     <p class="tabular mt-2 text-large">{move || hit_rate(right.get(), ROUND_LEN as u32).to_string()}</p>
                     <p class="tabular text-callout text-text-muted">{move || format!("{} of {ROUND_LEN} called right", right.get())}</p>
                     <p class="mt-4 text-callout">

@@ -141,6 +141,11 @@ Later waves add one stage each, written when the Learner is near it and informed
 - FR-14.1 Each Lesson Step has "Ask Claude about this", answered in the app with the lesson as context, in the course's terms, with no trade recommendations; failures show a message, never an invented answer.
 - FR-14.2 Every screen shows: "Education, not financial advice. Trading CFDs carries a high risk of losing money."
 
+### FR-15 Design polish *(Wave 1.75)*
+- FR-15.1 A polished design-file look in the Learner's palette: Inter for the interface, Newsreader for titles, one spacing and radius system, hairlines. See [`DESIGN-SYSTEM.md`](DESIGN-SYSTEM.md) v2.
+- FR-15.2 From 1024 px wide, a Figma-style workspace: a left sidebar with the app's sections and the course outline, a centre canvas on a faint dot grid, and a right panel where it adds context (Lesson; Journal and trade pages). Phones keep one column and the bottom tab bar.
+- FR-15.3 Quiet micro-interactions everywhere, plus **Milestone** moments, count-up numbers and screen transitions. Celebrations mark learning, never profit. Everything respects reduced motion.
+
 ## 6. Non-functional requirements
 - **Honesty:** never fabricate prices, charts or videos. Illustrative data is labelled. Every video link is verified to exist before shipping.
 - **Safety:** a first-launch disclaimer (education, not advice). The Live Track covers scams. No content recommends a specific trade.
@@ -161,3 +166,4 @@ Later waves add one stage each, written when the Learner is near it and informed
 2. **Plan change mid-count** → earlier trades keep counting; each was judged against the plan version in force at the time. *(Decided 2026-11-09.)*
 3. **Outside 7-phase lesson plan folded in** → Live Readiness raised to 50 entries over ≥ 8 weeks (profit still not required); Daily Loss Limit, No-Trade Windows and the checklist become Hard Rules; trading without a checklist is not adherent; Fibonacci and ATR are core, EMAs optional; strategies beyond Classic Price Action move to the Advanced Track; self-paced with a suggested pace; times follow the device timezone. *(Decided 2026-11-10.)*
 4. **Second LLM review folded in** → stay on MT5/CFDs (no US futures track); lessons in steps with widgets and a Recall Set; new Lesson 2 "The honest maths of trading" (core becomes 40 lessons); the 1% rule from the Lots lesson, stop-first in every widget, shorts'"'"' unlimited risk; Spaced Review, Confidence (a guessed right answer still counts for the Gate) and Question Records; a calibration drill now and candle reconstruction with Stage 4; journal R per trade, Emotion Tag, post-trade lesson and Expectancy; Ask Claude per step; a risk footer. Not adopted: fresh numbers on retry, bar replay, zone-tolerance grading, data export, dated headlines. *(Decided 2026-11-10.)*
+5. **Design polish (Wave 1.75)** → a polished design-file look keeping the green palette, blended with Figma's workspace structure on wide screens (sidebar with course outline, dot-grid canvas, right panel where it adds context); Inter + Newsreader; quiet micro-interactions plus Milestone moments, count-ups and screen transitions; before Stage 2; built straight into the app. taste-skill is used for its principles only, not installed. *(Decided 2026-11-11.)*

@@ -80,14 +80,14 @@ pub fn Home() -> impl IntoView {
                             <article class="mt-6 overflow-hidden rounded-card bg-fill text-on-fill">
                                 <div class="flex flex-wrap items-end justify-between gap-4 p-6 pb-5">
                                     <div class="min-w-0 max-w-md">
-                                        <p class="text-eyebrow uppercase opacity-80">"Up next · " {catalog::eyebrow(id)}</p>
+                                        <p class="text-eyebrow opacity-80">"Up next · " {catalog::eyebrow(id)}</p>
                                         <h2 class="mt-2 text-title1">{catalog::title(id)}</h2>
                                         <p class="mt-2 text-callout opacity-85">"About 5–8 minutes of reading, then a short quiz and an Explain-Back."</p>
                                     </div>
                                     <div class="opacity-90">{hero_art()}</div>
                                 </div>
                                 <div class="px-6 pb-6">
-                                    <a href=lesson_href(id) class="press inline-flex min-h-11 items-center rounded-full bg-on-fill px-6 text-headline text-fill">
+                                    <a href=lesson_href(id) class="press inline-flex min-h-11 items-center rounded-btn bg-on-fill px-6 text-callout font-semibold text-fill">
                                         "Start lesson ›"
                                     </a>
                                 </div>
@@ -104,7 +104,7 @@ pub fn Home() -> impl IntoView {
             </div>
 
             <section class="mt-9 rounded-card bg-surface p-5 shadow-card">
-                <p class="text-eyebrow uppercase text-text-muted">"Your setup"</p>
+                <p class="text-eyebrow text-text-muted">"Your setup"</p>
                 <h2 class="mt-1 text-headline">"TradingView for charts, MT5 demo for trades"</h2>
                 <p class="mt-1 text-callout text-text-muted">
                     "You won't need either until Stage 3. When you do, the lesson walks you through it."

@@ -74,7 +74,7 @@ pub fn LargeTitle(title: &'static str, #[prop(into, default = String::new())] ey
     view! {
         <header class="flex items-end justify-between gap-4 pt-4">
             <div class="min-w-0">
-                <p class="text-eyebrow uppercase text-text-muted">{eyebrow}</p>
+                <p class="text-eyebrow text-text-muted">{eyebrow}</p>
                 <h1 class="text-large">{title}</h1>
             </div>
             <button
@@ -141,7 +141,7 @@ fn TabBar() -> impl IntoView {
                                     aria-current=move || active().then_some("page")
                                     class=move || {
                                         format!(
-                                            "press flex min-h-14 min-w-16 flex-col items-center justify-center gap-0.5 px-2 text-[11px] font-semibold {}",
+                                            "press flex min-h-14 min-w-16 flex-col items-center justify-center gap-0.5 px-2 text-footnote font-medium {}",
                                             if active() { "text-text" } else { "text-text-muted" },
                                         )
                                     }

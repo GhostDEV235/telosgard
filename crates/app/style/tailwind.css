@@ -19,23 +19,38 @@
   --color-on-gold: #0F1F17;
   --color-scrim: rgb(5 12 9 / 0.6);
 
-  --shadow-card: none;
-  --shadow-sheet: 0 -8px 40px rgb(0 0 0 / 0.45);
+  /* v2 (Wave 1.75): a 1px hairline ring instead of a drop shadow in dark; ring + a whisper of shadow in light. */
+  --color-hairline: rgb(199 203 184 / 0.13);
+  --color-grid: rgb(199 203 184 / 0.11);
+  --shadow-card: 0 0 0 1px var(--color-hairline);
+  --shadow-lift: 0 0 0 1px rgb(199 203 184 / 0.22), 0 10px 24px rgb(0 0 0 / 0.22);
+  --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(0 0 0 / 0.45);
 
-  --radius-card: 22px;
-  --radius-btn: 14px;
-  --radius-field: 12px;
+  /* One radius family ("soft"): frames and cards 16, controls and buttons 10, chips full. */
+  --radius-card: 16px;
+  --radius-btn: 10px;
+  --radius-field: 10px;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  --font-display: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
 
-  --text-large: 34px;   --text-large--line-height: 41px;   --text-large--font-weight: 700;  --text-large--letter-spacing: -0.02em;
-  --text-title1: 28px;  --text-title1--line-height: 34px;  --text-title1--font-weight: 700; --text-title1--letter-spacing: -0.015em;
-  --text-title2: 22px;  --text-title2--line-height: 28px;  --text-title2--font-weight: 600;
-  --text-headline: 17px; --text-headline--line-height: 22px; --text-headline--font-weight: 600;
-  --text-body: 17px;    --text-body--line-height: 26px;
-  --text-callout: 16px; --text-callout--line-height: 22px;
+  /* Display sizes are set in Newsreader (h1 and .font-display); everything else in Inter. Nothing under 13px. */
+  --text-large: 38px;   --text-large--line-height: 44px;   --text-large--font-weight: 500;  --text-large--letter-spacing: -0.015em;
+  --text-title1: 32px;  --text-title1--line-height: 38px;  --text-title1--font-weight: 500; --text-title1--letter-spacing: -0.01em;
+  --text-title2: 22px;  --text-title2--line-height: 28px;  --text-title2--font-weight: 600; --text-title2--letter-spacing: -0.01em;
+  --text-headline: 17px; --text-headline--line-height: 24px; --text-headline--font-weight: 600; --text-headline--letter-spacing: -0.01em;
+  --text-body: 17px;    --text-body--line-height: 28px;
+  --text-callout: 16px; --text-callout--line-height: 24px;
   --text-footnote: 13px; --text-footnote--line-height: 18px;
-  --text-eyebrow: 12px; --text-eyebrow--line-height: 16px; --text-eyebrow--font-weight: 600; --text-eyebrow--letter-spacing: 0.06em;
+  /* "Label": sentence case, 13px, 500, no tracking (replaces the tracked-capitals eyebrow). */
+  --text-eyebrow: 13px; --text-eyebrow--line-height: 18px; --text-eyebrow--font-weight: 500; --text-eyebrow--letter-spacing: 0;
+}
+
+/* Motion tokens (borrowed from taste-skill motion.md): no curve overshoots. */
+:root {
+  --m-in: 150ms; --m-out: 120ms; --m-press: 90ms; --m-slide: 240ms; --m-panel: 200ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --ease-enter: cubic-bezier(.22, 1, .36, 1);
 }
 
 :root { color-scheme: dark; }
@@ -46,8 +61,10 @@
     --color-bg: #E4E6DA; --color-surface: #F4F5EF; --color-raised: #FFFFFF; --color-text: #0F1F17;
     --color-text-muted: #4E5F4B; --color-line: #C7CBB8; --color-locked: #DEE0D9;
     --color-up: #2A6E27; --color-down: #9E4232; --color-gold: #7A5C14; --color-scrim: rgb(15 31 23 / 0.35);
-    --shadow-card: 0 1px 2px rgb(15 31 23 / .06), 0 8px 24px rgb(15 31 23 / .06);
-    --shadow-sheet: 0 -8px 40px rgb(15 31 23 / .18);
+    --color-hairline: rgb(15 31 23 / 0.12); --color-grid: rgb(15 31 23 / 0.10);
+    --shadow-card: 0 0 0 1px var(--color-hairline), 0 1px 2px rgb(15 31 23 / .05);
+    --shadow-lift: 0 0 0 1px rgb(15 31 23 / .2), 0 10px 24px rgb(15 31 23 / .08);
+    --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(15 31 23 / .18);
   }
 }
 :root[data-theme="light"] {
@@ -55,8 +72,10 @@
   --color-bg: #E4E6DA; --color-surface: #F4F5EF; --color-raised: #FFFFFF; --color-text: #0F1F17;
   --color-text-muted: #4E5F4B; --color-line: #C7CBB8; --color-locked: #DEE0D9;
   --color-up: #2A6E27; --color-down: #9E4232; --color-gold: #7A5C14; --color-scrim: rgb(15 31 23 / 0.35);
-  --shadow-card: 0 1px 2px rgb(15 31 23 / .06), 0 8px 24px rgb(15 31 23 / .06);
-  --shadow-sheet: 0 -8px 40px rgb(15 31 23 / .18);
+  --color-hairline: rgb(15 31 23 / 0.12); --color-grid: rgb(15 31 23 / 0.10);
+  --shadow-card: 0 0 0 1px var(--color-hairline), 0 1px 2px rgb(15 31 23 / .05);
+  --shadow-lift: 0 0 0 1px rgb(15 31 23 / .2), 0 10px 24px rgb(15 31 23 / .08);
+  --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(15 31 23 / .18);
 }
 
 /* Un-layered on purpose: the artifact viewer wraps the page in its own un-layered reset (light
@@ -71,6 +90,7 @@ body {
   font-family: var(--font-sans);
   font-size: 17px;
   line-height: 1.5;
+  font-feature-settings: "cv05"; /* Inter: lower-case l with a tail, so l, 1 and I differ in prices */
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
@@ -82,8 +102,13 @@ body::before {
 
 @layer base {
   h1, h2, h3 { text-wrap: balance; }
+  /* The two display sizes are always Newsreader, whatever element carries them. */
+  h1, .text-large, .text-title1 { font-family: var(--font-display); }
   button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
-  :focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; border-radius: 8px; }
+  :focus-visible { outline: 2px solid var(--color-text); outline-offset: 2px; transition: none; }
+  /* Text links rest on a faint underline and darken it on hover. */
+  a.underline, button.underline { text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); transition: text-decoration-color var(--m-out) var(--ease); }
+  a.underline:hover, button.underline:hover { text-decoration-color: currentColor; transition-duration: var(--m-in); }
   ::selection { background: var(--color-fill); color: var(--color-on-fill); }
 }
 
@@ -101,9 +126,21 @@ body::before {
   backdrop-filter: blur(20px) saturate(140%);
 }
 @utility tabular { font-variant-numeric: tabular-nums; }
+/* Quiet hover and press (taste-skill motion.md numbers): buttons step up 1px on hover (fine pointer
+   only), press sinks 1px and scales .985. Linked cards use `lift`: up 2px, the hairline darkens. */
 @utility press {
-  transition: transform 200ms cubic-bezier(.2,.8,.2,1), background-color 200ms, opacity 200ms;
-  &:active { transform: scale(0.97); }
+  transition: transform var(--m-out) var(--ease), background-color var(--m-out) var(--ease), border-color var(--m-out) var(--ease), opacity var(--m-out);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled) { transform: translateY(-1px); transition-duration: var(--m-in); }
+  }
+  &:active:not(:disabled) { transform: translateY(1px) scale(.985); transition-duration: var(--m-press); }
+}
+@utility lift {
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease), background-color 180ms var(--ease);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+  }
+  &:active { transform: translateY(0) scale(.995); transition-duration: var(--m-press); }
 }
 
 @keyframes sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -115,6 +152,7 @@ body::before {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+  .press:hover, .press:active, .lift:hover, .lift:active { transform: none !important; }
 }
 
 /* Lesson body rendered from Markdown (crates/content). */

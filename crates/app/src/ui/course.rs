@@ -30,13 +30,13 @@ pub fn StageCard(section: &'static Section) -> impl IntoView {
         }>
             <div class="p-5 pb-4">
                 <div class="flex items-center justify-between gap-3">
-                    <p class=move || format!("text-eyebrow uppercase {}", soft())>{section.eyebrow}</p>
+                    <p class=move || format!("text-eyebrow {}", soft())>{section.eyebrow}</p>
                     {move || {
                         if complete() {
                             view! { <span class="rounded-full bg-gold-fill px-2.5 py-1 text-eyebrow text-on-gold uppercase">"✓ Complete"</span> }
                                 .into_any()
                         } else if locked() {
-                            view! { <span class="text-eyebrow uppercase">"🔒 Locked"</span> }.into_any()
+                            view! { <span class="text-eyebrow">"🔒 Locked"</span> }.into_any()
                         } else {
                             ().into_any()
                         }
@@ -193,7 +193,7 @@ pub fn VideoCard(video: &'static Video) -> impl IntoView {
             href=video.url()
             target="_blank"
             rel="noopener noreferrer"
-            class="press flex items-start gap-4 rounded-card bg-surface p-4 shadow-card hover:bg-raised"
+            class="lift flex items-start gap-4 rounded-card bg-surface p-4 shadow-card"
         >
             <span class="grid size-14 shrink-0 place-items-center rounded-btn bg-fill text-title2 text-on-fill" aria-hidden="true">"▶"</span>
             <span class="min-w-0 flex-1">
@@ -222,7 +222,7 @@ pub fn Callout(kind: CalloutKind, text: &'static str) -> impl IntoView {
     };
     view! {
         <aside class="rounded-card border-l-4 border-fill bg-surface p-5 shadow-card">
-            <p class="text-eyebrow uppercase text-text-muted">{label}</p>
+            <p class="text-eyebrow text-text-muted">{label}</p>
             <p class="mt-2 text-callout">{text}</p>
         </aside>
     }

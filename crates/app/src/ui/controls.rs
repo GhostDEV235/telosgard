@@ -2,8 +2,8 @@
 
 use leptos::prelude::*;
 
-pub const PILL: &str = "press inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-fill px-5 text-headline text-on-fill disabled:opacity-40 disabled:active:scale-100";
-pub const PILL_GHOST: &str = "press inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-line px-5 text-headline text-text";
+pub const PILL: &str = "press inline-flex min-h-11 items-center justify-center gap-2 rounded-btn bg-fill px-5 text-callout font-semibold text-on-fill disabled:opacity-40 disabled:active:scale-100";
+pub const PILL_GHOST: &str = "press inline-flex min-h-11 items-center justify-center gap-2 rounded-btn border border-line px-5 text-callout font-semibold text-text";
 
 #[component]
 pub fn PillLink(#[prop(into)] href: String, children: Children) -> impl IntoView {

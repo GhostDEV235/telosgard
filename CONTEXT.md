@@ -49,6 +49,10 @@ Claude's ruling on an **Explain-Back**: **Got it** (understood), **Almost** (a n
 **Gate**:
 The rule that locks the next **Lesson**: at least 80% on the **Quiz** *and* a **Got it** on the **Explain-Back**. Retries are unlimited and there is no penalty. Lessons cannot be skipped. Once passed, a Lesson stays passed.
 
+**Milestone**:
+A learning achievement the course marks with a celebration: passing a **Lesson**'s **Gate**, completing a **Stage**, or reaching **Live Readiness**. A profitable trade is never a Milestone; the course rewards discipline, not profit.
+_Avoid_: achievement, reward, streak
+
 **Dollar Move**:
 The course's unit for how far gold's price travels: the change in USD per ounce (2650.00 → 2655.00 is a $5 move). Stops, targets, journal fields and the **Trading Plan** are always in dollar moves.
 

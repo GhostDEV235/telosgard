@@ -61,7 +61,7 @@ pub fn SessionClock() -> impl IntoView {
                 let (headline, blocked, time, overlap, rollover) = state();
                 view! {
                     <div class="flex items-baseline justify-between gap-3">
-                        <p class="text-eyebrow uppercase text-text-muted">"Gold right now"</p>
+                        <p class="text-eyebrow text-text-muted">"Gold right now"</p>
                         <p class="tabular text-footnote text-text-muted">"Your time " {time}</p>
                     </div>
                     <p class=format!("mt-1 text-headline {}", if blocked { "text-down" } else { "" })>

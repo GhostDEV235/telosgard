@@ -36,8 +36,8 @@ fn ReadinessCard() -> impl IntoView {
     move || {
         if journal.current_plan().is_none() {
             return view! {
-                <a href="#plan" class="press block rounded-card bg-surface p-5 shadow-card hover:bg-raised">
-                    <p class="text-eyebrow uppercase text-text-muted">"Live Readiness"</p>
+                <a href="#plan" class="lift block rounded-card bg-surface p-5 shadow-card">
+                    <p class="text-eyebrow text-text-muted">"Live Readiness"</p>
                     <p class="mt-1 text-headline">"Write your Trading Plan first ›"</p>
                     <p class="mt-1 text-callout text-text-muted">"Every Demo Trade is judged against it."</p>
                 </a>
@@ -46,10 +46,10 @@ fn ReadinessCard() -> impl IntoView {
         }
         let (counted, pct) = journal.readiness_progress().map_or((0, 0), |(_, p)| (p.counted, p.counted * 100 / REQUIRED_TRADES));
         view! {
-            <a href="#readiness" class="press block rounded-card bg-surface p-5 shadow-card hover:bg-raised">
+            <a href="#readiness" class="lift block rounded-card bg-surface p-5 shadow-card">
                 <div class="flex items-center justify-between gap-3">
                     <div>
-                        <p class="text-eyebrow uppercase text-text-muted">"Live Readiness"</p>
+                        <p class="text-eyebrow text-text-muted">"Live Readiness"</p>
                         <p class="tabular mt-1 text-headline">{format!("{counted} of {REQUIRED_TRADES} trades counted")}</p>
                     </div>
                     <span class="text-title2 text-text-muted" aria-hidden="true">"›"</span>
@@ -74,7 +74,7 @@ pub fn Journal() -> impl IntoView {
                 <div class="grid gap-5">
                     <ReadinessCard />
                     <section class="rounded-card bg-surface p-5 shadow-card">
-                        <p class="text-eyebrow uppercase text-text-muted">"Today"</p>
+                        <p class="text-eyebrow text-text-muted">"Today"</p>
                         {move || {
                             if journal.checklist(day).is_some() {
                                 view! { <p class="mt-1 text-headline text-up">"✓ Pre-Session Checklist saved"</p> }.into_any()
@@ -215,14 +215,14 @@ pub fn Readiness() -> impl IntoView {
                     </div>
                 </section>
             })}
-            <p class="mt-6 text-eyebrow uppercase text-text-muted">{format!("Readiness Run {} · started with {}", run.run.number, run.run.starting_balance)}</p>
+            <p class="mt-6 text-eyebrow text-text-muted">{format!("Readiness Run {} · started with {}", run.run.number, run.run.starting_balance)}</p>
             <section class="mt-2 grid grid-cols-3 gap-2 rounded-card bg-surface p-5 shadow-card">
                 <Ring value=p.counted as f64 / REQUIRED_TRADES as f64 caption=format!("{}/{REQUIRED_TRADES}", p.counted) label="Trades" />
                 <Ring value=pct_adh / (REQUIRED_ADHERENCE.0 as f64 / 10_000.0) caption=if p.counted == 0 { "—".to_string() } else { p.adherence.to_string() } label="Followed plan" />
                 <Ring value=p.days as f64 / REQUIRED_DAYS as f64 caption=format!("{}/{REQUIRED_DAYS}", p.days) label="Days" />
             </section>
             <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
-                <p class="text-eyebrow uppercase text-text-muted">"Max total loss"</p>
+                <p class="text-eyebrow text-text-muted">"Max total loss"</p>
                 <p class="tabular mt-1 text-headline">{format!("{} drawdown of {} allowed", p.drawdown, p.max_loss)}</p>
                 <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-bg">
                     <div class="h-full rounded-full bg-down" style=format!("width:{drawdown_pct}%")></div>

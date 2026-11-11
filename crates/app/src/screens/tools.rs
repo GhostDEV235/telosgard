@@ -58,7 +58,7 @@ pub fn Tools() -> impl IntoView {
                         Some(Sizing::Ok { lots, risk, risk_pct }) => {
                             let stop = stop_v().unwrap_or_default();
                             view! {
-                                <p class="text-eyebrow uppercase text-text-muted">"Trade size"</p>
+                                <p class="text-eyebrow text-text-muted">"Trade size"</p>
                                 <p class="tabular mt-1 text-[56px] leading-[1.05] font-bold tracking-tight">
                                     {lots.to_string()} <span class="text-title2 font-semibold text-text-muted">" lots"</span>
                                 </p>
@@ -81,7 +81,7 @@ pub fn Tools() -> impl IntoView {
                         }
                         Some(Sizing::TooSmall { min_lot_risk, min_lot_risk_pct }) => {
                             view! {
-                                <p class="text-eyebrow uppercase text-text-muted">"Trade size"</p>
+                                <p class="text-eyebrow text-text-muted">"Trade size"</p>
                                 <p class="mt-1 text-title1 text-down">"▼ Too small to trade safely"</p>
                                 <p class="mt-3 text-callout">
                                     "Even the smallest size, 0.01 lots, would lose " <strong>{min_lot_risk.to_string()}</strong> " ("
@@ -95,7 +95,7 @@ pub fn Tools() -> impl IntoView {
                         }
                         None => {
                             view! {
-                                <p class="text-eyebrow uppercase text-text-muted">"Trade size"</p>
+                                <p class="text-eyebrow text-text-muted">"Trade size"</p>
                                 <p class="mt-2 text-callout text-text-muted">"Fix the highlighted field to see your size."</p>
                             }
                                 .into_any()
@@ -108,7 +108,7 @@ pub fn Tools() -> impl IntoView {
             </div>
 
             <h2 class="mt-10 text-title2">"Your Trading Plan"</h2>
-            <a href="#plan" class="press mt-3 flex items-center gap-4 rounded-card bg-surface p-5 shadow-card hover:bg-raised">
+            <a href="#plan" class="lift mt-3 flex items-center gap-4 rounded-card bg-surface p-5 shadow-card">
                 <span class="min-w-0 flex-1">
                     <span class="block text-headline">"Trading Plan"</span>
                     <span class="block text-callout text-text-muted">"Your written rules, versioned. You'll build it properly at Lesson 39."</span>

@@ -158,6 +158,38 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 **Exit check:** asking about a step returns an answer that stays on the lesson; the footer shows on every route; axe finds no violations.
 
+## Wave 1.75: Design polish *(decided 2026-11-11)*
+
+> A polished design file in the Learner's green palette, blended with the structure of Figma's own workspace. taste-skill (github.com/leonxlnx/taste-skill, 2.5.1) is **not installed**: it targets marketing sites (hero, one section per screen, photographs, a finish-gate hook) and its house rules conflict with a learning app. Its fitting principles are folded into [`DESIGN-SYSTEM.md`](DESIGN-SYSTEM.md) v2; checking stays with our own tools. Built straight into the app, no separate mockup; each phase is published for the Learner to review. Comes before Stage 2 so new lessons are written in the final layout.
+
+### Phase 13: Design spec, tokens and fonts ✅
+- [x] `DESIGN-SYSTEM.md` v2: workspace layout, type pairing, spacing and radius system, hairlines, canvas, motion tokens, Milestone moments, the principles borrowed from taste-skill and the ones left out
+- [x] Fonts: Inter (interface, body) and Newsreader (screen and lesson titles) from Google Fonts with system fallbacks; tabular figures kept
+- [x] Tokens in `tailwind.css`: type scale (nothing under 13px, labels in sentence case), one radius family, a hairline, dot-grid colours per theme, motion durations and curves; contrast measured for every new text pairing
+- [x] Applied app-wide without layout changes: titles in Newsreader, tracked capitals become sentence-case labels, the quiet press and hover layer on buttons, links and linked cards
+
+*Done 2026-11-11: `DESIGN-SYSTEM.md` v2 (incl. what was borrowed from taste-skill and what wasn't, measured contrast, workspace and motion specs); Inter + Newsreader loading in the app (display sizes always Newsreader); hairline rings on every card, `press` and `lift` motion utilities, one button shape (`rounded-btn`), 13 px sentence-case labels, tab labels 13 px. axe (WCAG 2/2.1 A, AA) clean on 12 screens in both themes. Bundle 568 KB gz (budget 2 MB); font transfer sizes aren't readable cross-origin, Google serves only the Latin subsets in use. Published as Artifact version 18.*
+
+**Exit check:** every screen renders in the new type and tokens in both themes; contrast table in the spec is filled; axe clean; bundle within budget.
+
+### Phase 14: Workspace shell
+- [ ] From 1024 px: left sidebar (Today, Practice, Tools, Journal; the course outline as a layers-style tree: every stage, current stage open, ✓ passed, ● current, 🔒 locked) replacing the bottom tab bar; centre canvas with a faint dot grid and a frame card with a Figma-style label; hairline borders between panels
+- [ ] Right panel where it adds context: Lesson (progress, Gate, Ask Claude inline, sources); Journal and trade pages (Live Readiness at a glance, today's checklist). Today, Practice and Tools use the full canvas width
+- [ ] Below 1024 px: one column and the bottom tab bar, as now; Ask Claude stays a sheet
+
+**Exit check:** every route works at 1440 / 1024 / 768 / 390 with no horizontal scroll; keyboard order follows sidebar → canvas → panel; axe clean.
+
+### Phase 15: Screens and motion
+- [ ] Screen-by-screen polish (Today, lesson reader, quiz and Explain-Back, Practice and drills, Tools, Plan, Checklist, Journal, trade, Weekly Review, Readiness) to the v2 spec
+- [ ] Motion: the quiet layer everywhere; steps slide a few pixels; progress bars fill; **Milestone** moments (lesson passed on the Gate card, stage complete, Live Readiness); count-up numbers on stats; screen transitions on the canvas. Never for a profitable trade. All off under reduced motion
+
+**Exit check:** each screen reviewed by the Learner on the published Artifact; reduced motion shows every final state.
+
+### Phase 16: Checks
+- [ ] Chrome at 1440 / 1024 / 768 / 390 in both themes; axe (WCAG 2/2.1 A and AA, transitions disabled while scanning); bundle and font weight; first paint under 2 s
+
+**Exit check:** all checks pass and are recorded here.
+
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:
 - Wave 2: session drills ("which session is it?", "is this a No-Trade Window?")

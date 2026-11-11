@@ -25,7 +25,7 @@ pub fn LessonScreen(id: LessonId) -> impl IntoView {
     view! {
         <crate::screens::shell::SubBar back="#today" back_label="Today" title=title />
         <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
-            <p class="text-eyebrow uppercase text-text-muted">{catalog::eyebrow(id)}</p>
+            <p class="text-eyebrow text-text-muted">{catalog::eyebrow(id)}</p>
             <h1 class="mt-1 text-title1">{title}</h1>
             {move || {
                 if !unlocked.get() {
@@ -99,7 +99,7 @@ fn screens(l: &Lesson) -> Vec<Screen> {
 fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> AnyView {
     match s {
         Screen::Hook => view! {
-            <p class="text-eyebrow uppercase text-text-muted">"Start with a question"</p>
+            <p class="text-eyebrow text-text-muted">"Start with a question"</p>
             <p class="mt-2 text-title2">{l.hook}</p>
             <p class="mt-3 text-callout text-text-muted">"Have a guess in your head, then tap Next."</p>
         }
@@ -107,7 +107,7 @@ fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> A
         Screen::Step(i) => {
             let st = &l.steps[i];
             view! {
-                <h2 class="text-title2">{st.heading}</h2>
+                <h2 class="font-display text-title2 font-medium">{st.heading}</h2>
                 <div class="lesson-prose mt-3" inner_html=st.text_html></div>
                 {st.widget.map(|w| view! { <div class="mt-4"><crate::ui::widgets::Widget kind=w /></div> })}
                 {st.why_html.map(|w| view! {
@@ -140,7 +140,7 @@ fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> A
         }
         .into_any(),
         Screen::Recall => view! {
-            <p class="text-eyebrow uppercase text-text-muted">"Recall · from memory"</p>
+            <p class="text-eyebrow text-text-muted">"Recall · from memory"</p>
             <p class="mt-1 text-callout text-text-muted">"Three quick questions before the quiz. Practice only."</p>
             <div class="mt-3">
                 <QuizCard questions=l.recall.iter().map(|q| QuizItem::course(l.id, q)).collect() on_done=|_| {} practice=true />
@@ -196,7 +196,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
 
         <section id="lesson-stepper" class="mt-6 scroll-mt-20 rounded-card bg-surface p-5 shadow-card" aria-label="Lesson steps">
             <div class="flex items-center justify-between gap-3">
-                <p class="tabular text-eyebrow uppercase text-text-muted">{move || format!("Step {} of {n}", pos.get() + 1)}</p>
+                <p class="tabular text-eyebrow text-text-muted">{move || format!("Step {} of {n}", pos.get() + 1)}</p>
             </div>
             <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-bg" role="progressbar" aria-label="Lesson progress" aria-valuemin="1" aria-valuemax=n aria-valuenow=move || pos.get() + 1>
                 <div class="h-full rounded-full bg-text-muted transition-[width]" style=move || format!("width:{}%", (pos.get() + 1) * 100 / n)></div>
@@ -418,7 +418,7 @@ fn suggestion_view(s: String) -> impl IntoView {
     let parts = gold_core::grading::marked_segments(&s);
     view! {
         <div class="mt-3 rounded-btn border-l-4 border-fill bg-surface p-3.5">
-            <p class="text-eyebrow uppercase text-text-muted">"Your answer, with the missing piece added"</p>
+            <p class="text-eyebrow text-text-muted">"Your answer, with the missing piece added"</p>
             <p class="mt-1.5 text-callout">
                 {parts
                     .into_iter()
@@ -525,7 +525,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                 Grade::Almost => res.gap.clone().map(|gap| {
                     view! {
                         <div class="mt-3 rounded-btn border-l-4 border-fill bg-surface p-3.5">
-                            <p class="text-eyebrow uppercase text-text-muted">"What's missing"</p>
+                            <p class="text-eyebrow text-text-muted">"What's missing"</p>
                             <p class="mt-1 text-callout">{gap}</p>
                         </div>
                     }
@@ -534,7 +534,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                 Grade::NotYet => res.reteach.clone().map(|r| {
                     view! {
                         <div class="mt-3 rounded-btn border-l-4 border-fill bg-surface p-3.5">
-                            <p class="text-eyebrow uppercase text-text-muted">"💡 Another way to see it"</p>
+                            <p class="text-eyebrow text-text-muted">"💡 Another way to see it"</p>
                             <p class="mt-1 text-callout">{r}</p>
                         </div>
                     }
@@ -582,7 +582,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                         let reteach = (a.grade == Grade::NotYet).then_some(a.reteach.clone()).flatten();
                         view! {
                             <div class="anim-fade mt-4 rounded-btn bg-bg p-4">
-                                <p class="text-eyebrow uppercase text-text-muted">{format!("Your last answer · {}", short_date(a.at))}</p>
+                                <p class="text-eyebrow text-text-muted">{format!("Your last answer · {}", short_date(a.at))}</p>
                                 <p class="mt-1.5 text-callout">{a.feedback.clone()}</p>
                                 {(a.grade == Grade::Almost).then_some(a.gap.clone()).flatten().map(|g| view! {
                                     <p class="mt-2 text-callout"><span class="font-semibold">"What's missing: "</span>{g}</p>
@@ -706,7 +706,7 @@ fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
                 round.get().map(|(n, items)| {
                     view! {
                         <div>
-                            <p class="mb-2 text-eyebrow uppercase text-text-muted">{format!("Practice round {n} · written by Claude")}</p>
+                            <p class="mb-2 text-eyebrow text-text-muted">{format!("Practice round {n} · written by Claude")}</p>
                             <QuizCard questions=items on_done=move |_| asking.set(true) practice=true />
                         </div>
                     }
