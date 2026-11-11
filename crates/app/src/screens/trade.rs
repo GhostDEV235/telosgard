@@ -364,6 +364,7 @@ pub fn TradeDetail(id: String) -> impl IntoView {
     let exit = RwSignal::new(String::new());
     let balance_after = RwSignal::new(String::new());
     let emotion = RwSignal::new(None::<Emotion>);
+    let confirm_delete = RwSignal::new(false);
     let lesson = RwSignal::new(String::new());
 
     let rec = move || journal.trade(&id.get_value());
@@ -412,6 +413,13 @@ pub fn TradeDetail(id: String) -> impl IntoView {
         journal.put_trade(id.get_value(), r);
         toasts.show("Result saved");
     };
+
+    let delete = move |_| {
+        journal.delete_trade(id.get_value());
+        toasts.show("Entry deleted");
+        let _ = window().location().set_hash("journal");
+    };
+    let deletable = move || crate::store::logged_at(&id.get_value()).is_some_and(|at| gold_core::journal::can_delete(at, now()));
 
     let body = move || {
         let Some(t) = rec() else {
@@ -539,6 +547,28 @@ pub fn TradeDetail(id: String) -> impl IntoView {
                             <button type="button" class=format!("{PILL} mt-4") on:click=close>"Save result"</button>
                         }.into_any(),
                     }}
+                </section>
+            })}
+            {deletable().then(|| view! {
+                <section class="mt-8 rounded-card border border-line/40 p-5" aria-label="Delete this entry">
+                    <Show
+                        when=move || confirm_delete.get()
+                        fallback=move || view! {
+                            <button type="button" class="press min-h-11 text-callout text-down underline underline-offset-4" on:click=move |_| confirm_delete.set(true)>
+                                "Delete this entry"
+                            </button>
+                            <p class="mt-1 text-footnote text-text-muted">"For test or mistaken entries. Possible for 24 hours after logging; after that it's part of your record."</p>
+                        }
+                    >
+                        <p class="text-callout font-semibold" role="alert">"Delete this entry permanently?"</p>
+                        <p class="mt-1 text-callout text-text-muted">
+                            "It's removed from your journal, Readiness and Weekly Review, and can't be undone. If it's the only entry in your current Readiness Run, that run is removed too."
+                        </p>
+                        <div class="mt-3 flex flex-wrap gap-3">
+                            <button type="button" class=PILL_GHOST on:click=move |_| confirm_delete.set(false)>"Cancel"</button>
+                            <button type="button" class="press min-h-11 rounded-full bg-down px-5 text-callout font-semibold text-bg" on:click=delete>"Delete permanently"</button>
+                        </div>
+                    </Show>
                 </section>
             })}
         }

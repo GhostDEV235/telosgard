@@ -158,6 +158,25 @@ impl JournalData {
         self.store.persist(async move { repo::save_trade(&id, &rec).await });
     }
 
+    /// Permanently deletes an entry. If that leaves the latest, still-open Readiness Run with no
+    /// entries, the run goes too, so a test entry doesn't start a run for good.
+    pub fn delete_trade(self, id: String) {
+        let Some(rec) = self.trade(&id) else { return };
+        self.trades.update(|v| v.retain(|(i, _)| *i != id));
+        self.store.persist(async move { repo::delete_trade(&id).await });
+        let latest = self.runs.with_untracked(|r| r.last().cloned());
+        if let Some(run) = latest.filter(|r| r.run.number == rec.run) {
+            let left = self.trades.with_untracked(|v| v.iter().filter(|(_, t)| t.run == run.run.number).count());
+            if gold_core::journal::remove_emptied_run(true, run.ended_at.is_some(), left) {
+                self.runs.update(|r| {
+                    r.pop();
+                });
+                let n = run.run.number;
+                self.store.persist(async move { repo::delete_run(n).await });
+            }
+        }
+    }
+
     /// The Readiness Run new trades belong to: the latest one that hasn't ended.
     pub fn active_run(&self) -> Option<RunRecord> {
         self.runs.with(|r| r.iter().rev().find(|r| r.ended_at.is_none()).cloned())

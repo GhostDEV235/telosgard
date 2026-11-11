@@ -170,4 +170,4 @@ One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave:
 Stage numbers above refer to the stage, not the lesson number; from Phase 9 every lesson after Lesson 1 moves up by one.
 
 ## Open items
-1. The Learner's live journal check for Phase 7 (a real verdict and a dispute). Before it, add a way to delete test entries (asked 2026-11-10, awaiting the Learner's choice).
+1. The Learner's live journal check for Phase 7 (a real verdict and a dispute). Test entries can now be deleted: "Delete this entry" on any entry for 24 hours after logging (two-step, permanent); if that empties the latest open Readiness Run, the run is removed too (added 2026-11-11, Artifact version 17).

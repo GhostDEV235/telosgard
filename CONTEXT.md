@@ -143,7 +143,7 @@ The **Learner**'s one-word label for how they felt about a **Demo Trade** (calm,
 The **Learner**'s weekly look back at their **Journal Entries**: win rate, average R, and rules broken.
 
 **Journal Entry**:
-The **Learner**'s record of one **Demo Trade**: what they did, why they did it, and how it turned out.
+The **Learner**'s record of one **Demo Trade**: what they did, why they did it, and how it turned out. It can be deleted for 24 hours after it's logged (for test or mistaken entries); after that it is part of the record. Deleting the only entry in the current **Readiness Run** removes that run too.
 _Avoid_: log, trade record
 
 **Plan Adherence**:

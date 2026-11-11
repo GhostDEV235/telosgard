@@ -231,6 +231,20 @@ pub fn r_multiple(pnl: Usd, risk: Usd) -> Option<RMultiple> {
     (risk.0 > 0).then(|| RMultiple(pnl.0 * 100 / risk.0))
 }
 
+/// How long after logging an entry can still be deleted (for test or mistaken entries). After
+/// that it is part of the record: deleting real trades would distort Readiness.
+pub const DELETE_WINDOW_MS: Millis = DAY_MS;
+
+pub fn can_delete(logged_at: Millis, now: Millis) -> bool {
+    now - logged_at < DELETE_WINDOW_MS
+}
+
+/// A Readiness Run left with no entries after a delete is removed too, but only the latest run and
+/// only while it is still open: an ended run is history.
+pub fn remove_emptied_run(is_latest: bool, ended: bool, entries_left: usize) -> bool {
+    is_latest && !ended && entries_left == 0
+}
+
 /// The Learner's calendar day for a timestamp, given their UTC offset in minutes.
 pub fn local_day(at: Millis, utc_offset_min: i32) -> i64 {
     (at + utc_offset_min as i64 * 60_000).div_euclid(DAY_MS)
@@ -288,6 +302,23 @@ impl Adherence {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn entries_can_be_deleted_for_a_day_after_logging() {
+        let t = 1_000_000_000;
+        assert!(can_delete(t, t));
+        assert!(can_delete(t, t + DAY_MS - 1));
+        assert!(!can_delete(t, t + DAY_MS));
+        assert!(can_delete(t, t - 5_000), "a device clock a little behind still allows it");
+    }
+
+    #[test]
+    fn only_the_open_latest_run_is_removed_when_emptied() {
+        assert!(remove_emptied_run(true, false, 0));
+        assert!(!remove_emptied_run(true, false, 1), "other entries remain");
+        assert!(!remove_emptied_run(true, true, 0), "an ended run is history");
+        assert!(!remove_emptied_run(false, false, 0), "not the latest run");
+    }
+
     #[test]
     fn r_multiple_from_pnl_and_risk() {
         assert_eq!(r_multiple(Usd(-10_000), Usd(10_000)), Some(RMultiple(-100)));

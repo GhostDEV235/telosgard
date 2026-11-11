@@ -163,6 +163,12 @@ pub fn new_id(prefix: &str) -> String {
     format!("{prefix}-{:012x}{rand:08x}", now())
 }
 
+/// When a document made by `new_id` was created (its first 12 hex digits are the time in ms).
+pub fn logged_at(id: &str) -> Option<Millis> {
+    let hex = id.rsplit_once('-')?.1.get(..12)?;
+    i64::from_str_radix(hex, 16).ok()
+}
+
 pub async fn load_doc<T: DeserializeOwned>(id: &str) -> Result<Option<T>, PlatformError> {
     Ok(platform::get::<Stored<T>>(id).await?.map(|s| s.body))
 }
@@ -205,6 +211,12 @@ pub mod repo {
     }
     pub async fn save_trade(id: &str, t: &TradeRecord) -> Result<(), PlatformError> {
         save_doc(id, kind::TRADE, t).await
+    }
+    pub async fn delete_trade(id: &str) -> Result<(), PlatformError> {
+        platform::delete(id).await
+    }
+    pub async fn delete_run(number: u32) -> Result<(), PlatformError> {
+        platform::delete(&format!("run-{number}")).await
     }
     pub async fn runs() -> Result<Vec<RunRecord>, PlatformError> {
         Ok(load_all::<RunRecord>(kind::RUN).await?.into_iter().map(|(_, r)| r).collect())

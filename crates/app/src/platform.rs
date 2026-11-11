@@ -119,7 +119,6 @@ pub async fn set<T: Serialize>(doc: &str, body: &T) -> Result<(), PlatformError>
     unwrap(js_set(doc, &json).await).map(|_| ())
 }
 
-#[allow(dead_code)] // used by the journal in Phase 7
 pub async fn delete(doc: &str) -> Result<(), PlatformError> {
     unwrap(js_delete(doc).await).map(|_| ())
 }
