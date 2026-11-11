@@ -106,6 +106,15 @@ export async function sampleJson(prompt, tier) {
   } catch (e) { return errOf(e); }
 }
 
+/// One plain-text call to Claude (the step tutor): {text, truncated}. Never cached: each question is new.
+export async function sampleText(prompt, tier) {
+  try {
+    if (!caps || !caps.sample) throw { code: "not_granted", message: "Claude unavailable" };
+    const r = await withTimeout(caps.sample(prompt, { modelTier: tier || "default", cache: false }), 90000);
+    return ok({ text: String((r && r.text) || ""), truncated: !!(r && r.truncated) });
+  } catch (e) { return errOf(e); }
+}
+
 /// Grader-lab results only: a shared (non-private) doc under `lab/` so Claude Code can read them back.
 export async function dbSetShared(path, json) {
   try {

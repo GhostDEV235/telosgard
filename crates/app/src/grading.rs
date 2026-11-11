@@ -80,3 +80,24 @@ pub async fn practice(lessons: &[&Lesson], avoid: &[String]) -> Result<Vec<gold_
         .map_err(|e| GradeError::Platform(e).describe().replace("Claude grading isn't available here", "Claude isn't available here").replace("Nothing was graded.", "No questions were written."))?;
     parse_practice(&v, 5, &ids, &avoid).map_err(|_| "Claude's questions didn't come back in a usable shape. Try again.".to_string())
 }
+
+/// "Ask Claude about this step": one plain-text tutor call. Errors are messages to show; there is
+/// never a stand-in answer. Returns the answer and whether the platform cut it short.
+pub async fn ask_step(l: &Lesson, step: usize, question: &str) -> Result<(String, bool), String> {
+    use gold_core::tutor::{TutorInput, TutorStep, build_tutor_prompt, clean_answer, plain_text};
+    let text = |i: usize| plain_text(l.steps[i].text_html);
+    let (cur, prev) = (text(step), step.checked_sub(1).map(text));
+    let input = TutorInput {
+        lesson: l.id,
+        title: l.title,
+        objective: l.objective,
+        current: TutorStep { heading: l.steps[step].heading, text: &cur },
+        previous: step.checked_sub(1).zip(prev.as_deref()).map(|(i, t)| TutorStep { heading: l.steps[i].heading, text: t }),
+        question,
+    };
+    match platform::sample_text(&build_tutor_prompt(&input), "default").await {
+        Ok(r) => clean_answer(&r.text).map(|a| (a, r.truncated)).ok_or_else(|| "Claude sent back an empty answer. Try asking again.".to_string()),
+        Err(PlatformError::NotGranted) => Err("Asking Claude isn't available here. Allow Claude for this page (or sign in), then try again.".into()),
+        Err(e) => Err(e.describe()),
+    }
+}

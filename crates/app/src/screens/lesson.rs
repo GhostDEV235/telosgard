@@ -96,7 +96,7 @@ fn screens(l: &Lesson) -> Vec<Screen> {
     v
 }
 
-fn screen_view(l: &'static Lesson, s: Screen) -> AnyView {
+fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> AnyView {
     match s {
         Screen::Hook => view! {
             <p class="text-eyebrow uppercase text-text-muted">"Start with a question"</p>
@@ -116,6 +116,9 @@ fn screen_view(l: &'static Lesson, s: Screen) -> AnyView {
                         <div class="lesson-prose mt-2 text-callout" inner_html=w></div>
                     </details>
                 })}
+                <button type="button" class="press mt-4 min-h-11 text-callout underline underline-offset-4" on:click=move |_| ask.set(Some(i))>
+                    "Ask Claude about this step"
+                </button>
             }
             .into_any()
         }
@@ -157,6 +160,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
     let returning = { let p = progress.get_untracked(id); p.quiz_best.is_some() || p.grade.is_some() };
     let reached_end = RwSignal::new(false);
     let quiz_done = RwSignal::new(false);
+    let ask = RwSignal::new(None::<usize>);
     let on_quiz = move |score: u8| {
         quiz_done.set(true);
         let was_passed = progress.passed(id);
@@ -198,7 +202,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
                 <div class="h-full rounded-full bg-text-muted transition-[width]" style=move || format!("width:{}%", (pos.get() + 1) * 100 / n)></div>
             </div>
             <div class="anim-fade mt-5 min-h-48" aria-live="polite">
-                {move || all.with_value(|v| screen_view(l, v[pos.get()]))}
+                {move || all.with_value(|v| screen_view(l, v[pos.get()], ask))}
             </div>
             <div class="mt-6 flex items-center justify-between gap-3">
                 <button type="button" class=PILL_GHOST disabled=move || pos.get() == 0 on:click=move |_| go(pos.get_untracked().saturating_sub(1))>"‹ Back"</button>
@@ -230,6 +234,8 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
                 <GateStatus id=id />
             </div>
         </Show>
+
+        <AskStep lesson=l ask=ask />
 
         <details class="mt-10 text-footnote text-text-muted">
             <summary class="press min-h-11 cursor-pointer py-2">"Sources for this lesson"</summary>
@@ -297,6 +303,96 @@ fn SpacedReview(current: u8) -> impl IntoView {
                 </div>
             </section>
         })
+    }
+}
+
+/// One question and Claude's answer, kept for this page load only.
+#[derive(Clone, PartialEq)]
+pub struct Asked {
+    lesson: u8,
+    step: usize,
+    question: String,
+    answer: String,
+    truncated: bool,
+}
+
+/// This page load's tutor answers (provided by the shell).
+#[derive(Clone, Copy)]
+pub struct TutorLog(pub RwSignal<Vec<Asked>>);
+
+/// "Ask Claude about this step" sheet (Phase 12). Plain-text answers that stay on the lesson.
+#[component]
+fn AskStep(lesson: &'static Lesson, ask: RwSignal<Option<usize>>) -> impl IntoView {
+    let log = expect_context::<TutorLog>().0;
+    let open = RwSignal::new(false);
+    // Keep `open` (the sheet) and `ask` (which step) in step. `set` always notifies, so each side
+    // only writes on a real change; otherwise the two effects wake each other forever.
+    Effect::new(move |_| {
+        let want = ask.get().is_some();
+        if open.get_untracked() != want {
+            open.set(want);
+        }
+    });
+    Effect::new(move |_| {
+        if !open.get() && ask.get_untracked().is_some() {
+            ask.set(None);
+        }
+    });
+    let question = RwSignal::new(String::new());
+    let busy = RwSignal::new(false);
+    let error = RwSignal::new(None::<String>);
+    let send = move || {
+        let Some(step) = ask.get_untracked() else { return };
+        let q = match gold_core::tutor::check_question(&question.get_untracked()) {
+            Ok(q) => q,
+            Err(gold_core::tutor::QuestionError::Empty) => return error.set(Some("Type a question first.".into())),
+            Err(gold_core::tutor::QuestionError::TooLong) => {
+                return error.set(Some(format!("Keep it under {} characters.", gold_core::tutor::MAX_QUESTION_CHARS)));
+            }
+        };
+        busy.set(true);
+        error.set(None);
+        spawn_local(async move {
+            match grading::ask_step(lesson, step, &q).await {
+                Ok((answer, truncated)) => {
+                    log.update(|v| v.push(Asked { lesson: lesson.id, step, question: q, answer, truncated }));
+                    question.set(String::new());
+                }
+                Err(msg) => error.set(Some(msg)),
+            }
+            busy.set(false);
+        });
+    };
+    view! {
+        <Sheet open=open title="Ask Claude">
+            {move || ask.get().map(|step| {
+                let st = &lesson.steps[step];
+                let earlier = log.with(|v| v.iter().filter(|a| a.lesson == lesson.id && a.step == step).cloned().collect::<Vec<_>>());
+                view! {
+                    <p class="text-footnote text-text-muted">{format!("About “{}”. Claude answers about this lesson only, and never tells you what to trade.", st.heading)}</p>
+                    <div class="mt-3 grid gap-3" aria-live="polite">
+                        {earlier.into_iter().map(|a| view! {
+                            <div class="rounded-btn bg-bg p-3.5">
+                                <p class="text-callout font-semibold">{a.question}</p>
+                                <p class="mt-1.5 whitespace-pre-line text-callout">{a.answer}</p>
+                                {a.truncated.then(|| view! { <p class="mt-1 text-footnote text-text-muted">"The answer was cut short. Try a narrower question."</p> })}
+                            </div>
+                        }).collect_view()}
+                    </div>
+                }
+            })}
+            <label class="mt-3 block">
+                <span class="text-callout font-semibold">"Your question"</span>
+                <textarea rows="3" maxlength="500" class="mt-1.5 w-full rounded-field bg-bg p-3.5 text-callout placeholder:text-text-muted" placeholder="What part of this step is unclear?" prop:value=move || question.get() on:input=move |ev| question.set(event_target_value(&ev))></textarea>
+            </label>
+            {move || error.get().map(|e| view! { <p class="mt-2 text-callout text-down" role="alert">{e}</p> })}
+            <div class="mt-3 flex items-center justify-between gap-3">
+                <p class="text-footnote text-text-muted">"Answers stay until you close the page."</p>
+                <button type="button" class=PILL disabled=move || busy.get() on:click=move |_| send()>
+                    {move || if busy.get() { "Asking…" } else { "Ask" }}
+                </button>
+            </div>
+        </Sheet>
     }
 }
 

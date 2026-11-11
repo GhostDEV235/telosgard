@@ -16,6 +16,7 @@ pub fn Shell() -> impl IntoView {
     let disclaimer = expect_context::<DisclaimerOpen>();
     let appearance = RwSignal::new(false);
     provide_context(AppearanceOpen(appearance));
+    provide_context(crate::screens::lesson::TutorLog(RwSignal::new(Vec::new())));
 
     view! {
         <div class="min-h-dvh pb-[calc(84px+env(safe-area-inset-bottom,0px))]">
@@ -39,11 +40,22 @@ pub fn Shell() -> impl IntoView {
                 Route::TradeSkip => view! { <crate::screens::trade::TradeSkip /> }.into_any(),
                 Route::Trade(id) => view! { <crate::screens::trade::TradeDetail id=id /> }.into_any(),
             }}
+            <RiskFooter />
         </div>
         <TabBar />
         <Toast />
         <AppearanceSheet open=appearance />
         <Disclaimer open=disclaimer.0 />
+    }
+}
+
+/// Shown under every screen (Phase 12).
+#[component]
+fn RiskFooter() -> impl IntoView {
+    view! {
+        <footer class="gutter mx-auto max-w-[680px] pt-2 pb-6 text-center text-footnote text-text-muted">
+            "Education, not financial advice. Trading CFDs carries a high risk of losing money."
+        </footer>
     }
 }
 

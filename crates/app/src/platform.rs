@@ -23,6 +23,8 @@ extern "C" {
     async fn js_upload(input_id: &str) -> JsValue;
     #[wasm_bindgen(js_name = sampleJson)]
     async fn js_sample(prompt: &str, tier: &str) -> JsValue;
+    #[wasm_bindgen(js_name = sampleText)]
+    async fn js_sample_text(prompt: &str, tier: &str) -> JsValue;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -151,6 +153,16 @@ pub async fn set_shared<T: Serialize>(path: &str, body: &T) -> Result<(), Platfo
 
 pub async fn sample_json(prompt: &str, tier: &str) -> Result<Value, PlatformError> {
     unwrap(js_sample(prompt, tier).await)
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SampledText {
+    pub text: String,
+    pub truncated: bool,
+}
+
+pub async fn sample_text(prompt: &str, tier: &str) -> Result<SampledText, PlatformError> {
+    serde_json::from_value(unwrap(js_sample_text(prompt, tier).await)?).map_err(|e| PlatformError::Invalid(e.to_string()))
 }
 
 #[derive(Debug, Clone, Deserialize)]

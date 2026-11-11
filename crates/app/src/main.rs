@@ -61,5 +61,9 @@ fn App() -> impl IntoView {
 
 fn main() {
     console_error_panic_hook::set_once();
+    // The artifact viewer's page skeleton has no `lang`; screen readers need it (WCAG 3.1.1).
+    if let Some(root) = leptos::prelude::document().document_element() {
+        let _ = root.set_attribute("lang", "en");
+    }
     leptos::mount::mount_to_body(App);
 }

@@ -20,6 +20,7 @@ pub mod review;
 pub mod sizing;
 pub mod stage1_drills;
 pub mod time;
+pub mod tutor;
 
 /// Milliseconds since the Unix epoch (what JavaScript's `Date.now()` returns).
 pub type Millis = i64;

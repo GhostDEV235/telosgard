@@ -150,9 +150,11 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 **Exit check:** tests green; a closed −$100 trade risking $100 shows −1.0R; a week of +2R, −1R, −1R, +2R shows Expectancy +0.5R.
 
 ### Phase 12: Ask Claude and the risk footer
-- [ ] **Ask Claude about this step**: a button on each Lesson Step opens a small sheet; the question goes to Claude with the lesson title, the current and previous steps, and the rule "answer as this course's tutor, using its terms; no trade recommendations; say so when a question is beyond this lesson". Plain-text answer (bridge gains `sampleText`), answers kept for the session only, failures show a message and never invent an answer
-- [ ] **Risk footer** on every screen: "Education, not financial advice. Trading CFDs carries a high risk of losing money."
-- [ ] Accessibility re-scan (axe) on the reader v2, widgets and new sheets, both themes
+- [x] **Ask Claude about this step**: a button on each Lesson Step opens a small sheet; the question goes to Claude with the lesson title, the current and previous steps, and the rule "answer as this course's tutor, using its terms; no trade recommendations; say so when a question is beyond this lesson". Plain-text answer (bridge gains `sampleText`), answers kept for the session only, failures show a message and never invent an answer
+- [x] **Risk footer** on every screen: "Education, not financial advice. Trading CFDs carries a high risk of losing money."
+- [x] Accessibility re-scan (axe) on the reader v2, widgets and new sheets, both themes
+
+*Done 2026-11-11: `tutor` module (6 tests, 144 in total); bridge `sampleText` (no cache); the sheet was checked locally (focus, empty question, the unavailable message, closing) and live by the Learner ("Why is a 60% win rate not enough?" on Lesson 2: stayed on the lesson, used 1R, no trade advice). The footer shows on every route. axe-core 4.10.2 (WCAG 2/2.1 A/AA) ran in both themes on every Lesson 1 screen, the Confidence step, Recall and the quiz (picked and revealed), the Ask sheet, the widget lab, question stats, Today, Practice, all three calibration states, Tools, Plan, a new and a closed trade, Journal, Weekly Review, Checklist and Readiness. One real violation: no `lang` on the page, because the viewer's skeleton has none; it's now set at startup. Scanning note: in a hidden tab, CSS transitions don't advance, so disable them before scanning or axe reads half-faded colours. Published as Artifact version 16.*
 
 **Exit check:** asking about a step returns an answer that stays on the lesson; the footer shows on every route; axe finds no violations.
 
