@@ -74,7 +74,7 @@ fn not_written() -> impl IntoView {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Screen {
+pub enum Screen {
     Hook,
     Step(usize),
     Analogy,
@@ -85,7 +85,7 @@ enum Screen {
     Recall,
 }
 
-fn screens(l: &Lesson) -> Vec<Screen> {
+pub fn screens(l: &Lesson) -> Vec<Screen> {
     let mut v = vec![Screen::Hook];
     v.extend((0..l.steps.len()).map(Screen::Step));
     v.extend([Screen::Analogy, Screen::Example, Screen::Mistake, Screen::Takeaways]);
@@ -116,7 +116,15 @@ fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> A
                         <div class="lesson-prose mt-2 text-callout" inner_html=w></div>
                     </details>
                 })}
-                <button type="button" class="press mt-4 min-h-11 text-callout underline underline-offset-4" on:click=move |_| ask.set(Some(i))>
+                <button type="button" class="press mt-4 min-h-11 text-callout underline underline-offset-4" on:click=move |_| {
+                    if wide() {
+                        if let Some(el) = document().get_element_by_id("ask-panel-q").and_then(|e| wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(e).ok()) {
+                            let _ = el.focus();
+                        }
+                    } else {
+                        ask.set(Some(i))
+                    }
+                }>
                     "Ask Claude about this step"
                 </button>
             }
@@ -156,7 +164,16 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
     let store = expect_context::<crate::store::Store>();
     let all = StoredValue::new(screens(l));
     let n = all.with_value(Vec::len);
-    let pos = RwSignal::new(0usize);
+    let ui = expect_context::<LessonUi>();
+    let pos = ui.pos;
+    pos.set(0);
+    ui.lesson.set(Some(l.id));
+    let this = l.id;
+    on_cleanup(move || {
+        if ui.lesson.get_untracked() == Some(this) {
+            ui.lesson.set(None);
+        }
+    });
     let returning = { let p = progress.get_untracked(id); p.quiz_best.is_some() || p.grade.is_some() };
     let reached_end = RwSignal::new(false);
     let quiz_done = RwSignal::new(false);
@@ -237,7 +254,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
 
         <AskStep lesson=l ask=ask />
 
-        <details class="mt-10 text-footnote text-text-muted">
+        <details class="mt-10 text-footnote text-text-muted lg:hidden">
             <summary class="press min-h-11 cursor-pointer py-2">"Sources for this lesson"</summary>
             <ul class="mt-2 grid gap-2">
                 {l.sources
@@ -320,29 +337,33 @@ pub struct Asked {
 #[derive(Clone, Copy)]
 pub struct TutorLog(pub RwSignal<Vec<Asked>>);
 
-/// "Ask Claude about this step" sheet (Phase 12). Plain-text answers that stay on the lesson.
+/// Which lesson is on screen and its current step, shared with the wide-screen lesson panel.
+#[derive(Clone, Copy)]
+pub struct LessonUi {
+    pub lesson: RwSignal<Option<u8>>,
+    pub pos: RwSignal<usize>,
+}
+
+impl LessonUi {
+    pub fn new() -> LessonUi {
+        LessonUi { lesson: RwSignal::new(None), pos: RwSignal::new(0) }
+    }
+}
+
+fn wide() -> bool {
+    window().inner_width().ok().and_then(|v| v.as_f64()).is_some_and(|w| w >= 1024.0)
+}
+
+/// The question form and this page load's answers for one step. Used in the phone sheet and in the
+/// wide-screen lesson panel. Plain-text answers that stay on the lesson (Phase 12).
 #[component]
-fn AskStep(lesson: &'static Lesson, ask: RwSignal<Option<usize>>) -> impl IntoView {
+fn AskBody(lesson: &'static Lesson, #[prop(into)] step: Signal<Option<usize>>, input_id: &'static str) -> impl IntoView {
     let log = expect_context::<TutorLog>().0;
-    let open = RwSignal::new(false);
-    // Keep `open` (the sheet) and `ask` (which step) in step. `set` always notifies, so each side
-    // only writes on a real change; otherwise the two effects wake each other forever.
-    Effect::new(move |_| {
-        let want = ask.get().is_some();
-        if open.get_untracked() != want {
-            open.set(want);
-        }
-    });
-    Effect::new(move |_| {
-        if !open.get() && ask.get_untracked().is_some() {
-            ask.set(None);
-        }
-    });
     let question = RwSignal::new(String::new());
     let busy = RwSignal::new(false);
     let error = RwSignal::new(None::<String>);
     let send = move || {
-        let Some(step) = ask.get_untracked() else { return };
+        let Some(step) = step.get_untracked() else { return };
         let q = match gold_core::tutor::check_question(&question.get_untracked()) {
             Ok(q) => q,
             Err(gold_core::tutor::QuestionError::Empty) => return error.set(Some("Type a question first.".into())),
@@ -363,36 +384,156 @@ fn AskStep(lesson: &'static Lesson, ask: RwSignal<Option<usize>>) -> impl IntoVi
             busy.set(false);
         });
     };
+    move || match step.get() {
+        None => view! { <p class="text-callout text-text-muted">"Open one of the lesson's steps to ask Claude about it."</p> }.into_any(),
+        Some(i) => {
+            let st = &lesson.steps[i];
+            let earlier = log.with(|v| v.iter().filter(|a| a.lesson == lesson.id && a.step == i).cloned().collect::<Vec<_>>());
+            view! {
+                <p class="text-footnote text-text-muted">{format!("About “{}”. Claude answers about this lesson only, and never tells you what to trade.", st.heading)}</p>
+                <div class="mt-3 grid gap-3" aria-live="polite">
+                    {earlier.into_iter().map(|a| view! {
+                        <div class="rounded-btn bg-surface p-3.5 shadow-card">
+                            <p class="text-callout font-semibold">{a.question}</p>
+                            <p class="mt-1.5 whitespace-pre-line text-callout">{a.answer}</p>
+                            {a.truncated.then(|| view! { <p class="mt-1 text-footnote text-text-muted">"The answer was cut short. Try a narrower question."</p> })}
+                        </div>
+                    }).collect_view()}
+                </div>
+                <label class="mt-3 block">
+                    <span class="text-callout font-semibold">"Your question"</span>
+                    <textarea id=input_id rows="3" maxlength="500" class="mt-1.5 w-full rounded-field bg-surface p-3.5 text-callout shadow-card placeholder:text-text-muted" placeholder="What part of this step is unclear?" prop:value=move || question.get() on:input=move |ev| question.set(event_target_value(&ev))></textarea>
+                </label>
+                {move || error.get().map(|e| view! { <p class="mt-2 text-callout text-down" role="alert">{e}</p> })}
+                <div class="mt-3 flex items-center justify-between gap-3">
+                    <p class="text-footnote text-text-muted">"Answers stay until you close the page."</p>
+                    <button type="button" class=PILL disabled=move || busy.get() on:click=move |_| send()>
+                        {move || if busy.get() { "Asking…" } else { "Ask" }}
+                    </button>
+                </div>
+            }.into_any()
+        }
+    }
+}
+
+/// The phone sheet for "Ask Claude about this step".
+#[component]
+fn AskStep(lesson: &'static Lesson, ask: RwSignal<Option<usize>>) -> impl IntoView {
+    let open = RwSignal::new(false);
+    // Keep `open` (the sheet) and `ask` (which step) in step. `set` always notifies, so each side
+    // only writes on a real change; otherwise the two effects wake each other forever.
+    Effect::new(move |_| {
+        let want = ask.get().is_some();
+        if open.get_untracked() != want {
+            open.set(want);
+        }
+    });
+    Effect::new(move |_| {
+        if !open.get() && ask.get_untracked().is_some() {
+            ask.set(None);
+        }
+    });
     view! {
         <Sheet open=open title="Ask Claude">
-            {move || ask.get().map(|step| {
-                let st = &lesson.steps[step];
-                let earlier = log.with(|v| v.iter().filter(|a| a.lesson == lesson.id && a.step == step).cloned().collect::<Vec<_>>());
-                view! {
-                    <p class="text-footnote text-text-muted">{format!("About “{}”. Claude answers about this lesson only, and never tells you what to trade.", st.heading)}</p>
-                    <div class="mt-3 grid gap-3" aria-live="polite">
-                        {earlier.into_iter().map(|a| view! {
-                            <div class="rounded-btn bg-bg p-3.5">
-                                <p class="text-callout font-semibold">{a.question}</p>
-                                <p class="mt-1.5 whitespace-pre-line text-callout">{a.answer}</p>
-                                {a.truncated.then(|| view! { <p class="mt-1 text-footnote text-text-muted">"The answer was cut short. Try a narrower question."</p> })}
-                            </div>
-                        }).collect_view()}
-                    </div>
-                }
-            })}
-            <label class="mt-3 block">
-                <span class="text-callout font-semibold">"Your question"</span>
-                <textarea rows="3" maxlength="500" class="mt-1.5 w-full rounded-field bg-bg p-3.5 text-callout placeholder:text-text-muted" placeholder="What part of this step is unclear?" prop:value=move || question.get() on:input=move |ev| question.set(event_target_value(&ev))></textarea>
-            </label>
-            {move || error.get().map(|e| view! { <p class="mt-2 text-callout text-down" role="alert">{e}</p> })}
-            <div class="mt-3 flex items-center justify-between gap-3">
-                <p class="text-footnote text-text-muted">"Answers stay until you close the page."</p>
-                <button type="button" class=PILL disabled=move || busy.get() on:click=move |_| send()>
-                    {move || if busy.get() { "Asking…" } else { "Ask" }}
-                </button>
-            </div>
+            <AskBody lesson=lesson step=Signal::derive(move || ask.get()) input_id="ask-sheet-q" />
         </Sheet>
+    }
+}
+
+pub fn screen_title(l: &Lesson, s: Screen) -> &'static str {
+    match s {
+        Screen::Hook => "Start with a question",
+        Screen::Step(i) => l.steps[i].heading,
+        Screen::Analogy => "Analogy",
+        Screen::Example => "Real life",
+        Screen::Mistake => "Common mistake",
+        Screen::Takeaways => "Key takeaways",
+        Screen::Videos => "Watch (optional)",
+        Screen::Recall => "Recall",
+    }
+}
+
+/// Wide-screen right panel for a lesson: progress (jump to any step), the Gate, Ask Claude about the
+/// current step, and sources.
+#[component]
+pub fn LessonPanel(id: LessonId) -> impl IntoView {
+    let progress = expect_context::<Progress>();
+    let ui = expect_context::<LessonUi>();
+    let unlocked = Memo::new(move |_| progress.unlocked(id));
+    let body = move || {
+        let l = content_for(id).filter(|_| unlocked.get())?;
+        let all = screens(l);
+        let n = all.len();
+        let all = StoredValue::new(all);
+        let step = Signal::derive(move || all.with_value(|v| match v.get(ui.pos.get()) {
+            Some(Screen::Step(i)) => Some(*i),
+            _ => None,
+        }));
+        let check = |met: bool, text: &'static str| view! {
+            <li class="flex items-center gap-2 text-callout">
+                <span class=if met { "text-gold" } else { "text-text-muted" } aria-hidden="true">{if met { "✓" } else { "○" }}</span>
+                <span class=if met { "" } else { "text-text-muted" }>{text}</span>
+                <span class="sr-only">{if met { ", met" } else { ", not met yet" }}</span>
+            </li>
+        };
+        Some(view! {
+            <p class="text-eyebrow text-text-muted">"Progress"</p>
+            <p class="tabular mt-1 text-callout">{move || format!("Step {} of {n}", ui.pos.get().min(n - 1) + 1)}</p>
+            <div class="mt-2 h-1 overflow-hidden rounded-full bg-surface" aria-hidden="true">
+                <div class="h-full rounded-full bg-text-muted transition-[width] duration-200" style=move || format!("width:{}%", (ui.pos.get().min(n - 1) + 1) * 100 / n)></div>
+            </div>
+            <ol class="mt-3 grid grid-cols-1 gap-px">
+                {all.with_value(|v| v.iter().enumerate().map(|(i, s)| {
+                    let title = screen_title(l, *s);
+                    view! {
+                        <li>
+                            <button
+                                type="button"
+                                aria-current=move || (ui.pos.get() == i).then_some("step")
+                                class=move || format!(
+                                    "press flex min-h-8 w-full items-center gap-2 rounded-[8px] px-2 text-left text-footnote {}",
+                                    if ui.pos.get() == i { "bg-surface font-semibold text-text" } else { "text-text-muted hover:bg-surface/60 hover:text-text" },
+                                )
+                                on:click=move |_| ui.pos.set(i)
+                            >
+                                <span class="tabular w-5 shrink-0 text-right">{i + 1}</span>
+                                <span class="min-w-0 flex-1 truncate">{title}</span>
+                            </button>
+                        </li>
+                    }
+                }).collect_view())}
+            </ol>
+            <div class="my-5 border-t border-hairline"></div>
+            <p class="text-eyebrow text-text-muted">"To unlock the next lesson"</p>
+            {move || {
+                let p = progress.get(id);
+                view! {
+                    <ul class="mt-2 grid gap-1.5">
+                        {check(p.quiz_met(), "Quiz ≥ 80%")}
+                        {check(p.explain_back_met(), "Explain-Back: Got it")}
+                    </ul>
+                    {progress.passed(id).then(|| view! { <p class="mt-2 text-callout text-gold">"🏅 Lesson passed"</p> })}
+                }
+            }}
+            <div class="my-5 border-t border-hairline"></div>
+            <p class="text-eyebrow text-text-muted">"Ask Claude"</p>
+            <div class="mt-2"><AskBody lesson=l step=step input_id="ask-panel-q" /></div>
+            <div class="my-5 border-t border-hairline"></div>
+            <p class="text-eyebrow text-text-muted">"Sources"</p>
+            <ul class="mt-2 grid gap-2 text-footnote text-text-muted">
+                {l.sources.iter().map(|s| view! {
+                    <li>
+                        <a href=s.url target="_blank" rel="noopener noreferrer" class="underline underline-offset-2">{s.name}</a>
+                        {format!(" · checked {}", s.checked)}
+                    </li>
+                }).collect_view()}
+            </ul>
+        })
+    };
+    view! {
+        <aside aria-label="Lesson panel" class="sticky top-0 hidden h-dvh w-[280px] shrink-0 overflow-y-auto border-l border-hairline bg-bg px-4 xl:w-[320px] xl:px-5 py-6 lg:block">
+            {body}
+        </aside>
     }
 }
 

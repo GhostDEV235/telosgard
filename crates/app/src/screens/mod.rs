@@ -9,3 +9,4 @@ pub mod review;
 pub mod shell;
 pub mod tools;
 pub mod trade;
+pub mod workspace;

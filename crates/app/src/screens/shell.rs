@@ -17,9 +17,20 @@ pub fn Shell() -> impl IntoView {
     let appearance = RwSignal::new(false);
     provide_context(AppearanceOpen(appearance));
     provide_context(crate::screens::lesson::TutorLog(RwSignal::new(Vec::new())));
+    provide_context(crate::screens::lesson::LessonUi::new());
 
+    // Wide screens (DESIGN-SYSTEM §4.1): sidebar | dot-grid canvas holding the screen as a frame | panel.
+    let panel = move || match route.get() {
+        Route::Lesson(id) => Some(view! { <crate::screens::lesson::LessonPanel id=id /> }.into_any()),
+        r if crate::screens::workspace::has_journal_panel(&r) => Some(view! { <crate::screens::workspace::JournalPanel /> }.into_any()),
+        _ => None,
+    };
     view! {
-        <div class="min-h-dvh pb-[calc(84px+env(safe-area-inset-bottom,0px))]">
+        <div class="lg:flex">
+        <crate::screens::workspace::Sidebar />
+        <div class="min-h-dvh min-w-0 flex-1 pb-[calc(84px+env(safe-area-inset-bottom,0px))] lg:canvas-grid lg:px-5 lg:pt-5 lg:pb-10 xl:px-8">
+            <p class="hidden pb-2 text-footnote text-text-muted lg:block" aria-hidden="true">{move || crate::screens::workspace::frame_label(&route.get())}</p>
+            <div class="lg:frame">
             {move || match route.get() {
                 Route::Today => view! { <Home /> }.into_any(),
                 Route::Lesson(id) => view! { <LessonScreen id=id /> }.into_any(),
@@ -41,6 +52,9 @@ pub fn Shell() -> impl IntoView {
                 Route::Trade(id) => view! { <crate::screens::trade::TradeDetail id=id /> }.into_any(),
             }}
             <RiskFooter />
+            </div>
+        </div>
+        {panel}
         </div>
         <TabBar />
         <Toast />
@@ -80,7 +94,7 @@ pub fn LargeTitle(title: &'static str, #[prop(into, default = String::new())] ey
             <button
                 type="button"
                 aria-label="Appearance and about"
-                class="press mb-1 grid size-10 shrink-0 place-items-center rounded-full bg-surface text-title2 shadow-card"
+                class="press mb-1 grid size-10 shrink-0 place-items-center rounded-full bg-surface text-title2 shadow-card lg:hidden"
                 on:click=move |_| appearance.set(true)
             >
                 <svg viewBox="0 0 24 24" class="size-5" aria-hidden="true">
@@ -109,7 +123,7 @@ pub fn SubBar(back: &'static str, back_label: &'static str, #[prop(into)] title:
     }
 }
 
-fn tab_icon(tab: Tab) -> impl IntoView {
+pub fn tab_icon(tab: Tab, class: &'static str) -> impl IntoView {
     let path = match tab {
         Tab::Today => "M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 11.5zM6 17.5h12M8 20.5h8",
         Tab::Practice => "M7 3v4M7 15v6M17 3v6M17 17v4M5 7h4v8H5zM15 9h4v8h-4z",
@@ -117,7 +131,7 @@ fn tab_icon(tab: Tab) -> impl IntoView {
         Tab::Journal => "M6 3.5h11.5a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1.5 1.5 0 0 1-1.5-1.5V5A1.5 1.5 0 0 1 6 3.5zM8.5 3.5v17M11.5 8h4M11.5 11.5h4",
     };
     view! {
-        <svg viewBox="0 0 24 24" class="size-6" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class=class aria-hidden="true">
             <path d=path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
     }
@@ -128,7 +142,7 @@ fn TabBar() -> impl IntoView {
     let route = expect_context::<RwSignal<Route>>();
     let tabs = [(Tab::Today, "#today", "Today"), (Tab::Practice, "#practice", "Practice"), (Tab::Tools, "#size", "Tools"), (Tab::Journal, "#journal", "Journal")];
     view! {
-        <nav aria-label="Main" class="glass gutter fixed inset-x-0 bottom-0 z-30 border-t border-line/30 pb-[env(safe-area-inset-bottom,0px)]">
+        <nav aria-label="Main" class="glass gutter fixed inset-x-0 bottom-0 z-30 lg:hidden border-t border-line/30 pb-[env(safe-area-inset-bottom,0px)]">
             <ul class="mx-auto flex max-w-[560px] justify-around">
                 {tabs
                     .into_iter()
@@ -146,7 +160,7 @@ fn TabBar() -> impl IntoView {
                                         )
                                     }
                                 >
-                                    {tab_icon(tab)}
+                                    {tab_icon(tab, "size-6")}
                                     {label}
                                 </a>
                             </li>

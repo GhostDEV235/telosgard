@@ -22,6 +22,7 @@
   /* v2 (Wave 1.75): a 1px hairline ring instead of a drop shadow in dark; ring + a whisper of shadow in light. */
   --color-hairline: rgb(199 203 184 / 0.13);
   --color-grid: rgb(199 203 184 / 0.11);
+  --color-canvas: #0A1711;
   --shadow-card: 0 0 0 1px var(--color-hairline);
   --shadow-lift: 0 0 0 1px rgb(199 203 184 / 0.22), 0 10px 24px rgb(0 0 0 / 0.22);
   --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(0 0 0 / 0.45);
@@ -61,7 +62,7 @@
     --color-bg: #E4E6DA; --color-surface: #F4F5EF; --color-raised: #FFFFFF; --color-text: #0F1F17;
     --color-text-muted: #4E5F4B; --color-line: #C7CBB8; --color-locked: #DEE0D9;
     --color-up: #2A6E27; --color-down: #9E4232; --color-gold: #7A5C14; --color-scrim: rgb(15 31 23 / 0.35);
-    --color-hairline: rgb(15 31 23 / 0.12); --color-grid: rgb(15 31 23 / 0.10);
+    --color-hairline: rgb(15 31 23 / 0.12); --color-grid: rgb(15 31 23 / 0.10); --color-canvas: #D8DBCE;
     --shadow-card: 0 0 0 1px var(--color-hairline), 0 1px 2px rgb(15 31 23 / .05);
     --shadow-lift: 0 0 0 1px rgb(15 31 23 / .2), 0 10px 24px rgb(15 31 23 / .08);
     --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(15 31 23 / .18);
@@ -72,7 +73,7 @@
   --color-bg: #E4E6DA; --color-surface: #F4F5EF; --color-raised: #FFFFFF; --color-text: #0F1F17;
   --color-text-muted: #4E5F4B; --color-line: #C7CBB8; --color-locked: #DEE0D9;
   --color-up: #2A6E27; --color-down: #9E4232; --color-gold: #7A5C14; --color-scrim: rgb(15 31 23 / 0.35);
-  --color-hairline: rgb(15 31 23 / 0.12); --color-grid: rgb(15 31 23 / 0.10);
+  --color-hairline: rgb(15 31 23 / 0.12); --color-grid: rgb(15 31 23 / 0.10); --color-canvas: #D8DBCE;
   --shadow-card: 0 0 0 1px var(--color-hairline), 0 1px 2px rgb(15 31 23 / .05);
   --shadow-lift: 0 0 0 1px rgb(15 31 23 / .2), 0 10px 24px rgb(15 31 23 / .08);
   --shadow-sheet: 0 0 0 1px var(--color-hairline), 0 -8px 40px rgb(15 31 23 / .18);
@@ -126,6 +127,19 @@ body::before {
   backdrop-filter: blur(20px) saturate(140%);
 }
 @utility tabular { font-variant-numeric: tabular-nums; }
+/* Wide-screen workspace: the canvas is a faint 16px dot grid; the screen sits on it as one frame. */
+@utility canvas-grid {
+  background-color: var(--color-canvas);
+  background-image: radial-gradient(circle at 1px 1px, var(--color-grid) 1px, transparent 1.5px);
+  background-size: 16px 16px;
+}
+@utility frame {
+  background: var(--color-bg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: clip;
+  min-height: calc(100dvh - 4.5rem);
+}
 /* Quiet hover and press (taste-skill motion.md numbers): buttons step up 1px on hover (fine pointer
    only), press sinks 1px and scales .985. Linked cards use `lift`: up 2px, the hairline darkens. */
 @utility press {

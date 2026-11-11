@@ -172,10 +172,12 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 **Exit check:** every screen renders in the new type and tokens in both themes; contrast table in the spec is filled; axe clean; bundle within budget.
 
-### Phase 14: Workspace shell
-- [ ] From 1024 px: left sidebar (Today, Practice, Tools, Journal; the course outline as a layers-style tree: every stage, current stage open, ✓ passed, ● current, 🔒 locked) replacing the bottom tab bar; centre canvas with a faint dot grid and a frame card with a Figma-style label; hairline borders between panels
-- [ ] Right panel where it adds context: Lesson (progress, Gate, Ask Claude inline, sources); Journal and trade pages (Live Readiness at a glance, today's checklist). Today, Practice and Tools use the full canvas width
-- [ ] Below 1024 px: one column and the bottom tab bar, as now; Ask Claude stays a sheet
+### Phase 14: Workspace shell ✅
+- [x] From 1024 px: left sidebar (Today, Practice, Tools, Journal; the course outline as a layers-style tree: every stage, current stage open, ✓ passed, ● current, 🔒 locked) replacing the bottom tab bar; centre canvas with a faint dot grid and a frame card with a Figma-style label; hairline borders between panels
+- [x] Right panel where it adds context: Lesson (progress, Gate, Ask Claude inline, sources); Journal and trade pages (Live Readiness at a glance, today's checklist). Today, Practice and Tools use the full canvas width
+- [x] Below 1024 px: one column and the bottom tab bar, as now; Ask Claude stays a sheet
+
+*Done 2026-11-11: `screens/workspace.rs` (sidebar with the course outline, frame labels, Journal panel), `LessonPanel` (jump to any step, Gate checks, Ask Claude inline, sources) sharing the step through a `LessonUi` context; Ask Claude split into one body used by the phone sheet and the panel ("Ask Claude about this step" focuses the panel on wide screens). Sidebar 240 / panels 272–280 px from 1024, 272 / 300–320 from 1280. Checked at 1512, 1024, 768 and 390 (same-origin iframes; the browser window couldn't be resized): no horizontal scroll; keyboard order sidebar → canvas → panel. axe found locked outline rows dimmed below AA (fixed); then clean on 11 screens in both themes. Published as Artifact version 19.*
 
 **Exit check:** every route works at 1440 / 1024 / 768 / 390 with no horizontal scroll; keyboard order follows sidebar → canvas → panel; axe clean.
 
