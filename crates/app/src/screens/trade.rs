@@ -10,7 +10,7 @@ use crate::state::{Toasts, now};
 use crate::store::{TradeRecord, TradeResult, new_id};
 use crate::ui::controls::{NumberField, PILL, PILL_GHOST, PillLink, Segmented};
 use gold_core::adherence::{AdherenceInput, Dispute};
-use gold_core::journal::{Adherence, Direction, HardRule, HardRuleResult, TradeEntry, combine, evaluate_hard_rules, local_day, pnl};
+use gold_core::journal::{Adherence, Direction, Emotion, HardRule, HardRuleResult, TradeEntry, combine, evaluate_hard_rules, local_day, pnl};
 use gold_core::money::{DEFAULT_CONTRACT_OZ, Lots, Price, Usd};
 use gold_core::sizing::{Sizing, SizingInput, size};
 use gold_core::time::{civil_from_days, days_from_civil};
@@ -363,6 +363,8 @@ pub fn TradeDetail(id: String) -> impl IntoView {
     let dispute_text = RwSignal::new(String::new());
     let exit = RwSignal::new(String::new());
     let balance_after = RwSignal::new(String::new());
+    let emotion = RwSignal::new(None::<Emotion>);
+    let lesson = RwSignal::new(String::new());
 
     let rec = move || journal.trade(&id.get_value());
 
@@ -399,9 +401,14 @@ pub fn TradeDetail(id: String) -> impl IntoView {
             toasts.show("Enter the exit price.");
             return;
         };
+        let Some(em) = emotion.get_untracked() else {
+            toasts.show("Pick how you felt during this trade.");
+            return;
+        };
         let p = pnl(&r.entry, x);
         let after = Usd::parse(&balance_after.get_untracked()).filter(|b| b.0 > 0).unwrap_or(r.entry.balance_before + p);
-        r.result = Some(TradeResult { exit: x, pnl: p, balance_after: after, closed_at: now() });
+        let lesson = Some(lesson.get_untracked().trim().to_string()).filter(|l| !l.is_empty());
+        r.result = Some(TradeResult { exit: x, pnl: p, balance_after: after, closed_at: now(), emotion: Some(em), lesson });
         journal.put_trade(id.get_value(), r);
         toasts.show("Result saved");
     };
@@ -418,6 +425,8 @@ pub fn TradeDetail(id: String) -> impl IntoView {
         let hard_failed = t.hard_results.iter().any(|h| !h.pass);
         let preview_pnl = move || Price::parse(&exit.get()).map(|x| pnl_text(pnl(&e, x)));
         let e2 = t.entry.clone();
+        let r_of = t.r();
+        let risk = t.risk();
         view! {
             <div class="mt-3 flex flex-wrap items-center gap-3">
                 <span class=format!("rounded-full px-3 py-1 text-footnote font-semibold {chip_class}")>{chip}</span>
@@ -487,11 +496,15 @@ pub fn TradeDetail(id: String) -> impl IntoView {
                         Some(r) => {
                             let (txt, tone) = pnl_text(r.pnl);
                             view! {
-                                <dl class="mt-3 grid grid-cols-3 gap-4">
+                                <dl class="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
                                     <div><dt class="text-footnote text-text-muted">"Exit"</dt><dd class="tabular text-callout">{r.exit.to_string()}</dd></div>
                                     <div><dt class="text-footnote text-text-muted">"Profit / loss"</dt><dd class=format!("tabular text-callout font-semibold {tone}")>{txt}</dd></div>
+                                    <div><dt class="text-footnote text-text-muted">"Result in R"</dt><dd class=format!("tabular text-callout font-semibold {tone}")>{r_of.map_or("—".to_string(), |x| x.to_string())}</dd></div>
                                     <div><dt class="text-footnote text-text-muted">"Balance after"</dt><dd class="tabular text-callout">{r.balance_after.to_string()}</dd></div>
                                 </dl>
+                                {risk.map(|k| view! { <p class="mt-2 text-footnote text-text-muted">{format!("1R = {k}, the money at risk between entry and stop.")}</p> })}
+                                {r.emotion.map(|em| view! { <p class="mt-3 text-callout"><span class="font-semibold">"Felt: "</span>{em.label()}</p> })}
+                                {r.lesson.clone().map(|l| view! { <p class="mt-1 text-callout"><span class="font-semibold">"Lesson: "</span>{l}</p> })}
                             }.into_any()
                         }
                         None => view! {
@@ -501,6 +514,28 @@ pub fn TradeDetail(id: String) -> impl IntoView {
                                 <NumberField label="Balance after (from MT5, optional)" prefix="$" value=balance_after />
                             </div>
                             {move || preview_pnl().map(|(txt, tone)| view! { <p class=format!("tabular mt-3 text-callout font-semibold {tone}")>{txt} " before costs"</p> })}
+                            <fieldset class="mt-5">
+                                <legend class="text-callout font-semibold">"How did you feel during this trade?"</legend>
+                                <div role="radiogroup" aria-label="Emotion Tag" class="mt-2 flex flex-wrap gap-2">
+                                    {Emotion::ALL.into_iter().map(|em| view! {
+                                        <button
+                                            type="button"
+                                            role="radio"
+                                            aria-checked=move || (emotion.get() == Some(em)).to_string()
+                                            on:click=move |_| emotion.set(Some(em))
+                                            class=move || if emotion.get() == Some(em) {
+                                                "press min-h-11 rounded-full bg-fill px-4 text-callout font-semibold text-on-fill"
+                                            } else {
+                                                "press min-h-11 rounded-full bg-bg px-4 text-callout text-text-muted"
+                                            }
+                                        >{em.label()}</button>
+                                    }).collect_view()}
+                                </div>
+                            </fieldset>
+                            <label class="mt-4 block">
+                                <span class="text-callout font-semibold">"One lesson from this trade (optional)"</span>
+                                <input type="text" maxlength="200" class="mt-1.5 min-h-11 w-full rounded-field bg-bg px-3.5 text-callout placeholder:text-text-muted" placeholder="I moved my stop because I was scared; next time I leave it." prop:value=move || lesson.get() on:input=move |ev| lesson.set(event_target_value(&ev)) />
+                            </label>
                             <button type="button" class=format!("{PILL} mt-4") on:click=close>"Save result"</button>
                         }.into_any(),
                     }}

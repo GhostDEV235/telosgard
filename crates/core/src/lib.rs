@@ -2,6 +2,7 @@
 //! Vocabulary follows CONTEXT.md at the repo root.
 
 pub mod adherence;
+pub mod calibration;
 pub mod checklist;
 pub mod clock;
 pub mod course;

@@ -23,6 +23,7 @@ pub fn Shell() -> impl IntoView {
                 Route::Today => view! { <Home /> }.into_any(),
                 Route::Lesson(id) => view! { <LessonScreen id=id /> }.into_any(),
                 Route::Practice => view! { <practice::Practice /> }.into_any(),
+                Route::Drill(DrillKind::Calibration) => view! { <practice::CalibrationDrill /> }.into_any(),
                 Route::Drill(DrillKind::Direction) => view! { <practice::DirectionDrill /> }.into_any(),
                 Route::Drill(kind) => view! { <practice::ChoiceDrill kind=kind /> }.into_any(),
                 Route::Tools => view! { <tools::Tools /> }.into_any(),

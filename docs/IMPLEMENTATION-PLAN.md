@@ -140,10 +140,12 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 **Exit check:** retention tests green (weighting, eligibility, determinism, drop-out rule); a guessed right answer still passes the Gate and reappears in the next lesson's Spaced Review.
 
 ### Phase 11: Drills and journal upgrades
-- [ ] **Calibration drill** (Practice, after Lesson 2): predict up/down on 10 seeded illustrative charts, then see the hit rate (expected ≈ 50%) and the lesson: you can't predict the next candle; you manage risk over many trades. No streaks. `gold-core` test: seeded rounds are reproducible; the score is a plain hit rate
-- [ ] Journal: **R-Multiple** on each closed trade and in the list (`gold-core` `r_multiple`, test-first); **Emotion Tag** (calm / FOMO / revenge / fear / overconfident) set when closing; a one-line **post-trade lesson**, separate from the pre-trade reason
-- [ ] Weekly Review: **Expectancy** in R (`gold-core` `review`, test-first), emotions shown against broken rules, and the week's post-trade lessons
-- [ ] Phase 7's end-to-end test extended with R, Expectancy and emotion counts against a hand calculation
+- [x] **Calibration drill** (Practice, after Lesson 2): predict up/down on 10 seeded illustrative charts, then see the hit rate (expected ≈ 50%) and the lesson: you can't predict the next candle; you manage risk over many trades. No streaks. `gold-core` test: seeded rounds are reproducible; the score is a plain hit rate
+- [x] Journal: **R-Multiple** on each closed trade and in the list (`gold-core` `r_multiple`, test-first); **Emotion Tag** (calm / FOMO / revenge / fear / overconfident) set when closing; a one-line **post-trade lesson**, separate from the pre-trade reason
+- [x] Weekly Review: **Expectancy** in R (`gold-core` `review`, test-first), emotions shown against broken rules, and the week's post-trade lessons
+- [x] Phase 7's end-to-end test extended with R, Expectancy and emotion counts against a hand calculation
+
+*Done 2026-11-11: `calibration` module and `r_multiple` / `Emotion` in `journal`; the Weekly Review's "Average R" became Expectancy; an Emotion Tag is required when recording a result, the lesson is optional; 140 tests; published as Artifact version 14.*
 
 **Exit check:** tests green; a closed −$100 trade risking $100 shows −1.0R; a week of +2R, −1R, −1R, +2R shows Expectancy +0.5R.
 

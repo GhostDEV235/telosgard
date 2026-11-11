@@ -119,6 +119,7 @@ pub fn Journal() -> impl IntoView {
                                 let (chip, chip_class) = verdict_chip(&t);
                                 let dir = match t.entry.direction { Direction::Buy => ("▲ Buy", "text-up"), Direction::Sell => ("▼ Sell", "text-down") };
                                 let pnl = t.result.as_ref().map(|r| pnl_text(r.pnl));
+                                let r_txt = t.r().map(|r| r.to_string());
                                 view! {
                                     <li>
                                         <a href=format!("#{id}") class="press flex flex-wrap items-center gap-x-4 gap-y-1 rounded-btn bg-surface px-4 py-3 shadow-card hover:bg-raised">
@@ -126,6 +127,7 @@ pub fn Journal() -> impl IntoView {
                                             <span class=format!("w-16 text-callout font-semibold {}", dir.1)>{dir.0}</span>
                                             <span class="tabular text-callout">{t.entry.entry.to_string()}</span>
                                             {pnl.map(|(s, c)| view! { <span class=format!("tabular text-callout font-semibold {c}")>{s}</span> })}
+                                            {r_txt.map(|r| view! { <span class="tabular text-callout text-text-muted">{r}</span> })}
                                             <span class=format!("ml-auto rounded-full px-2.5 py-1 text-footnote font-semibold {chip_class}")>{chip}</span>
                                         </a>
                                     </li>

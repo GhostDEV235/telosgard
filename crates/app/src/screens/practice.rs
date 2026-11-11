@@ -17,7 +17,8 @@ struct DrillInfo {
     lesson: &'static str,
 }
 
-const DRILLS: [DrillInfo; 5] = [
+const DRILLS: [DrillInfo; 6] = [
+    DrillInfo { kind: DrillKind::Calibration, title: "Can you call the next candle?", blurb: "Ten charts: predict up or down, then see your hit rate.", lesson: "Lesson 2" },
     DrillInfo { kind: DrillKind::Direction, title: "Bullish or bearish?", blurb: "Read a candle's direction from its open and close.", lesson: "Lesson 5" },
     DrillInfo { kind: DrillKind::BidAsk, title: "Spot the spread", blurb: "Find the bid, the ask, and the cost of getting in.", lesson: "Lesson 6" },
     DrillInfo { kind: DrillKind::Distance, title: "Measure the move", blurb: "Turn two prices into a Dollar Move.", lesson: "Lesson 4" },
@@ -354,6 +355,127 @@ pub fn DirectionDrill() -> impl IntoView {
                         }
                     })
             }}
+        </main>
+    }
+}
+
+/// Calibration drill (Phase 11): ten predictions of the next candle on a random walk. The hit rate
+/// lands near 50% for everyone; the lesson is to manage risk over many trades, not to predict.
+#[component]
+pub fn CalibrationDrill() -> impl IntoView {
+    use gold_core::calibration::{ROUND_LEN, calibration_round, hit_rate};
+    let store = expect_context::<crate::store::Store>();
+    let seed = RwSignal::new(now() as u64);
+    let charts = Memo::new(move |_| calibration_round(seed.get()));
+    let idx = RwSignal::new(0usize);
+    let guess = RwSignal::new(None::<bool>);
+    let right = RwSignal::new(0u32);
+    let done = RwSignal::new(false);
+
+    let chart = move || charts.with(|c| c[idx.get()].clone());
+    let shown = Signal::derive(move || {
+        let c = chart();
+        let mut v = c.shown.clone();
+        if guess.get().is_some() {
+            v.push(c.next);
+        }
+        v
+    });
+    let highlight = Signal::derive(move || guess.get().map(|_| shown.with(|v| v.len() - 1)));
+    let predict = move |up: bool| {
+        if guess.get_untracked().is_some() {
+            return;
+        }
+        guess.set(Some(up));
+        let hit = chart().went_up() == up;
+        right.update(|r| *r += hit as u32);
+        store.record_drill("calibration", hit);
+    };
+    let next = move |_| {
+        if idx.get_untracked() + 1 >= ROUND_LEN {
+            done.set(true);
+        } else {
+            idx.update(|i| *i += 1);
+            guess.set(None);
+        }
+    };
+    let again = move |_| {
+        seed.update(|s| *s = s.wrapping_add(7919));
+        idx.set(0);
+        guess.set(None);
+        right.set(0);
+        done.set(false);
+    };
+    let choice = move |up: bool, label: &'static str, glyph: &'static str, tone: &'static str| {
+        view! {
+            <button
+                type="button"
+                disabled=move || guess.get().is_some()
+                on:click=move |_| predict(up)
+                class=move || {
+                    let ring = match guess.get() {
+                        Some(_) if chart().went_up() == up => "ring-2 ring-up",
+                        Some(g) if g == up => "ring-2 ring-down",
+                        Some(_) => "opacity-55",
+                        None => "",
+                    };
+                    format!("press flex min-h-14 flex-1 items-center justify-center gap-2 rounded-btn bg-surface shadow-card text-headline {ring}")
+                }
+            >
+                <span class=tone aria-hidden="true">{glyph}</span>
+                {label}
+            </button>
+        }
+    };
+
+    view! {
+        <SubBar back="#practice" back_label="Practice" title="Call the next candle" />
+        <main class="gutter mx-auto max-w-[760px] pt-6 pb-10">
+            <h1 class="text-title1">"Can you call the next candle?"</h1>
+            <p class="mt-2 text-callout text-text-muted">
+                "Ten illustrative charts. For each, predict whether the next candle closes higher or lower. Give it your best read."
+            </p>
+            <Show
+                when=move || done.get()
+                fallback=move || view! {
+                    <p class="tabular mt-4 text-eyebrow uppercase text-text-muted">{move || format!("Chart {} of {ROUND_LEN}", idx.get() + 1)}</p>
+                    <section class="mt-2 rounded-card bg-surface p-4 shadow-card md:p-5">
+                        <CandleChart candles=shown highlight=highlight label="Illustrative candlestick chart; predict the next candle" />
+                    </section>
+                    <div class="mt-5 flex gap-3">
+                        {choice(true, "Higher", "▲", "text-up")}
+                        {choice(false, "Lower", "▼", "text-down")}
+                    </div>
+                    {move || guess.get().map(|g| {
+                        let c = chart();
+                        let up = c.went_up();
+                        let moved = (c.next.close - c.next.open).abs();
+                        let (verdict, tone) = if g == up { ("✓ Called it", "text-up") } else { ("✗ Missed", "text-down") };
+                        view! {
+                            <div class="anim-fade mt-5 rounded-card bg-surface p-5 shadow-card" aria-live="polite">
+                                <p class=format!("text-headline {tone}")>{verdict}</p>
+                                <p class="mt-1 text-callout">{format!("The next candle closed {moved} {}.", if up { "higher" } else { "lower" })}</p>
+                                <button type="button" class=format!("{PILL} mt-4") on:click=next>
+                                    {move || if idx.get() + 1 >= ROUND_LEN { "See your hit rate" } else { "Next chart ›" }}
+                                </button>
+                            </div>
+                        }
+                    })}
+                }
+            >
+                <section class="anim-fade mt-5 rounded-card bg-surface p-5 shadow-card" aria-live="polite">
+                    <p class="text-eyebrow uppercase text-text-muted">"Your hit rate"</p>
+                    <p class="tabular mt-2 text-large">{move || hit_rate(right.get(), ROUND_LEN as u32).to_string()}</p>
+                    <p class="tabular text-callout text-text-muted">{move || format!("{} of {ROUND_LEN} called right", right.get())}</p>
+                    <p class="mt-4 text-callout">
+                        "These charts move at random, so anyone lands around 50% over many rounds; a high or low score here is luck. Real charts aren't much kinder: nobody can reliably call the next candle."
+                    </p>
+                    <p class="mt-2 text-callout">
+                        "That's why a trader doesn't need to predict. As in Lesson 2, you win by keeping every loss small and planned and letting wins be bigger, over many trades."
+                    </p>
+                    <button type="button" class=format!("{PILL} mt-4") on:click=again>"New round"</button>
+                </section>
+            </Show>
         </main>
     }
 }

@@ -1,4 +1,5 @@
-//! Weekly Review (FR-11.4): this week's numbers from the journal, plus a note.
+//! Weekly Review (FR-11.4): this week's numbers from the journal (Expectancy in R, rules broken,
+//! Emotion Tags against broken plans, post-trade lessons), plus a note.
 
 use crate::journal_data::{JournalData, today, utc_offset_min};
 use crate::screens::journal::pnl_text;
@@ -28,19 +29,23 @@ pub fn Review() -> impl IntoView {
     let stats = move || {
         let w = week();
         let offset = utc_offset_min();
-        let entries: Vec<ReviewEntry> = journal.trades.with(|v| {
-            v.iter()
-                .filter(|(_, t)| (w..w + 7).contains(&local_day(t.entry.at, offset)))
+        let (entries, lessons): (Vec<ReviewEntry>, Vec<String>) = journal.trades.with(|v| {
+            let week: Vec<_> = v.iter().filter(|(_, t)| (w..w + 7).contains(&local_day(t.entry.at, offset))).collect();
+            let entries = week
+                .iter()
                 .map(|(_, t)| ReviewEntry {
                     skipped: !t.taken(),
                     pnl: t.result.as_ref().map(|r| r.pnl),
                     risk: t.risk(),
                     failed_rules: t.hard_results.iter().filter(|h| !h.pass).map(|h| h.rule).collect(),
                     adherent: t.adherence.final_adherent(),
+                    emotion: t.result.as_ref().and_then(|r| r.emotion),
                 })
-                .collect()
+                .collect();
+            let lessons = week.iter().filter_map(|(_, t)| t.result.as_ref()?.lesson.clone()).collect();
+            (entries, lessons)
         });
-        weekly_review(&entries)
+        (weekly_review(&entries), lessons)
     };
 
     let tile = |label: &'static str, value: String, tone: &'static str| {
@@ -62,16 +67,19 @@ pub fn Review() -> impl IntoView {
             </div>
             <p class="mt-3 text-footnote text-text-muted">{move || format!("Week starting Monday {}", date_string(week()))}</p>
             {move || {
-                let r = stats();
+                let (r, lessons) = stats();
                 let (net, tone) = pnl_text(r.net);
-                let avg = format!("{}{:.2}R", if r.avg_r >= 0 { "+" } else { "−" }, r.avg_r.abs() as f64 / 100.0);
+                let (exp, exp_tone) = match r.expectancy {
+                    Some(x) => (x.to_string(), if x.0 > 0 { "text-up" } else if x.0 < 0 { "text-down" } else { "" }),
+                    None => ("—".to_string(), ""),
+                };
                 view! {
                     <section class="mt-4 grid grid-cols-2 gap-3 rounded-card bg-surface p-5 shadow-card sm:grid-cols-3">
                         {tile("Trades taken", r.taken.to_string(), "")}
                         {tile("Skipped setups", r.skipped.to_string(), "")}
                         {tile("Broke the plan", r.not_adherent.to_string(), if r.not_adherent > 0 { "text-down" } else { "" })}
                         {tile("Win rate", if r.closed == 0 { "—".into() } else { r.win_rate.to_string() }, "")}
-                        {tile("Average R", if r.closed == 0 { "—".into() } else { avg }, "")}
+                        {tile("Expectancy (per trade)", exp, exp_tone)}
                         {tile("Net (closed)", if r.closed == 0 { "—".into() } else { net }, if r.closed == 0 { "" } else { tone })}
                     </section>
                     <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
@@ -84,6 +92,35 @@ pub fn Review() -> impl IntoView {
                                     {r.rule_breaks.into_iter().map(|(rule, n)| view! { <li class="flex justify-between"><span>{rule_name(rule)}</span><span class="tabular text-down">{format!("× {n}")}</span></li> }).collect_view()}
                                 </ul>
                             }.into_any()
+                        }}
+                    </section>
+                    <p class="mt-3 text-footnote text-text-muted">"Expectancy is your average result per trade in R. Over many trades, above 0R means the way you trade makes money; one week is too few to judge."</p>
+                    <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
+                        <h2 class="text-headline">"How you felt"</h2>
+                        {if r.emotions.is_empty() {
+                            view! { <p class="mt-2 text-callout text-text-muted">"No Emotion Tags this week. You set one when you record a trade's result."</p> }.into_any()
+                        } else {
+                            view! {
+                                <ul class="mt-2 grid gap-1 text-callout">
+                                    {r.emotions.into_iter().map(|c| view! {
+                                        <li class="flex justify-between gap-3">
+                                            <span>{c.emotion.label()}</span>
+                                            <span class="tabular">
+                                                {format!("{} trade{}", c.trades, if c.trades == 1 { "" } else { "s" })}
+                                                <span class={if c.broke_plan > 0 { "text-down" } else { "text-text-muted" }}>{format!(" · {} broke the plan", c.broke_plan)}</span>
+                                            </span>
+                                        </li>
+                                    }).collect_view()}
+                                </ul>
+                            }.into_any()
+                        }}
+                    </section>
+                    <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
+                        <h2 class="text-headline">"Your post-trade lessons"</h2>
+                        {if lessons.is_empty() {
+                            view! { <p class="mt-2 text-callout text-text-muted">"None written this week."</p> }.into_any()
+                        } else {
+                            view! { <ul class="mt-2 grid list-disc gap-1 pl-5 text-callout">{lessons.into_iter().map(|l| view! { <li>{l}</li> }).collect_view()}</ul> }.into_any()
                         }}
                     </section>
                 }

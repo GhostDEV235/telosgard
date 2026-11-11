@@ -189,6 +189,48 @@ pub fn pnl(e: &TradeEntry, exit: Price) -> Usd {
     moved.value(e.lots, e.contract_oz)
 }
 
+/// How the Learner felt when the trade closed (Emotion Tag), chosen when recording the result.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Emotion {
+    Calm,
+    Fomo,
+    Revenge,
+    Fear,
+    Overconfident,
+}
+
+impl Emotion {
+    pub const ALL: [Emotion; 5] = [Emotion::Calm, Emotion::Fomo, Emotion::Revenge, Emotion::Fear, Emotion::Overconfident];
+    pub fn label(self) -> &'static str {
+        match self {
+            Emotion::Calm => "Calm",
+            Emotion::Fomo => "FOMO",
+            Emotion::Revenge => "Revenge",
+            Emotion::Fear => "Fear",
+            Emotion::Overconfident => "Overconfident",
+        }
+    }
+}
+
+/// A result measured in units of the planned risk (R), in hundredths: −$100 risking $100 = −100.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RMultiple(pub i64);
+
+impl std::fmt::Display for RMultiple {
+    /// One decimal, rounded half away from zero, with a sign: "+2.0R", "−1.0R", "+0.5R".
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let tenths = (self.0.abs() + 5) / 10;
+        let sign = if tenths == 0 { "" } else if self.0 < 0 { "−" } else { "+" };
+        write!(f, "{sign}{}.{}R", tenths / 10, tenths % 10)
+    }
+}
+
+/// P/L ÷ risk, in hundredths, rounded toward zero. `None` without a positive risk.
+pub fn r_multiple(pnl: Usd, risk: Usd) -> Option<RMultiple> {
+    (risk.0 > 0).then(|| RMultiple(pnl.0 * 100 / risk.0))
+}
+
 /// The Learner's calendar day for a timestamp, given their UTC offset in minutes.
 pub fn local_day(at: Millis, utc_offset_min: i32) -> i64 {
     (at + utc_offset_min as i64 * 60_000).div_euclid(DAY_MS)
@@ -246,6 +288,25 @@ impl Adherence {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn r_multiple_from_pnl_and_risk() {
+        assert_eq!(r_multiple(Usd(-10_000), Usd(10_000)), Some(RMultiple(-100)));
+        assert_eq!(r_multiple(Usd(20_000), Usd(10_000)), Some(RMultiple(200)));
+        assert_eq!(r_multiple(Usd(5_000), Usd(10_000)), Some(RMultiple(50)));
+        assert_eq!(r_multiple(Usd(-3_333), Usd(10_000)), Some(RMultiple(-33)));
+        assert_eq!(r_multiple(Usd(5_000), Usd(0)), None);
+    }
+
+    #[test]
+    fn r_multiple_display() {
+        assert_eq!(RMultiple(-100).to_string(), "−1.0R");
+        assert_eq!(RMultiple(200).to_string(), "+2.0R");
+        assert_eq!(RMultiple(50).to_string(), "+0.5R");
+        assert_eq!(RMultiple(125).to_string(), "+1.3R");
+        assert_eq!(RMultiple(-4).to_string(), "0.0R");
+        assert_eq!(RMultiple(0).to_string(), "0.0R");
+    }
+
     use super::*;
     use crate::checklist::sample;
     use crate::money::DEFAULT_CONTRACT_OZ;

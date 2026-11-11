@@ -4,6 +4,7 @@ use gold_core::course::LessonId;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DrillKind {
+    Calibration,
     Direction,
     BidAsk,
     Distance,
@@ -12,9 +13,10 @@ pub enum DrillKind {
 }
 
 impl DrillKind {
-    pub const ALL: [DrillKind; 5] = [DrillKind::Direction, DrillKind::BidAsk, DrillKind::Distance, DrillKind::Pips, DrillKind::Orders];
+    pub const ALL: [DrillKind; 6] = [DrillKind::Calibration, DrillKind::Direction, DrillKind::BidAsk, DrillKind::Distance, DrillKind::Pips, DrillKind::Orders];
     pub fn slug(self) -> &'static str {
         match self {
+            DrillKind::Calibration => "calibration",
             DrillKind::Direction => "direction",
             DrillKind::BidAsk => "bid-ask",
             DrillKind::Distance => "distance",

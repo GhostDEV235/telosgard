@@ -1,15 +1,15 @@
 //! Phase 7 exit check, the deterministic part (IMPLEMENTATION-PLAN): plan v1 → trade with no
 //! checklist → checklist → adherent trade → 17:30 New York trade → daily loss limit → dispute →
-//! readiness and weekly numbers against a hand calculation. Claude's own verdicts are stand-ins here;
+//! readiness and weekly numbers (R per trade, Expectancy, Emotion Tags; Phase 11) against a hand calculation. Claude's own verdicts are stand-ins here;
 //! the live calls are checked by the Learner in the app.
 
 use gold_core::checklist::{Bias, CalendarEvent, PreSessionChecklist, RiskCommitment, Tier, Zone};
 use gold_core::daily::{DayTrade, day_totals};
-use gold_core::journal::{Adherence, DayContext, DisputeError, Direction, HardRule, HardRuleResult, TradeEntry, combine, evaluate_hard_rules, pnl};
+use gold_core::journal::{Emotion, RMultiple, r_multiple, Adherence, DayContext, DisputeError, Direction, HardRule, HardRuleResult, TradeEntry, combine, evaluate_hard_rules, pnl};
 use gold_core::money::{DollarMove, Lots, Percent, Price, Usd};
 use gold_core::plan::{HardRules, PlanHistory, Session, SoftRules};
 use gold_core::readiness::{ReadinessRun, TradeSummary};
-use gold_core::review::{ReviewEntry, weekly_review};
+use gold_core::review::{EmotionCount, ReviewEntry, weekly_review};
 use gold_core::time::days_from_civil;
 
 fn utc(y: i64, m: u32, d: u32, h: i64, min: i64) -> i64 {
@@ -157,23 +157,47 @@ fn phase_7_end_to_end() {
 
     // 9. Weekly Review of the same entries (week of Monday 12 Jan) plus one skipped setup.
     let risk = Some(Usd(10_000));
+    use Emotion::*;
+    let e = |pnl: Option<i64>, failed_rules: Vec<HardRule>, adherent: bool, emotion: Option<Emotion>| ReviewEntry {
+        skipped: false,
+        pnl: pnl.map(Usd),
+        risk,
+        failed_rules,
+        adherent: Some(adherent),
+        emotion,
+    };
     let entries = vec![
-        ReviewEntry { skipped: false, pnl: Some(Usd(20_000)), risk, failed_rules: failed(&ra), adherent: Some(false) },
-        ReviewEntry { skipped: false, pnl: Some(Usd(-10_000)), risk, failed_rules: vec![], adherent: Some(true) },
-        ReviewEntry { skipped: false, pnl: None, risk, failed_rules: failed(&rc), adherent: Some(false) },
-        ReviewEntry { skipped: false, pnl: Some(Usd(-10_000)), risk, failed_rules: vec![], adherent: Some(true) },
-        ReviewEntry { skipped: false, pnl: Some(Usd(-10_000)), risk, failed_rules: vec![], adherent: Some(true) },
-        ReviewEntry { skipped: false, pnl: Some(Usd(-10_000)), risk, failed_rules: vec![], adherent: Some(true) },
-        ReviewEntry { skipped: false, pnl: None, risk, failed_rules: failed(&rd), adherent: Some(false) },
-        ReviewEntry { skipped: true, pnl: None, risk: None, failed_rules: vec![], adherent: None },
+        e(Some(20_000), failed(&ra), false, Some(Overconfident)),
+        e(Some(-10_000), vec![], true, Some(Calm)),
+        e(None, failed(&rc), false, None),
+        e(Some(-10_000), vec![], true, Some(Calm)),
+        e(Some(-10_000), vec![], true, Some(Fear)),
+        e(Some(-10_000), vec![], true, Some(Calm)),
+        e(None, failed(&rd), false, Some(Revenge)),
+        ReviewEntry { skipped: true, pnl: None, risk: None, failed_rules: vec![], adherent: None, emotion: None },
     ];
+    // R per trade: a −$100 loss risking $100 is −1.0R; the +$200 win is +2.0R.
+    assert_eq!(r_multiple(Usd(-10_000), Usd(10_000)).unwrap().to_string(), "−1.0R");
+    assert_eq!(r_multiple(Usd(20_000), Usd(10_000)), Some(RMultiple(200)));
     let w = weekly_review(&entries);
     // Hand calculation: 7 taken, 1 skipped, 5 closed, 1 win → 20%; R = (+2 −1 −1 −1 −1)/5 = −0.4R; net −$200.
     assert_eq!((w.taken, w.skipped, w.closed, w.wins), (7, 1, 5, 1));
     assert_eq!(w.win_rate, Percent(2_000));
-    assert_eq!(w.avg_r, -40);
+    assert_eq!(w.expectancy, Some(RMultiple(-40)));
+    assert_eq!(w.expectancy.unwrap().to_string(), "−0.4R");
     assert_eq!(w.net, Usd(-20_000));
     assert_eq!(w.not_adherent, 3);
     assert!(w.rule_breaks.iter().any(|(r, _)| *r == HardRule::NoTradeWindow));
     assert!(w.rule_breaks.iter().any(|(r, _)| *r == HardRule::DailyLossLimit));
+    // Emotions by hand: Calm ×3 (all followed the plan), Fear ×1 (followed), Revenge ×1 (broke it:
+    // the daily loss limit), Overconfident ×1 (broke it: the no-trade window).
+    assert_eq!(
+        w.emotions,
+        vec![
+            EmotionCount { emotion: Calm, trades: 3, broke_plan: 0 },
+            EmotionCount { emotion: Revenge, trades: 1, broke_plan: 1 },
+            EmotionCount { emotion: Fear, trades: 1, broke_plan: 0 },
+            EmotionCount { emotion: Overconfident, trades: 1, broke_plan: 1 },
+        ]
+    );
 }

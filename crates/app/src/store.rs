@@ -9,7 +9,7 @@ use gold_core::adherence::SoftResult;
 use gold_core::checklist::PreSessionChecklist;
 use gold_core::course::LessonId;
 use gold_core::gate::{Grade, LessonProgress};
-use gold_core::journal::{Adherence, HardRuleResult, TradeEntry};
+use gold_core::journal::{Adherence, Emotion, HardRuleResult, RMultiple, TradeEntry, r_multiple};
 use gold_core::money::{Price, Usd};
 use gold_core::plan::TradingPlan;
 use gold_core::readiness::ReadinessRun;
@@ -87,6 +87,12 @@ pub struct TradeResult {
     pub pnl: Usd,
     pub balance_after: Usd,
     pub closed_at: Millis,
+    /// Emotion Tag chosen when closing (Phase 11; older results have none).
+    #[serde(default)]
+    pub emotion: Option<Emotion>,
+    /// One-line post-trade lesson, separate from the pre-trade reason.
+    #[serde(default)]
+    pub lesson: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -121,6 +127,10 @@ impl TradeRecord {
     pub fn risk(&self) -> Option<Usd> {
         let e = &self.entry;
         e.stop.map(|s| (e.entry - s).abs().value(e.lots, e.contract_oz)).filter(|u| u.0 > 0)
+    }
+    /// The closed result in R (P/L ÷ the risk at entry).
+    pub fn r(&self) -> Option<RMultiple> {
+        r_multiple(self.result.as_ref()?.pnl, self.risk()?)
     }
 }
 
