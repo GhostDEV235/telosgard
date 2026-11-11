@@ -8,9 +8,9 @@ use crate::ui::chart::Ring;
 use crate::ui::moments::CountUp;
 use crate::ui::clock::SessionClock;
 use crate::ui::controls::{NumberField, PILL, PILL_GHOST, PillLink};
-use gold_core::journal::{Adherence, Direction};
-use gold_core::money::{Percent, Usd};
-use gold_core::readiness::{REQUIRED_ADHERENCE, REQUIRED_DAYS, REQUIRED_TRADES};
+use telosgard_core::journal::{Adherence, Direction};
+use telosgard_core::money::{Percent, Usd};
+use telosgard_core::readiness::{REQUIRED_ADHERENCE, REQUIRED_DAYS, REQUIRED_TRADES};
 use leptos::prelude::*;
 
 pub fn verdict_chip(t: &TradeRecord) -> (&'static str, &'static str) {
@@ -219,7 +219,7 @@ pub fn Readiness() -> impl IntoView {
             <p class="mt-6 text-eyebrow text-text-muted">{format!("Readiness Run {} · started with {}", run.run.number, run.run.starting_balance)}</p>
             <section class="mt-2 grid grid-cols-3 gap-2 rounded-card bg-surface p-5 shadow-card">
                 <Ring value=p.counted as f64 / REQUIRED_TRADES as f64 label="Trades"><CountUp value=p.counted as i64 fmt=|v| format!("{v}/{REQUIRED_TRADES}") /></Ring>
-                <Ring value=pct_adh / (REQUIRED_ADHERENCE.0 as f64 / 10_000.0) label="Followed plan">{if p.counted == 0 { "—".into_any() } else { view! { <CountUp value=p.adherence.0 as i64 fmt=|v| gold_core::money::Percent(v as u32).to_string() /> }.into_any() }}</Ring>
+                <Ring value=pct_adh / (REQUIRED_ADHERENCE.0 as f64 / 10_000.0) label="Followed plan">{if p.counted == 0 { "—".into_any() } else { view! { <CountUp value=p.adherence.0 as i64 fmt=|v| telosgard_core::money::Percent(v as u32).to_string() /> }.into_any() }}</Ring>
                 <Ring value=p.days as f64 / REQUIRED_DAYS as f64 label="Days"><CountUp value=p.days fmt=|v| format!("{v}/{REQUIRED_DAYS}") /></Ring>
             </section>
             <section class="mt-5 rounded-card bg-surface p-5 shadow-card">

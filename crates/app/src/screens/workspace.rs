@@ -6,7 +6,7 @@ use crate::catalog::{self, SECTIONS};
 use crate::journal_data::{JournalData, today};
 use crate::router::{Route, Tab, lesson_href};
 use crate::state::Progress;
-use gold_core::course::LessonId;
+use telosgard_core::course::LessonId;
 use leptos::prelude::*;
 
 /// The small Figma-style label above the frame.
@@ -51,8 +51,8 @@ pub fn Sidebar() -> impl IntoView {
             class="sticky top-0 hidden h-dvh w-[240px] shrink-0 flex-col xl:w-[272px] border-r border-hairline bg-bg lg:flex"
         >
             <div class="flex items-center gap-2.5 px-5 pt-5 pb-4">
-                <span class="grid size-7 place-items-center rounded-[8px] bg-gold-fill text-footnote font-bold text-on-gold" aria-hidden="true">"Au"</span>
-                <span class="font-display text-headline font-medium">"Gold School"</span>
+                <span class="grid size-7 place-items-center rounded-[8px] bg-gold-fill pb-px font-display text-headline font-semibold text-on-gold" aria-hidden="true">"T"</span>
+                <span class="font-display text-headline font-medium">"Telosgard"</span>
             </div>
             <nav aria-label="Main" class="px-3">
                 <ul class="grid gap-0.5">

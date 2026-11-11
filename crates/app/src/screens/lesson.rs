@@ -2,17 +2,17 @@
 
 use crate::catalog;
 use crate::grading;
-use gold_content::Lesson;
+use telosgard_content::Lesson;
 use crate::state::{Progress, Toasts, now};
 use crate::store::{Attempt, SaveState, Store, repo};
-use gold_core::gate::Grade;
-use gold_core::grading::GradeResult;
+use telosgard_core::gate::Grade;
+use telosgard_core::grading::GradeResult;
 use leptos::task::spawn_local;
 use crate::ui::controls::{PILL, PILL_GHOST};
 use crate::ui::course::{Callout, CalloutKind, GateStatus, VideoCard};
 use crate::ui::quiz::{QuizCard, QuizItem};
 use crate::ui::sheet::Sheet;
-use gold_core::course::LessonId;
+use telosgard_core::course::LessonId;
 use leptos::prelude::*;
 
 #[component]
@@ -42,7 +42,7 @@ pub fn LessonScreen(id: LessonId) -> impl IntoView {
 
 fn locked(id: LessonId) -> impl IntoView {
     let why = match id.predecessor() {
-        Some(p) if !matches!(id.track(), gold_core::course::Track::Live | gold_core::course::Track::Advanced) => {
+        Some(p) if !matches!(id.track(), telosgard_core::course::Track::Live | telosgard_core::course::Track::Advanced) => {
             format!("Pass “{}” first. Lessons build on each other, so none can be skipped.", catalog::title(p))
         }
         _ => "This track unlocks with Live Readiness: 50 disciplined Demo Trades over at least 8 weeks.".to_string(),
@@ -57,7 +57,7 @@ fn locked(id: LessonId) -> impl IntoView {
 
 pub fn content_for(id: LessonId) -> Option<&'static Lesson> {
     match id {
-        LessonId::Numbered(n) => gold_content::lesson(n),
+        LessonId::Numbered(n) => telosgard_content::lesson(n),
         _ => None,
     }
 }
@@ -286,7 +286,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
 /// has answered (so retired questions are known) and stable for the day. Practice only.
 #[component]
 fn SpacedReview(current: u8) -> impl IntoView {
-    use gold_core::retention::{QuestionKey, pick_review};
+    use telosgard_core::retention::{QuestionKey, pick_review};
     let progress = expect_context::<Progress>();
     let store = expect_context::<Store>();
     let ready = Memo::new(move |_| !matches!(store.state.get(), SaveState::Connecting));
@@ -297,17 +297,17 @@ fn SpacedReview(current: u8) -> impl IntoView {
         }
         // Picked once: answering (or passing this lesson) must not reshuffle a review in progress.
         untrack(|| {
-        let passed: Vec<u8> = (1..=gold_core::course::LAST_CORE)
+        let passed: Vec<u8> = (1..=telosgard_core::course::LAST_CORE)
             .filter(|n| progress.passed(LessonId::Numbered(*n)))
             .collect();
         let recs = store.qrecs.get_untracked();
-        let questions: Vec<(QuestionKey, &'static gold_content::QuizQ)> = passed
+        let questions: Vec<(QuestionKey, &'static telosgard_content::QuizQ)> = passed
             .iter()
-            .filter_map(|n| gold_content::lesson(*n))
+            .filter_map(|n| telosgard_content::lesson(*n))
             .flat_map(|l| l.quiz.iter().chain(l.recall.iter()).map(move |q| (QuestionKey::new(l.id, q.id), q)))
             .collect();
         let pool: Vec<_> = questions.iter().map(|(k, _)| (k.clone(), recs.get(&k.lesson).and_then(|m| m.get(&k.id)))).collect();
-        let seed = (now() / gold_core::DAY_MS) as u64 * 1000 + current as u64;
+        let seed = (now() / telosgard_core::DAY_MS) as u64 * 1000 + current as u64;
         pick_review(&pool, &passed, current, 3, seed)
             .into_iter()
             .filter_map(|k| questions.iter().find(|(qk, _)| *qk == k).map(|(_, q)| QuizItem::course(k.lesson, q)))
@@ -372,11 +372,11 @@ fn AskBody(lesson: &'static Lesson, #[prop(into)] step: Signal<Option<usize>>, i
     let error = RwSignal::new(None::<String>);
     let send = move || {
         let Some(step) = step.get_untracked() else { return };
-        let q = match gold_core::tutor::check_question(&question.get_untracked()) {
+        let q = match telosgard_core::tutor::check_question(&question.get_untracked()) {
             Ok(q) => q,
-            Err(gold_core::tutor::QuestionError::Empty) => return error.set(Some("Type a question first.".into())),
-            Err(gold_core::tutor::QuestionError::TooLong) => {
-                return error.set(Some(format!("Keep it under {} characters.", gold_core::tutor::MAX_QUESTION_CHARS)));
+            Err(telosgard_core::tutor::QuestionError::Empty) => return error.set(Some("Type a question first.".into())),
+            Err(telosgard_core::tutor::QuestionError::TooLong) => {
+                return error.set(Some(format!("Keep it under {} characters.", telosgard_core::tutor::MAX_QUESTION_CHARS)));
             }
         };
         busy.set(true);
@@ -564,7 +564,7 @@ fn grade_chip(g: Grade) -> impl IntoView {
 
 /// The Learner's answer with the missing idea added, additions highlighted (the [[...]] parts).
 fn suggestion_view(s: String) -> impl IntoView {
-    let parts = gold_core::grading::marked_segments(&s);
+    let parts = telosgard_core::grading::marked_segments(&s);
     view! {
         <div class="mt-3 rounded-btn border-l-4 border-fill bg-surface p-3.5">
             <p class="text-eyebrow text-text-muted">"Your answer, with the missing piece added"</p>
@@ -827,7 +827,7 @@ fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
     let rounds = RwSignal::new(0u32);
 
     let earlier = move || -> Vec<&'static Lesson> {
-        gold_content::LESSONS.iter().filter(|l| l.id < lesson.id && progress.passed(LessonId::Numbered(l.id))).collect()
+        telosgard_content::LESSONS.iter().filter(|l| l.id < lesson.id && progress.passed(LessonId::Numbered(l.id))).collect()
     };
     let start = move |scope: MoreScope| {
         let mut sources: Vec<&'static Lesson> = vec![lesson];

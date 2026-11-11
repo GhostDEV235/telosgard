@@ -496,39 +496,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gold-app"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "gold-content",
- "gold-core",
- "js-sys",
- "leptos",
- "serde",
- "serde_json",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
-]
-
-[[package]]
-name = "gold-content"
-version = "0.1.0"
-dependencies = [
- "pulldown-cmark",
- "serde",
- "toml",
-]
-
-[[package]]
-name = "gold-core"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "guardian"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1441,6 +1408,39 @@ dependencies = [
  "throw_error",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "telosgard-app"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "js-sys",
+ "leptos",
+ "serde",
+ "serde_json",
+ "telosgard-content",
+ "telosgard-core",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "telosgard-content"
+version = "0.1.0"
+dependencies = [
+ "pulldown-cmark",
+ "serde",
+ "toml",
+]
+
+[[package]]
+name = "telosgard-core"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

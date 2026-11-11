@@ -1,11 +1,11 @@
 [package]
-name = "gold-core"
-description = "Pure domain logic for Gold School: money, sizing, gates, plans, journal, readiness, drills."
+name = "telosgard-core"
+description = "Pure domain logic for Telosgard: money, sizing, gates, plans, journal, readiness, drills."
 edition.workspace = true
 version.workspace = true
 
 [lib]
-name = "gold_core"
+name = "telosgard_core"
 
 [dependencies]
 serde = { workspace = true }

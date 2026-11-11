@@ -2,10 +2,10 @@
 
 use crate::journal_data::local_hm;
 use crate::state::now;
-use gold_core::Millis;
-use gold_core::clock::{in_overlap, next_overlap_start, next_rollover};
-use gold_core::plan::Session;
-use gold_core::time::{NoTrade, no_trade_window, sessions_at};
+use telosgard_core::Millis;
+use telosgard_core::clock::{in_overlap, next_overlap_start, next_rollover};
+use telosgard_core::plan::Session;
+use telosgard_core::time::{NoTrade, no_trade_window, sessions_at};
 use leptos::prelude::*;
 use std::time::Duration;
 

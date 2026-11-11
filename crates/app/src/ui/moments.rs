@@ -7,7 +7,7 @@ use crate::catalog::SECTIONS;
 use crate::router::lesson_href;
 use crate::state::Progress;
 use crate::ui::controls::{PILL, PILL_GHOST};
-use gold_core::course::LessonId;
+use telosgard_core::course::LessonId;
 use leptos::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -8,10 +8,10 @@ use crate::screens::trade::rule_name;
 use crate::state::Toasts;
 use crate::ui::moments::CountUp;
 use crate::ui::controls::{PILL, Segmented};
-use gold_core::clock::week_start;
-use gold_core::journal::local_day;
-use gold_core::review::{ReviewEntry, weekly_review};
-use gold_core::time::date_string;
+use telosgard_core::clock::week_start;
+use telosgard_core::journal::local_day;
+use telosgard_core::review::{ReviewEntry, weekly_review};
+use telosgard_core::time::date_string;
 use leptos::prelude::*;
 
 #[component]
@@ -73,7 +73,7 @@ pub fn Review() -> impl IntoView {
                 let (net, tone) = pnl_text(r.net);
                 let (exp, exp_tone) = match r.expectancy {
                     Some(x) => (
-                        view! { <CountUp value=x.0 fmt=|v| gold_core::journal::RMultiple(v).to_string() /> }.into_any(),
+                        view! { <CountUp value=x.0 fmt=|v| telosgard_core::journal::RMultiple(v).to_string() /> }.into_any(),
                         if x.0 > 0 { "text-up" } else if x.0 < 0 { "text-down" } else { "" },
                     ),
                     None => ("—".into_any(), ""),
@@ -84,7 +84,7 @@ pub fn Review() -> impl IntoView {
                         {tile("Trades taken", count(r.taken as i64), "")}
                         {tile("Skipped setups", count(r.skipped as i64), "")}
                         {tile("Broke the plan", count(r.not_adherent as i64), if r.not_adherent > 0 { "text-down" } else { "" })}
-                        {tile("Win rate", if r.closed == 0 { dash() } else { view! { <CountUp value=r.win_rate.0 as i64 fmt=|v| gold_core::money::Percent(v as u32).to_string() /> }.into_any() }, "")}
+                        {tile("Win rate", if r.closed == 0 { dash() } else { view! { <CountUp value=r.win_rate.0 as i64 fmt=|v| telosgard_core::money::Percent(v as u32).to_string() /> }.into_any() }, "")}
                         {tile("Expectancy (per trade)", exp, exp_tone)}
                         {tile("Net (closed)", if r.closed == 0 { dash() } else { net.into_any() }, if r.closed == 0 { "" } else { tone })}
                     </section>

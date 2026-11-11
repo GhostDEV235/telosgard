@@ -2,7 +2,7 @@
 //! difference, never just a verdict. Anything that opens a trade asks for the stop first.
 
 use crate::ui::controls::{PILL, Segmented};
-use gold_core::money::{Price, Usd};
+use telosgard_core::money::{Price, Usd};
 use leptos::prelude::*;
 
 const BOX: &str = "mt-1 rounded-card border border-line/40 bg-bg p-4";

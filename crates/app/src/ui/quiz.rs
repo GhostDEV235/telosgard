@@ -4,9 +4,9 @@
 
 use crate::state::now;
 use crate::ui::controls::{PILL, PILL_GHOST};
-use gold_core::drills::Rng;
-use gold_core::gate::{QUIZ_PASS_PERCENT, quiz_score};
-use gold_core::retention::{Confidence, QuestionKey};
+use telosgard_core::drills::Rng;
+use telosgard_core::gate::{QUIZ_PASS_PERCENT, quiz_score};
+use telosgard_core::retention::{Confidence, QuestionKey};
 use leptos::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -20,7 +20,7 @@ pub struct QuizItem {
 }
 
 impl QuizItem {
-    pub fn course(lesson: u8, q: &gold_content::QuizQ) -> QuizItem {
+    pub fn course(lesson: u8, q: &telosgard_content::QuizQ) -> QuizItem {
         QuizItem {
             q: q.q.into(),
             options: q.options.iter().map(|o| o.to_string()).collect(),
@@ -31,8 +31,8 @@ impl QuizItem {
     }
 }
 
-impl From<gold_core::practice::PracticeQ> for QuizItem {
-    fn from(q: gold_core::practice::PracticeQ) -> QuizItem {
+impl From<telosgard_core::practice::PracticeQ> for QuizItem {
+    fn from(q: telosgard_core::practice::PracticeQ) -> QuizItem {
         QuizItem { q: q.q, options: q.options, answer: q.answer, why: q.why, key: None }
     }
 }

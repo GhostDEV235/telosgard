@@ -1,7 +1,7 @@
 //! App-wide state. Phase 3 keeps progress in memory; Phase 4 swaps in the Artifact database.
 
-use gold_core::course::LessonId;
-use gold_core::gate::LessonProgress;
+use telosgard_core::course::LessonId;
+use telosgard_core::gate::LessonProgress;
 use leptos::prelude::*;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -41,7 +41,7 @@ impl Progress {
     }
     /// The first Core lesson that is unlocked but not passed.
     pub fn up_next(&self) -> Option<LessonId> {
-        (1..=gold_core::course::LAST_CORE).map(LessonId::Numbered).find(|id| self.unlocked(*id) && !self.passed(*id))
+        (1..=telosgard_core::course::LAST_CORE).map(LessonId::Numbered).find(|id| self.unlocked(*id) && !self.passed(*id))
     }
 }
 

@@ -5,9 +5,9 @@ use crate::state::now;
 use crate::ui::chart::CandleChart;
 use crate::ui::controls::PILL;
 use crate::router::DrillKind;
-use gold_core::drills::{Candle, CandleDirection, Rng, check_direction, generate};
-use gold_core::stage1_drills::{BidAskAsk, BidAskQ, DistanceQ, OrderKind, OrderQ, PipQ};
-use gold_core::money::{DollarMove, Price};
+use telosgard_core::drills::{Candle, CandleDirection, Rng, check_direction, generate};
+use telosgard_core::stage1_drills::{BidAskAsk, BidAskQ, DistanceQ, OrderKind, OrderQ, PipQ};
+use telosgard_core::money::{DollarMove, Price};
 use leptos::prelude::*;
 
 struct DrillInfo {
@@ -363,7 +363,7 @@ pub fn DirectionDrill() -> impl IntoView {
 /// lands near 50% for everyone; the lesson is to manage risk over many trades, not to predict.
 #[component]
 pub fn CalibrationDrill() -> impl IntoView {
-    use gold_core::calibration::{ROUND_LEN, calibration_round, hit_rate};
+    use telosgard_core::calibration::{ROUND_LEN, calibration_round, hit_rate};
     let store = expect_context::<crate::store::Store>();
     let seed = RwSignal::new(now() as u64);
     let charts = Memo::new(move |_| calibration_round(seed.get()));
@@ -465,7 +465,7 @@ pub fn CalibrationDrill() -> impl IntoView {
             >
                 <section class="anim-fade mt-5 rounded-card bg-surface p-5 shadow-card" aria-live="polite">
                     <p class="text-eyebrow text-text-muted">"Your hit rate"</p>
-                    <p class="tabular mt-2 text-large">{move || view! { <crate::ui::moments::CountUp value=hit_rate(right.get(), ROUND_LEN as u32).0 as i64 fmt=|v| gold_core::money::Percent(v as u32).to_string() /> }}</p>
+                    <p class="tabular mt-2 text-large">{move || view! { <crate::ui::moments::CountUp value=hit_rate(right.get(), ROUND_LEN as u32).0 as i64 fmt=|v| telosgard_core::money::Percent(v as u32).to_string() /> }}</p>
                     <p class="tabular text-callout text-text-muted">{move || format!("{} of {ROUND_LEN} called right", right.get())}</p>
                     <p class="mt-4 text-callout">
                         "These charts move at random, so anyone lands around 50% over many rounds; a high or low score here is luck. Real charts aren't much kinder: nobody can reliably call the next candle."

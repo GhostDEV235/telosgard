@@ -4,8 +4,8 @@ use crate::journal_data::{JournalData, local_label};
 use crate::screens::shell::SubBar;
 use crate::state::Toasts;
 use crate::ui::controls::{NumberField, PILL, PILL_GHOST};
-use gold_core::money::Percent;
-use gold_core::plan::{HardRules, PlanError, Session, SoftRules, TradingPlan};
+use telosgard_core::money::Percent;
+use telosgard_core::plan::{HardRules, PlanError, Session, SoftRules, TradingPlan};
 use leptos::prelude::*;
 
 const CLASSIC_SETUP: &str = "Classic Price Action: trade only in the direction of the H4 trend (read from market structure), at a key support or resistance zone marked in my checklist, after a confirmation candle (pin bar or engulfing) closes at that zone.";

@@ -196,7 +196,7 @@ fn AppearanceSheet(open: RwSignal<bool>) -> impl IntoView {
                     disclaimer.set(true);
                 }
             >
-                "About Gold School & disclaimer"
+                "About Telosgard & disclaimer"
             </button>
         </Sheet>
     }
@@ -216,7 +216,7 @@ fn Disclaimer(open: RwSignal<bool>) -> impl IntoView {
     view! {
         <Sheet open=open title="Before you start" dismissible=false>
             <div class="grid gap-3 text-body">
-                <p>"Gold School teaches you how gold trading works, step by step. It is " <strong>"education, not financial advice"</strong> "."</p>
+                <p>"Telosgard teaches you how gold trading works, step by step. It is " <strong>"education, not financial advice"</strong> "."</p>
                 <p>"It will never tell you to buy or sell, and it never shows live prices or signals. Charts in drills are illustrative, not real market data."</p>
                 <p>"Trading can lose money, including more than you expect, quickly. That's why you'll practise on a " <strong>"demo account"</strong> " until your discipline is proven, and only then learn about going live."</p>
             </div>

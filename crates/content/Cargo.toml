@@ -1,11 +1,11 @@
 [package]
-name = "gold-content"
-description = "Gold School lesson content, validated and compiled into Rust data at build time."
+name = "telosgard-content"
+description = "Telosgard lesson content, validated and compiled into Rust data at build time."
 edition.workspace = true
 version.workspace = true
 
 [lib]
-name = "gold_content"
+name = "telosgard_content"
 
 [build-dependencies]
 serde = { workspace = true }

@@ -1,10 +1,10 @@
-//! Explain-Back grading call: prompt from `gold_core::grading`, one `sample.json` call, strict check.
+//! Explain-Back grading call: prompt from `telosgard_core::grading`, one `sample.json` call, strict check.
 //! No automatic retry on an unreadable reply (the platform asks pages not to); the UI offers "Try again".
 
 use crate::platform::{self, PlatformError};
-use gold_content::{Expect, Lesson};
-use gold_core::gate::Grade;
-use gold_core::grading::{GradeParseError, GradeResult, GradingInput, build_prompt, parse_grade};
+use telosgard_content::{Expect, Lesson};
+use telosgard_core::gate::Grade;
+use telosgard_core::grading::{GradeParseError, GradeResult, GradingInput, build_prompt, parse_grade};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GradeError {
@@ -59,15 +59,15 @@ pub async fn grade(lesson: &Lesson, answer: &str) -> Result<GradeResult, GradeEr
 }
 
 /// One Adherence Verdict (or a dispute re-judgement) from Claude. Never assumes a pass.
-pub async fn judge(input: &gold_core::adherence::AdherenceInput<'_>) -> Result<gold_core::adherence::AdherenceResult, String> {
-    let prompt = gold_core::adherence::build_adherence_prompt(input);
+pub async fn judge(input: &telosgard_core::adherence::AdherenceInput<'_>) -> Result<telosgard_core::adherence::AdherenceResult, String> {
+    let prompt = telosgard_core::adherence::build_adherence_prompt(input);
     let v = platform::sample_json(&prompt, "default").await.map_err(|e| GradeError::Platform(e).describe().replace("graded", "judged"))?;
-    gold_core::adherence::parse_adherence(&v).map_err(|_| "Claude's verdict didn't come back in the expected shape. Nothing was judged; try again.".to_string())
+    telosgard_core::adherence::parse_adherence(&v).map_err(|_| "Claude's verdict didn't come back in the expected shape. Nothing was judged; try again.".to_string())
 }
 
 /// A Claude-written practice round (5 questions) on these lessons. Never counts towards a Gate.
-pub async fn practice(lessons: &[&Lesson], avoid: &[String]) -> Result<Vec<gold_core::practice::PracticeQ>, String> {
-    use gold_core::practice::{PracticeSource, build_practice_prompt, parse_practice};
+pub async fn practice(lessons: &[&Lesson], avoid: &[String]) -> Result<Vec<telosgard_core::practice::PracticeQ>, String> {
+    use telosgard_core::practice::{PracticeSource, build_practice_prompt, parse_practice};
     let sources: Vec<PracticeSource> = lessons
         .iter()
         .map(|l| PracticeSource { lesson: l.id, title: l.title, objective: l.objective, takeaways: l.takeaways, key_ideas: l.explain.must_include })
@@ -84,7 +84,7 @@ pub async fn practice(lessons: &[&Lesson], avoid: &[String]) -> Result<Vec<gold_
 /// "Ask Claude about this step": one plain-text tutor call. Errors are messages to show; there is
 /// never a stand-in answer. Returns the answer and whether the platform cut it short.
 pub async fn ask_step(l: &Lesson, step: usize, question: &str) -> Result<(String, bool), String> {
-    use gold_core::tutor::{TutorInput, TutorStep, build_tutor_prompt, clean_answer, plain_text};
+    use telosgard_core::tutor::{TutorInput, TutorStep, build_tutor_prompt, clean_answer, plain_text};
     let text = |i: usize| plain_text(l.steps[i].text_html);
     let (cur, prev) = (text(step), step.checked_sub(1).map(text));
     let input = TutorInput {

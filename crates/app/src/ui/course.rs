@@ -1,11 +1,11 @@
 //! StageCard, LessonRow, GateStatus, VideoCard, Callout.
 
 use crate::catalog::{self, Section};
-use gold_content::Video;
+use telosgard_content::Video;
 use crate::router::lesson_href;
 use crate::state::Progress;
 use crate::ui::controls::{PILL, PillLink};
-use gold_core::course::LessonId;
+use telosgard_core::course::LessonId;
 use leptos::prelude::*;
 
 fn required(section: &'static Section) -> impl Iterator<Item = LessonId> {
@@ -150,8 +150,8 @@ pub fn GateStatus(id: LessonId) -> impl IntoView {
         }
     };
     let next = match id {
-        LessonId::Numbered(n) if n < gold_core::course::LAST_LIVE => Some(LessonId::Numbered(n + 1)),
-        LessonId::Advanced(n) if n < gold_core::course::LAST_ADVANCED => Some(LessonId::Advanced(n + 1)),
+        LessonId::Numbered(n) if n < telosgard_core::course::LAST_LIVE => Some(LessonId::Numbered(n + 1)),
+        LessonId::Advanced(n) if n < telosgard_core::course::LAST_ADVANCED => Some(LessonId::Advanced(n + 1)),
         _ => None,
     };
     view! {

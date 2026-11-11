@@ -9,11 +9,11 @@ use crate::screens::shell::SubBar;
 use crate::state::{Toasts, now};
 use crate::store::{TradeRecord, TradeResult, new_id};
 use crate::ui::controls::{NumberField, PILL, PILL_GHOST, PillLink, Segmented};
-use gold_core::adherence::{AdherenceInput, Dispute};
-use gold_core::journal::{Adherence, Direction, Emotion, HardRule, HardRuleResult, TradeEntry, combine, evaluate_hard_rules, local_day, pnl};
-use gold_core::money::{DEFAULT_CONTRACT_OZ, Lots, Price, Usd};
-use gold_core::sizing::{Sizing, SizingInput, size};
-use gold_core::time::{civil_from_days, days_from_civil};
+use telosgard_core::adherence::{AdherenceInput, Dispute};
+use telosgard_core::journal::{Adherence, Direction, Emotion, HardRule, HardRuleResult, TradeEntry, combine, evaluate_hard_rules, local_day, pnl};
+use telosgard_core::money::{DEFAULT_CONTRACT_OZ, Lots, Price, Usd};
+use telosgard_core::sizing::{Sizing, SizingInput, size};
+use telosgard_core::time::{civil_from_days, days_from_civil};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
@@ -52,9 +52,9 @@ fn hard_list(results: Vec<HardRuleResult>) -> impl IntoView {
 /// "YYYY-MM-DDTHH:MM" (a datetime-local value) for a UTC instant, in local time.
 fn to_input(ms: i64) -> String {
     let local = ms + utc_offset_min() as i64 * 60_000;
-    let day = local.div_euclid(gold_core::DAY_MS);
+    let day = local.div_euclid(telosgard_core::DAY_MS);
     let (y, m, d) = civil_from_days(day);
-    let mins = local.rem_euclid(gold_core::DAY_MS) / 60_000;
+    let mins = local.rem_euclid(telosgard_core::DAY_MS) / 60_000;
     format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}", mins / 60, mins % 60)
 }
 
@@ -419,7 +419,7 @@ pub fn TradeDetail(id: String) -> impl IntoView {
         toasts.show("Entry deleted");
         let _ = window().location().set_hash("journal");
     };
-    let deletable = move || crate::store::logged_at(&id.get_value()).is_some_and(|at| gold_core::journal::can_delete(at, now()));
+    let deletable = move || crate::store::logged_at(&id.get_value()).is_some_and(|at| telosgard_core::journal::can_delete(at, now()));
 
     let body = move || {
         let Some(t) = rec() else {

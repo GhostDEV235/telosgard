@@ -1,6 +1,6 @@
 //! Plain hash routes (`#today`, `#lesson-5`, …): the only hash form the artifact viewer passes through.
 
-use gold_core::course::LessonId;
+use telosgard_core::course::LessonId;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DrillKind {

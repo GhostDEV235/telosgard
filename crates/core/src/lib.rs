@@ -1,4 +1,4 @@
-//! Pure domain logic for Gold School. No web, no async, no floats in rules.
+//! Pure domain logic for Telosgard. No web, no async, no floats in rules.
 //! Vocabulary follows CONTEXT.md at the repo root.
 
 pub mod adherence;

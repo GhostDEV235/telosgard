@@ -66,7 +66,7 @@ pub fn plain_text(html: &str) -> String {
 pub fn build_tutor_prompt(i: &TutorInput) -> String {
     let previous = i.previous.map_or("(this is the first step)".to_string(), |p| format!("{}: {}", p.heading, p.text));
     format!(
-        r#"You are the tutor inside "Gold School", a course that teaches a complete beginner to trade gold (XAUUSD CFDs on a demo account first). Answer the learner's question about the step they are reading.
+        r#"You are the tutor inside "Telosgard", a course that teaches a complete beginner to trade gold (XAUUSD CFDs on a demo account first). Answer the learner's question about the step they are reading.
 
 LESSON {lesson}: {title}
 Lesson goal: the learner can {objective}

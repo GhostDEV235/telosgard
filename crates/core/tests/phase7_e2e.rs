@@ -3,17 +3,17 @@
 //! readiness and weekly numbers (R per trade, Expectancy, Emotion Tags; Phase 11) against a hand calculation. Claude's own verdicts are stand-ins here;
 //! the live calls are checked by the Learner in the app.
 
-use gold_core::checklist::{Bias, CalendarEvent, PreSessionChecklist, RiskCommitment, Tier, Zone};
-use gold_core::daily::{DayTrade, day_totals};
-use gold_core::journal::{Emotion, RMultiple, r_multiple, Adherence, DayContext, DisputeError, Direction, HardRule, HardRuleResult, TradeEntry, combine, evaluate_hard_rules, pnl};
-use gold_core::money::{DollarMove, Lots, Percent, Price, Usd};
-use gold_core::plan::{HardRules, PlanHistory, Session, SoftRules};
-use gold_core::readiness::{ReadinessRun, TradeSummary};
-use gold_core::review::{EmotionCount, ReviewEntry, weekly_review};
-use gold_core::time::days_from_civil;
+use telosgard_core::checklist::{Bias, CalendarEvent, PreSessionChecklist, RiskCommitment, Tier, Zone};
+use telosgard_core::daily::{DayTrade, day_totals};
+use telosgard_core::journal::{Emotion, RMultiple, r_multiple, Adherence, DayContext, DisputeError, Direction, HardRule, HardRuleResult, TradeEntry, combine, evaluate_hard_rules, pnl};
+use telosgard_core::money::{DollarMove, Lots, Percent, Price, Usd};
+use telosgard_core::plan::{HardRules, PlanHistory, Session, SoftRules};
+use telosgard_core::readiness::{ReadinessRun, TradeSummary};
+use telosgard_core::review::{EmotionCount, ReviewEntry, weekly_review};
+use telosgard_core::time::days_from_civil;
 
 fn utc(y: i64, m: u32, d: u32, h: i64, min: i64) -> i64 {
-    days_from_civil(y, m, d) * gold_core::DAY_MS + h * 3_600_000 + min * 60_000
+    days_from_civil(y, m, d) * telosgard_core::DAY_MS + h * 3_600_000 + min * 60_000
 }
 
 fn p(s: &str) -> Price {

@@ -1,4 +1,4 @@
-//! Gold School front-end. See docs/ARCHITECTURE.md.
+//! Telosgard front-end. See docs/ARCHITECTURE.md.
 
 mod catalog;
 mod grading;

@@ -19,7 +19,7 @@
 - [x] **YouTube:** iframes and thumbnails are blocked by the platform → link-out VideoCards
 - [x] **Bundle size:** spike 37 KB gzipped; full app 175 KB gzipped
 
-## Phase 2: Domain core (`crates/core`, package `gold-core`), test-first ✅
+## Phase 2: Domain core (`crates/core`, package `telosgard-core`), test-first ✅
 - [x] `money`, `sizing`, `gate`, `course`, `plan`, `journal`, `readiness`, `drills` (56 tests)
 
 ## Phase 3: App shell & design system ✅
@@ -30,7 +30,7 @@
 - [x] Home "Today" card stack; first-launch disclaimer
 - [x] Fix: `html`/`body` styles un-layered so the viewer's reset can't override them (ARCHITECTURE §9)
 
-## Phase 3b: Realign to course map v2 ✅ *(test-first in `gold-core`)*
+## Phase 3b: Realign to course map v2 ✅ *(test-first in `telosgard-core`)*
 Code built before the 2026-11-10 revision that now disagrees with the docs:
 - [x] `course`: `LAST_CORE = 39`, `LAST_LIVE = 43`, `LAST_ADVANCED = 10`, 8 `STAGES` (1–11, 12–14, 15–19, 20–22, 23–27, 28–30, 31–35, 36–39); Indicators unlocks after L27. Update tests.
 - [x] `readiness`: `REQUIRED_TRADES = 50`, `REQUIRED_DAYS = 56`. Update tests (boundary cases at 49/50 trades and 55/56 days).
@@ -49,7 +49,7 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 ## Phase 4: Platform bridge & persistence
 - [x] `bridge.js` (JSON-string results, one retry on `unavailable`, 12 s timeout for storage, 90 s for Claude) + `platform::{init, get, set, delete, list, sample_json}` with typed `PlatformError`
 - [x] `store::` repositories: profile, progress, attempts, plans, trades, checklists, runs, drills, readiness; every document `kind`-tagged
-- [x] Race-safe saves: a lesson save merges with what's stored (`LessonProgress::merge`, tested in `gold-core`); progress made before the load finishes is saved once it lands
+- [x] Race-safe saves: a lesson save merges with what's stored (`LessonProgress::merge`, tested in `telosgard-core`); progress made before the load finishes is saved once it lands
 - [x] Wired now: lesson progress, theme + disclaimer in `profile`, drill totals. Attempts, plans, trades, checklists and runs are wired in Phases 5 and 7
 - [x] Degraded mode: a status chip on Home (Connecting / Saved / Not saving in this view / sign in / couldn't save); with no platform the app renders all content (checked locally, no console errors)
 - [x] Published with capabilities `db`, `user`, `sample{images}`, `assets`; the live page reports "Progress saved to your account"
@@ -59,7 +59,7 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 ## Phase 5: Learning loop
 - [x] Quiz flow: shuffle, instant feedback, best score saved
-- [x] Explain-Back: prompt builder + strict reply check in `gold_core::grading` (7 tests), the three Grade UIs (Got it + optional tip / Almost + "what's missing" / Not yet + re-teach with a different analogy), errors with "Try again" (no auto-retry, per the platform), attempt history saved and listed
+- [x] Explain-Back: prompt builder + strict reply check in `telosgard_core::grading` (7 tests), the three Grade UIs (Got it + optional tip / Almost + "what's missing" / Not yet + re-teach with a different analogy), errors with "Try again" (no auto-retry, per the platform), attempt history saved and listed
 - [x] GateStatus wiring + unlocking the next lesson; a gold "Lesson passed" banner and toast
 - [x] Rubrics + 3 fixtures for each of L1–11 (`rubrics.rs`; moves into `crates/content` in Phase 6)
 - [x] **Rubric tuning:** grader lab run 2026-11-10: 32 of 33 as expected. The miss: L8's correct answer got Almost because the rubric demanded "margin is not the cost of the trade" literally; reworded to "a deposit that lets you control a much bigger position (it is not the full cost)". **Re-run 2026-11-10 19:06 UTC: 33 of 33 as expected**, and all 22 Almost / Not yet replies carried a marked suggested answer (one awkward but correct L11 sentence noted)
@@ -72,7 +72,7 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 - [x] **Fact check:** each lesson lists its sources with the date checked. Confirmed pages: MT5 Help (order types, execution, trade), SIX ISO 4217 list (XAU = 959), LBMA (USD per troy ounce), World Gold Council (demand), FCA (CFD leverage 30:1–2:1; high-risk investments), NFA BASIC, ASIC registers, MT5 platform (demo). Unconfirmable claims were dropped or reworded: troy-ounce grams, CME's 100-oz contract (site unreachable; 100 oz is stated as the course's working assumption), FCA's 20:1 for gold
 - [x] 15 videos, 1–2 per lesson, each confirmed via YouTube oEmbed on 2026-11-10 (title, channel)
 - [x] Stage 1 drill kinds tagged per lesson (`candle_direction`, `bid_ask`, `dollar_distance`, `pip_convert`, `order_type`); the players arrive in Phase 7
-- [x] App reads lessons, rubrics and grader fixtures from `gold-content`; the Phase 3 Lesson 1 draft and `rubrics.rs` are gone
+- [x] App reads lessons, rubrics and grader fixtures from `telosgard-content`; the Phase 3 Lesson 1 draft and `rubrics.rs` are gone
 
 **Exit check:** the build passes validation; each lesson takes 5–8 minutes to read; every fact has a recorded source; every video link was opened and confirmed within the last 7 days. *(Met 2026-11-10.)*
 
@@ -107,17 +107,17 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 ## After Wave 1
 - [x] Fix: finishing the quiz reset it to question 1 instead of showing the score (the lesson reader re-rendered on every progress save; it now re-renders only when the lock state changes). The same bug closed the Explain-Back sheet when a grade arrived
-- [x] "Want to be quizzed on more concepts?" after the quiz: Claude writes 5 fresh questions on the lesson, or mixed with earlier passed lessons (`gold_core::practice`, 5 tests; strict checks, malformed questions dropped, fewer than 3 good = error). Practice never affects the Gate
+- [x] "Want to be quizzed on more concepts?" after the quiz: Claude writes 5 fresh questions on the lesson, or mixed with earlier passed lessons (`telosgard_core::practice`, 5 tests; strict checks, malformed questions dropped, fewer than 3 good = error). Practice never affects the Gate
 - [x] Explain-Back attempts now also store the "what's missing" note
 - [x] **Suggested answer:** on Almost / Not yet, Claude returns the Learner's own answer minimally rewritten to include the missing idea, additions in [[brackets]] and highlighted in the app; required by the reply check (3 tests). The Learner still rewrites it in their own words to pass
 - [x] The latest grade, feedback and suggestion also show on the Explain-Back card, so they can't be lost when the sheet closes; sheets focus their first field on open
 
 ## Wave 1.5: Learning upgrades *(from the second LLM review, decided 2026-11-10)*
 
-> Source: `Gold Trading Course Notes — LLM 2 Review`. It reviewed an earlier, different dashboard, so only the ideas that fit Gold School are taken. Not adopted: a US futures track (the Learner trades outside the US on MT5), fresh numbers on retry, bar replay, zone-tolerance grading (the existing Wave 5 drill stays as planned), data export, dated real headlines, Lightweight Charts, Papermorph narration. Already covered: current example prices (~4,100), Dollar Moves instead of pips, real yields and central banks (Stage 3), accessibility, process-based graduation (Live Readiness), DST-correct sessions.
+> Source: `Gold Trading Course Notes — LLM 2 Review`. It reviewed an earlier, different dashboard, so only the ideas that fit Telosgard are taken. Not adopted: a US futures track (the Learner trades outside the US on MT5), fresh numbers on retry, bar replay, zone-tolerance grading (the existing Wave 5 drill stays as planned), data export, dated real headlines, Lightweight Charts, Papermorph narration. Already covered: current example prices (~4,100), Dollar Moves instead of pips, real yields and central banks (Stage 3), accessibility, process-based graduation (Live Readiness), DST-correct sessions.
 
 ### Phase 9: Lessons in steps, the new Lesson 2, risk early ✅
-- [x] `gold-core` course map v3, test-first: 40 core lessons, Live Track L41–44, `STAGES = (1,12) (13,15) (16,20) (21,23) (24,28) (29,31) (32,36) (37,40)`, Indicators after L28. Checked with `ArtifactData` before publishing: the Learner's only lesson record is `lesson-01` (passed 2026-11-10), so nothing needed migrating
+- [x] `telosgard-core` course map v3, test-first: 40 core lessons, Live Track L41–44, `STAGES = (1,12) (13,15) (16,20) (21,23) (24,28) (29,31) (32,36) (37,40)`, Indicators after L28. Checked with `ArtifactData` before publishing: the Learner's only lesson record is `lesson-01` (passed 2026-11-10), so nothing needed migrating
 - [x] Content format v2 (ARCHITECTURE §7): hook + **3–6 explanation steps** (≤ 60 words of main text each; detail in `why`; optional `widget`) + analogy, example, mistake, takeaways, videos + a 3-question **Recall Set**; stable quiz ids (`q1…`, recall `r1…`); main path 2–5 min at 130 wpm, ≤ 8 min with every "Why?" opened; the Markdown body must be empty. A planted 65-word step fails the build with a clear message
 - [x] Reader v2: one screen at a time (9–12 per lesson), progress bar, Back / Next, "Why? Tell me more", Recall Set, then Quiz, Explain-Back and Gate; "Skip to the quiz" for lessons already started
 - [x] Nine Widgets, checked one by one on the hidden `#widget-lab` page against hand calculations: `price_drag`, `lots_money`, `one_percent`, `stop_first` (Enter disabled until the stop is set), `short_risk` (whole $1,000 gone at 4,250, with the close-out / negative-balance note), `leverage_toggle` (50×: 12.20 oz, $20 move = ±$243.90, wiped after $82), `bid_ask`, `win_rate` (35% at 2:1 → +0.05R), `pip_convert`
@@ -129,7 +129,7 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 **Exit check:** `cargo test --workspace` green (124); the build rejects a step over 60 words; all 12 Stage 1 lessons render step by step with working widgets; grader lab 36 of 36 as expected. *(Met 2026-11-10.)*
 
 ### Phase 10: Retention (Spaced Review, Confidence, Question Records)
-- [x] `gold-core` `retention` module, test-first: `QuestionRecord { answered, wrong, guessed_right, last_at }`; `record(answer_correct, confidence)`; `pick_review(records, eligible_lessons, n, seed) -> Vec<QuestionId>` weighted towards wrong (×3) and right-but-guessing (×2), only from **passed** lessons other than the current one, deterministic for a seed; a question answered right while "Sure" twice in a row drops out
+- [x] `telosgard-core` `retention` module, test-first: `QuestionRecord { answered, wrong, guessed_right, last_at }`; `record(answer_correct, confidence)`; `pick_review(records, eligible_lessons, n, seed) -> Vec<QuestionId>` weighted towards wrong (×3) and right-but-guessing (×2), only from **passed** lessons other than the current one, deterministic for a seed; a question answered right while "Sure" twice in a row drops out
 - [x] Quiz: a **Sure / Guessing** choice per answer (before the answer is revealed). A right answer counts towards the Gate either way (decided 2026-11-10)
 - [x] Storage: one `qrec-<lesson>` document per lesson (question id → record); written after each quiz and review
 - [x] **Spaced Review** card at the start of each lesson (2–3 questions; skipped when there's nothing eligible); practice only
@@ -140,9 +140,9 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 **Exit check:** retention tests green (weighting, eligibility, determinism, drop-out rule); a guessed right answer still passes the Gate and reappears in the next lesson's Spaced Review.
 
 ### Phase 11: Drills and journal upgrades
-- [x] **Calibration drill** (Practice, after Lesson 2): predict up/down on 10 seeded illustrative charts, then see the hit rate (expected ≈ 50%) and the lesson: you can't predict the next candle; you manage risk over many trades. No streaks. `gold-core` test: seeded rounds are reproducible; the score is a plain hit rate
-- [x] Journal: **R-Multiple** on each closed trade and in the list (`gold-core` `r_multiple`, test-first); **Emotion Tag** (calm / FOMO / revenge / fear / overconfident) set when closing; a one-line **post-trade lesson**, separate from the pre-trade reason
-- [x] Weekly Review: **Expectancy** in R (`gold-core` `review`, test-first), emotions shown against broken rules, and the week's post-trade lessons
+- [x] **Calibration drill** (Practice, after Lesson 2): predict up/down on 10 seeded illustrative charts, then see the hit rate (expected ≈ 50%) and the lesson: you can't predict the next candle; you manage risk over many trades. No streaks. `telosgard-core` test: seeded rounds are reproducible; the score is a plain hit rate
+- [x] Journal: **R-Multiple** on each closed trade and in the list (`telosgard-core` `r_multiple`, test-first); **Emotion Tag** (calm / FOMO / revenge / fear / overconfident) set when closing; a one-line **post-trade lesson**, separate from the pre-trade reason
+- [x] Weekly Review: **Expectancy** in R (`telosgard-core` `review`, test-first), emotions shown against broken rules, and the week's post-trade lessons
 - [x] Phase 7's end-to-end test extended with R, Expectancy and emotion counts against a hand calculation
 
 *Done 2026-11-11: `calibration` module and `r_multiple` / `Emotion` in `journal`; the Weekly Review's "Average R" became Expectancy; an Emotion Tag is required when recording a result, the lesson is optional; 140 tests; published as Artifact version 14.*
@@ -189,10 +189,17 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 **Exit check:** each screen reviewed by the Learner on the published Artifact; reduced motion shows every final state.
 
-### Phase 16: Checks
-- [ ] Chrome at 1440 / 1024 / 768 / 390 in both themes; axe (WCAG 2/2.1 A and AA, transitions disabled while scanning); bundle and font weight; first paint under 2 s
+### Phase 16: Checks ✅
+- [x] Chrome at 1440 / 1024 / 768 / 390 in both themes; axe (WCAG 2/2.1 A and AA, transitions disabled while scanning); bundle and font weight; first paint under 2 s
 
-**Exit check:** all checks pass and are recorded here.
+*Done 2026-11-11, on the Phase 15 build (Artifact version 20), in same-origin iframes at exact widths (the browser window can't be resized):*
+- *Widths × themes: 16 routes (Today, Lesson 1, Practice, three drills, Tools, Plan, Journal, Readiness, Checklist, Weekly Review, new trade, skipped setup, widget lab, question stats) at 1440 / 1024 / 768 / 390 in dark and light: 128 of 128 clean.*
+- *axe-core 4.10.2, WCAG 2 / 2.1 A and AA, transitions off while scanning: 0 violations in all 128.*
+- *Horizontal overflow: no element past the screen edge on any of the 64 route × width pairs (checked per element, since `body` hides horizontal overflow).*
+- *Weight: app bundle 604 KB gz (1.56 MB raw; budget 2 MB compressed), JS glue 7 KB gz, page 38 KB, fonts ≈ 176 KB (two Latin woff2 files; `display=swap`, so they never block content).*
+- *Start-up: with files cached, lesson content is on screen 43–54 ms after the frame starts loading; the loading screen within ~15 ms. A first visit is dominated by downloading ~650 KB (≈ 0.5 s at 10 Mbit/s, ≈ 1 s at 5 Mbit/s if the host serves it compressed; ≈ 1.3 s at 10 Mbit/s if not), so under 2 s on a typical connection. Paint timings couldn't be read because the automated tab is hidden.*
+
+**Exit check:** all checks pass and are recorded here. ✅
 
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:

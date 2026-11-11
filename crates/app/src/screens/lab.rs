@@ -4,11 +4,11 @@
 
 use crate::grading;
 use crate::platform;
-use gold_content::LESSONS;
+use telosgard_content::LESSONS;
 use crate::screens::shell::SubBar;
 use crate::state::{Toasts, now};
 use crate::ui::controls::PILL;
-use gold_core::gate::Grade;
+use telosgard_core::gate::Grade;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde::Serialize;
@@ -208,7 +208,7 @@ pub fn WidgetLab() -> impl IntoView {
             <h1 class="text-title1">"Widget lab"</h1>
             <MomentLab />
             <div class="mt-4 grid gap-6">
-                {gold_content::WIDGETS
+                {telosgard_content::WIDGETS
                     .iter()
                     .map(|w| view! {
                         <section aria-label=*w>
@@ -242,7 +242,7 @@ pub fn QuestionStats() -> impl IntoView {
                 lessons
                     .into_iter()
                     .map(|n| {
-                        let l = gold_content::lesson(n);
+                        let l = telosgard_content::lesson(n);
                         let m = recs.get(&n).cloned().unwrap_or_default();
                         let rows = m
                             .iter()
@@ -311,7 +311,7 @@ fn MomentLab() -> impl IntoView {
                     eyebrow: "Stage 1",
                     title: "Foundations",
                     lessons: 12,
-                    next: Some((gold_core::course::LessonId::Numbered(13), "Sessions & Timing")),
+                    next: Some((telosgard_core::course::LessonId::Numbered(13), "Sessions & Timing")),
                 }))>"Stage complete"</button>
                 <button type="button" class=crate::ui::controls::PILL_GHOST on:click=move |_| moments.big.set(Some(BigMoment::Readiness))>"Live Readiness"</button>
             </div>

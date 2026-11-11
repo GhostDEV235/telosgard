@@ -1,7 +1,7 @@
 //! Course map shown in the app: stage cards and lesson titles, including lessons not yet written.
 //! Written lessons live in `crates/content`.
 
-use gold_core::course::LessonId::{self, Advanced, Indicators, Numbered};
+use telosgard_core::course::LessonId::{self, Advanced, Indicators, Numbered};
 
 pub struct Section {
     pub eyebrow: &'static str,

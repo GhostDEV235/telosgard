@@ -1,12 +1,12 @@
 [package]
-name = "gold-app"
-description = "Gold School front-end (Leptos CSR, compiled to wasm32)."
+name = "telosgard-app"
+description = "Telosgard front-end (Leptos CSR, compiled to wasm32)."
 edition.workspace = true
 version.workspace = true
 
 [dependencies]
-gold-core = { path = "../core" }
-gold-content = { path = "../content" }
+telosgard-core = { path = "../core" }
+telosgard-content = { path = "../content" }
 leptos = { version = "=0.8.23", features = ["csr"] }
 wasm-bindgen = "=0.2.130"
 js-sys = "=0.3.107"

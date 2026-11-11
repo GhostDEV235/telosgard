@@ -35,7 +35,7 @@ fn App() -> impl IntoView {
     let (count, set_count) = signal(0);
     view! {
         <main>
-            <h1>"Gold School: proof of concept"</h1>
+            <h1>"Telosgard: proof of concept"</h1>
             <div class="card">
                 <strong>"1. WASM + Leptos"</strong>
                 <p>"If you can click this and the number goes up, Rust is running in the viewer."</p>

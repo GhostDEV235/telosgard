@@ -1,4 +1,4 @@
-# Design System: Gold School (v2)
+# Design System: Telosgard (v2)
 
 > **v2 (Wave 1.75, 2026-11-11):** a polished design file in the Learner's green palette, blended with the structure of Figma's own workspace. Calm and content-first, as before; more precise.
 > Palette from the Learner's reference image (#0F1F17 · #1E3A2E · #3E5A3F · #6B7F67 · #C7CBB8 · #3D4337).

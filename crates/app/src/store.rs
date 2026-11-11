@@ -4,16 +4,16 @@
 use crate::platform::{self, PlatformError};
 use crate::state::{Progress, Toasts, now};
 use crate::theme::ThemeChoice;
-use gold_core::Millis;
-use gold_core::adherence::SoftResult;
-use gold_core::checklist::PreSessionChecklist;
-use gold_core::course::LessonId;
-use gold_core::gate::{Grade, LessonProgress};
-use gold_core::journal::{Adherence, Emotion, HardRuleResult, RMultiple, TradeEntry, r_multiple};
-use gold_core::money::{Price, Usd};
-use gold_core::plan::TradingPlan;
-use gold_core::readiness::ReadinessRun;
-use gold_core::retention::{Confidence, QuestionKey, QuestionRecord};
+use telosgard_core::Millis;
+use telosgard_core::adherence::SoftResult;
+use telosgard_core::checklist::PreSessionChecklist;
+use telosgard_core::course::LessonId;
+use telosgard_core::gate::{Grade, LessonProgress};
+use telosgard_core::journal::{Adherence, Emotion, HardRuleResult, RMultiple, TradeEntry, r_multiple};
+use telosgard_core::money::{Price, Usd};
+use telosgard_core::plan::TradingPlan;
+use telosgard_core::readiness::ReadinessRun;
+use telosgard_core::retention::{Confidence, QuestionKey, QuestionRecord};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -201,7 +201,7 @@ pub mod repo {
         save_doc(&format!("plan-v{}", p.version), kind::PLAN, p).await
     }
     pub async fn checklist(day: i64) -> Result<Option<PreSessionChecklist>, PlatformError> {
-        load_doc(&format!("checklist-{}", gold_core::time::date_string(day))).await
+        load_doc(&format!("checklist-{}", telosgard_core::time::date_string(day))).await
     }
     pub async fn save_checklist(c: &PreSessionChecklist) -> Result<(), PlatformError> {
         save_doc(&c.doc_id(), kind::CHECKLIST, c).await
@@ -238,7 +238,7 @@ pub mod repo {
         Ok(load_all::<ReviewNote>(kind::REVIEW).await?.into_iter().map(|(_, r)| r).collect())
     }
     pub async fn save_review(r: &ReviewNote) -> Result<(), PlatformError> {
-        save_doc(&format!("review-{}", gold_core::time::date_string(r.week)), kind::REVIEW, r).await
+        save_doc(&format!("review-{}", telosgard_core::time::date_string(r.week)), kind::REVIEW, r).await
     }
     pub async fn readiness() -> Result<ReadinessRecord, PlatformError> {
         Ok(load_doc("readiness").await?.unwrap_or_default())

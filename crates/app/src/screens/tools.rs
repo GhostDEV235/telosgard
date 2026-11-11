@@ -2,8 +2,8 @@
 
 use crate::screens::shell::LargeTitle;
 use crate::ui::controls::NumberField;
-use gold_core::money::{DEFAULT_CONTRACT_OZ, DollarMove, Percent, Usd};
-use gold_core::sizing::{Sizing, SizingInput, size};
+use telosgard_core::money::{DEFAULT_CONTRACT_OZ, DollarMove, Percent, Usd};
+use telosgard_core::sizing::{Sizing, SizingInput, size};
 use leptos::prelude::*;
 
 #[component]

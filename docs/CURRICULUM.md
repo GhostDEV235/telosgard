@@ -1,4 +1,4 @@
-# Curriculum: Gold School
+# Curriculum: Telosgard
 
 > The lesson map and the content spec for authors. Terms follow [`CONTEXT.md`](../CONTEXT.md). Stage 1 is specified in full because Wave 1 ships it. Revised 2026-11-10 to fold in an outside 7-phase lesson plan (sessions, news, Fibonacci, risk routine) per the Learner's decisions. Later stages are outlines, fleshed out in their own wave.
 

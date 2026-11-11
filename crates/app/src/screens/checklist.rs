@@ -5,9 +5,9 @@ use crate::screens::shell::SubBar;
 use crate::state::Toasts;
 use crate::ui::clock::SessionClock;
 use crate::ui::controls::{NumberField, PILL, PILL_GHOST, Segmented};
-use gold_core::checklist::{Bias, CalendarEvent, ChecklistError, PreSessionChecklist, RiskCommitment, Tier, Zone};
-use gold_core::money::{DEFAULT_CONTRACT_OZ, DollarMove, Percent, Price, Usd};
-use gold_core::sizing::Sizing;
+use telosgard_core::checklist::{Bias, CalendarEvent, ChecklistError, PreSessionChecklist, RiskCommitment, Tier, Zone};
+use telosgard_core::money::{DEFAULT_CONTRACT_OZ, DollarMove, Percent, Price, Usd};
+use telosgard_core::sizing::Sizing;
 use leptos::prelude::*;
 
 const INPUT: &str = "min-h-11 min-w-0 rounded-field bg-bg px-3 text-callout text-text placeholder:text-text-muted";

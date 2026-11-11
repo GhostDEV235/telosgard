@@ -42,9 +42,9 @@ fn hero_art() -> impl IntoView {
     }
 }
 
-fn minutes_line(id: gold_core::course::LessonId) -> String {
+fn minutes_line(id: telosgard_core::course::LessonId) -> String {
     match id {
-        gold_core::course::LessonId::Numbered(n) => match gold_content::lesson(n) {
+        telosgard_core::course::LessonId::Numbered(n) => match telosgard_content::lesson(n) {
             Some(l) => format!("About {} minutes, step by step, then a short quiz and an Explain-Back.", l.read_minutes),
             None => "Written when you get close to it, using what worked for you so far.".into(),
         },
@@ -58,10 +58,10 @@ fn ProgressCard() -> impl IntoView {
     use crate::ui::moments::CountUp;
     let progress = expect_context::<Progress>();
     move || {
-        let core: Vec<_> = (1..=gold_core::course::LAST_CORE).map(gold_core::course::LessonId::Numbered).collect();
+        let core: Vec<_> = (1..=telosgard_core::course::LAST_CORE).map(telosgard_core::course::LessonId::Numbered).collect();
         let passed = core.iter().filter(|l| progress.passed(**l)).count() as i64;
         let total = core.len() as i64;
-        let focus = progress.up_next().unwrap_or(gold_core::course::LessonId::Numbered(1));
+        let focus = progress.up_next().unwrap_or(telosgard_core::course::LessonId::Numbered(1));
         let stage = SECTIONS.iter().find(|s| s.lessons.iter().any(|(l, _)| *l == focus)).unwrap_or(&SECTIONS[0]);
         let in_stage = stage.lessons.iter().filter(|(l, _)| progress.passed(*l)).count();
         let pct = if total == 0 { 0 } else { passed * 100 / total };

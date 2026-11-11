@@ -4,13 +4,13 @@
 use crate::platform::PlatformError;
 use crate::state::{Progress, now};
 use crate::store::{ReadinessRecord, ReviewNote, RunRecord, SaveState, Store, TradeRecord, repo};
-use gold_core::Millis;
-use gold_core::checklist::PreSessionChecklist;
-use gold_core::daily::{DayTrade, day_totals};
-use gold_core::journal::{DayContext, local_day};
-use gold_core::money::Usd;
-use gold_core::plan::{HardRules, PlanError, PlanHistory, SoftRules, TradingPlan};
-use gold_core::readiness::{ReadinessProgress, ReadinessRun, TradeSummary};
+use telosgard_core::Millis;
+use telosgard_core::checklist::PreSessionChecklist;
+use telosgard_core::daily::{DayTrade, day_totals};
+use telosgard_core::journal::{DayContext, local_day};
+use telosgard_core::money::Usd;
+use telosgard_core::plan::{HardRules, PlanError, PlanHistory, SoftRules, TradingPlan};
+use telosgard_core::readiness::{ReadinessProgress, ReadinessRun, TradeSummary};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use std::collections::BTreeMap;
@@ -44,7 +44,7 @@ pub fn local_time_to_utc(day: i64, hm: &str) -> Option<Millis> {
     if !(0..24).contains(&h) || !(0..60).contains(&m) {
         return None;
     }
-    Some(day * gold_core::DAY_MS + (h * 60 + m - utc_offset_min() as i64) * 60_000)
+    Some(day * telosgard_core::DAY_MS + (h * 60 + m - utc_offset_min() as i64) * 60_000)
 }
 
 #[derive(Clone, Copy)]
@@ -167,7 +167,7 @@ impl JournalData {
         let latest = self.runs.with_untracked(|r| r.last().cloned());
         if let Some(run) = latest.filter(|r| r.run.number == rec.run) {
             let left = self.trades.with_untracked(|v| v.iter().filter(|(_, t)| t.run == run.run.number).count());
-            if gold_core::journal::remove_emptied_run(true, run.ended_at.is_some(), left) {
+            if telosgard_core::journal::remove_emptied_run(true, run.ended_at.is_some(), left) {
                 self.runs.update(|r| {
                     r.pop();
                 });

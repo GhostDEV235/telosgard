@@ -1,7 +1,7 @@
 //! SVG candle chart and ring progress.
 
-use gold_core::drills::{Candle, ILLUSTRATIVE_LABEL};
-use gold_core::money::Price;
+use telosgard_core::drills::{Candle, ILLUSTRATIVE_LABEL};
+use telosgard_core::money::Price;
 use leptos::prelude::*;
 
 const W: f64 = 640.0;
