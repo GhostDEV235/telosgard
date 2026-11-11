@@ -63,7 +63,7 @@ impl PlatformError {
     pub fn describe(&self) -> String {
         match self {
             PlatformError::NotGranted => "This isn't available in this view (permission not granted, or signed out).".into(),
-            PlatformError::Unavailable => "Couldn't reach claude.ai. Check your connection and try again.".into(),
+            PlatformError::Unavailable => "Couldn't reach Telosgard's server. Check your connection and try again.".into(),
             PlatformError::Revoked => "Access to this page changed. Reload to continue.".into(),
             PlatformError::Quota(_) => "Storage is full. Nothing new can be saved.".into(),
             PlatformError::RateLimited => "Too many requests. Wait a moment and try again.".into(),
@@ -177,7 +177,7 @@ pub async fn upload_from_input(input_id: &str) -> Result<Option<Uploaded>, Platf
     }
 }
 
-/// Where a stored asset id is served (assets capability contract).
+/// Where a stored image is served (the Worker's R2 route; only to its owner).
 pub fn asset_url(id: &str) -> String {
-    format!("/_blob/{id}")
+    format!("/api/files/{id}")
 }

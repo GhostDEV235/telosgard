@@ -1,58 +1,72 @@
-// Bridge between Rust and the claude.ai Artifact runtime (ARCHITECTURE §4).
+// Bridge between Rust and Telosgard's Cloudflare Worker (ARCHITECTURE §4, ADR 0003).
+// Same exports as the claude.ai Artifact bridge it replaced, so the Rust side is unchanged.
 // Every export resolves to a JSON string: {"ok":true,"value":…} or {"ok":false,"code":…,"message":…}.
-// It never rejects, so Rust only has to parse one shape.
+// It never rejects, so Rust only has to parse one shape. Sign-in is Cloudflare Access: its cookie
+// rides along on every same-origin request.
 
 const TIMEOUT_MS = 12000;
-let caps = null;      // { db, user, sample } namespaces or null
-let userId = null;
+const CLAUDE_TIMEOUT_MS = 90000;
 let initPromise = null;
 
 const ok = (value) => JSON.stringify({ ok: true, value: value === undefined ? null : value });
 const fail = (code, message) => JSON.stringify({ ok: false, code: code || "unavailable", message: String(message || "") });
+const errOf = (e) => fail(e && e.code, e && e.message ? e.message : e);
 
-function use(name) {
+/** One API call. Resolves to the parsed JSON body, or throws {code, message}. */
+async function api(method, path, body, { timeout = TIMEOUT_MS, contentType = "application/json" } = {}) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeout);
+  let res;
   try {
-    return window.claude && typeof window.claude.use === "function" ? window.claude.use(name) : Promise.resolve(null);
+    res = await fetch(path, {
+      method,
+      body,
+      headers: body === undefined ? {} : { "content-type": contentType },
+      credentials: "same-origin",
+      signal: ctrl.signal,
+    });
   } catch (e) {
-    return Promise.resolve(null);
+    throw { code: "unavailable", message: ctrl.signal.aborted ? "timed out" : "network error" };
+  } finally {
+    clearTimeout(t);
   }
+  let data = null;
+  try {
+    data = await res.json();
+  } catch (e) {
+    data = null;
+  }
+  if (!res.ok) {
+    // Access may answer an expired session with a redirect page instead of JSON.
+    const code = (data && data.code) || (res.status === 401 || res.status === 403 ? "not_granted" : res.status === 429 ? "rate_limited" : "unavailable");
+    throw { code, message: (data && data.message) || `HTTP ${res.status}` };
+  }
+  return data;
 }
 
-function withTimeout(promise, ms = TIMEOUT_MS) {
-  let t;
-  const timer = new Promise((_, reject) => {
-    t = setTimeout(() => reject({ code: "unavailable", message: "timed out" }), ms);
-  });
-  return Promise.race([promise, timer]).finally(() => clearTimeout(t));
-}
-
-// One retry after a short random delay for transient failures, per the db contract.
+// One retry after a short random delay for transient failures.
 async function call(fn) {
   try {
-    return await withTimeout(fn());
+    return await fn();
   } catch (e) {
     if (e && e.code === "unavailable") {
       await new Promise((r) => setTimeout(r, 300 + Math.random() * 600));
-      return await withTimeout(fn());
+      return await fn();
     }
     throw e;
   }
 }
 
-const errOf = (e) => fail(e && e.code, e && e.message ? e.message : e);
+const docPath = (id) => `/api/docs/${encodeURIComponent(id)}`;
 
 export function init() {
   if (!initPromise) {
     initPromise = (async () => {
       try {
-        const [db, user, sample] = await Promise.all([use("db"), use("user"), use("sample")]);
-        caps = { db, user, sample };
-        if (user) {
-          try { userId = await user.id(); } catch (e) { userId = null; }
-        }
-        return ok({ db: !!db && !!userId, user: !!user, sample: !!sample, signedIn: !!userId });
+        const me = await call(() => api("GET", "/api/me"));
+        const signedIn = !!(me && me.signedIn);
+        return ok({ db: signedIn, user: true, sample: signedIn, signedIn });
       } catch (e) {
-        caps = { db: null, user: null, sample: null };
         return errOf(e);
       }
     })();
@@ -60,29 +74,22 @@ export function init() {
   return initPromise;
 }
 
-function docRef(docId) {
-  if (!caps || !caps.db || !userId) throw { code: "not_granted", message: "storage unavailable" };
-  return caps.db.doc(`data/users/${userId}/${docId}`);
-}
-
 export async function dbGet(docId) {
   try {
-    const snap = await call(() => docRef(docId).get());
-    return ok(snap.exists ? snap.data() : null);
+    return ok(await call(() => api("GET", docPath(docId))));
   } catch (e) { return errOf(e); }
 }
 
 export async function dbSet(docId, json) {
   try {
-    const body = JSON.parse(json);
-    await call(() => docRef(docId).set(body));
+    await call(() => api("PUT", docPath(docId), json));
     return ok(null);
   } catch (e) { return errOf(e); }
 }
 
 export async function dbDelete(docId) {
   try {
-    await call(() => docRef(docId).delete());
+    await call(() => api("DELETE", docPath(docId)));
     return ok(null);
   } catch (e) { return errOf(e); }
 }
@@ -90,53 +97,47 @@ export async function dbDelete(docId) {
 /// All of the Learner's documents of one kind: [{id, data}].
 export async function dbList(kind) {
   try {
-    if (!caps || !caps.db || !userId) throw { code: "not_granted", message: "storage unavailable" };
-    const q = caps.db.collection(`data/users/${userId}`).where("kind", "==", kind).limit(1000);
-    const snap = await call(() => q.get());
-    return ok(snap.docs.map((d) => ({ id: d.id, data: d.data() })));
+    return ok(await call(() => api("GET", `/api/docs?kind=${encodeURIComponent(kind)}`)));
   } catch (e) { return errOf(e); }
 }
 
-/// One structured call to Claude. `tier` is quick | default | complex.
-export async function sampleJson(prompt, tier) {
-  try {
-    if (!caps || !caps.sample) throw { code: "not_granted", message: "Claude unavailable" };
-    const value = await withTimeout(caps.sample.json(prompt, { modelTier: tier || "default" }), 90000);
-    return ok(value);
-  } catch (e) { return errOf(e); }
-}
-
-/// One plain-text call to Claude (the step tutor): {text, truncated}. Never cached: each question is new.
-export async function sampleText(prompt, tier) {
-  try {
-    if (!caps || !caps.sample) throw { code: "not_granted", message: "Claude unavailable" };
-    const r = await withTimeout(caps.sample(prompt, { modelTier: tier || "default", cache: false }), 90000);
-    return ok({ text: String((r && r.text) || ""), truncated: !!(r && r.truncated) });
-  } catch (e) { return errOf(e); }
-}
-
-/// Grader-lab results only: a shared (non-private) doc under `lab/` so Claude Code can read them back.
+/// Grader-lab results: on Cloudflare they are the Learner's own document `lab-<name>`, read back with
+/// `wrangler d1 execute`.
 export async function dbSetShared(path, json) {
   try {
     if (!path.startsWith("lab/")) throw { code: "invalid_argument", message: "shared writes are limited to lab/" };
-    if (!caps || !caps.db) throw { code: "not_granted", message: "storage unavailable" };
     const body = JSON.parse(json);
-    await call(() => caps.db.doc(path).set(body));
+    if (!body.kind) body.kind = "lab";
+    await call(() => api("PUT", docPath(path.replace(/\//g, "-")), JSON.stringify(body)));
     return ok(null);
   } catch (e) { return errOf(e); }
 }
 
-/// Uploads the image chosen in <input type=file id=inputId> to the artifact's asset store: {id, url}.
+/// One structured call to Claude through the Worker. `tier` is quick | default | complex.
+export async function sampleJson(prompt, tier) {
+  try {
+    const r = await api("POST", "/api/claude/json", JSON.stringify({ prompt, tier: tier || "default" }), { timeout: CLAUDE_TIMEOUT_MS });
+    return ok(r && r.value);
+  } catch (e) { return errOf(e); }
+}
+
+/// One plain-text call to Claude (the step tutor): {text, truncated}.
+export async function sampleText(prompt, tier) {
+  try {
+    const r = await api("POST", "/api/claude/text", JSON.stringify({ prompt, tier: tier || "default" }), { timeout: CLAUDE_TIMEOUT_MS });
+    return ok({ text: String((r && r.text) || ""), truncated: !!(r && r.truncated) });
+  } catch (e) { return errOf(e); }
+}
+
+/// Uploads the image chosen in <input type=file id=inputId>: {id, url}.
 export async function uploadFromInput(inputId) {
   try {
     const input = document.getElementById(inputId);
     const file = input && input.files && input.files[0];
     if (!file) return ok(null);
-    if (!file.type.startsWith("image/")) throw { code: "invalid_argument", message: "please choose an image" };
+    if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) throw { code: "invalid_argument", message: "please choose a PNG, JPEG, WebP or GIF image" };
     if (file.size > 8 * 1024 * 1024) throw { code: "invalid_argument", message: "images up to 8 MB" };
-    const assets = await use("assets");
-    if (!assets) throw { code: "not_granted", message: "uploads unavailable" };
-    const r = await withTimeout(assets.upload(file), 60000);
+    const r = await api("POST", "/api/files", file, { timeout: 60000, contentType: file.type });
     return ok({ id: r.id, url: r.url });
   } catch (e) { return errOf(e); }
 }

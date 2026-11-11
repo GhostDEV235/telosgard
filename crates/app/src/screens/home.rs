@@ -89,7 +89,7 @@ fn SaveStatus() -> impl IntoView {
             SaveState::Connecting => ("Connecting…", "text-text-muted"),
             SaveState::Saving => ("Saving…", "text-text-muted"),
             SaveState::Saved => ("✓ Progress saved to your account", "text-text-muted"),
-            SaveState::Local(LocalReason::SignedOut) => ("Not saving: sign in to claude.ai to keep your progress", "text-text"),
+            SaveState::Local(LocalReason::SignedOut) => ("Not saving: sign in to keep your progress", "text-text"),
             SaveState::Local(LocalReason::NoStorage) => ("Not saving in this view · lessons still work", "text-text"),
             SaveState::Failed => ("⚠ Couldn't save just now · will retry on your next change", "text-down"),
         };

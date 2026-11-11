@@ -213,12 +213,14 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 **Exit check:** every screen in the new look at 1440 / 1024 / 768 / 390, both themes; axe clean.
 
-### Phase 18: Cloudflare backend (local first)
-- [ ] `cloudflare/`: Pages Functions in TypeScript with a D1 binding: `GET/PUT/DELETE /api/docs/:id`, `GET /api/docs?kind=`, `GET /api/me`; identity from the Access JWT (verified against the team's keys), with a local-dev identity under `wrangler dev`
-- [ ] D1 schema and migrations: `docs (user_id, doc_id, kind, body, updated_at)`, primary key `(user_id, doc_id)`, index on `(user_id, kind)`
-- [ ] R2 for chart screenshots (`POST /api/assets`, served from `/api/assets/:id` to the owner only)
-- [ ] `bridge.js` Cloudflare twin with the same exports; the Rust app unchanged apart from asset URLs
-- [ ] Tests for the Worker (Vitest with the Workers pool): auth required, one user can't read another's documents, list by kind
+### Phase 18: Cloudflare backend (local first) ✅
+- [x] `cloudflare/`: a Worker with static assets (TypeScript; Cloudflare's current recommendation instead of Pages Functions) with a D1 binding: `GET/PUT/DELETE /api/docs/:id`, `GET /api/docs?kind=`, `GET /api/me`; identity from the Access JWT (verified against the team's keys), with a local-dev identity under `wrangler dev`
+- [x] D1 schema and migrations: `docs (user_id, doc_id, kind, body, updated_at)`, primary key `(user_id, doc_id)`, index on `(user_id, kind)`
+- [x] R2 for chart screenshots (`POST /api/files`, served from `/api/files/:id` to the owner only)
+- [x] `bridge.js` Cloudflare twin with the same exports; the Rust app unchanged apart from asset URLs
+- [x] Tests for the Worker (Vitest with `@cloudflare/vitest-plugin`, the renamed Workers pool): auth required, one user can't read another's documents, list by kind
+
+*Done 2026-11-11: `cloudflare/` (wrangler 4.154.0, jose 6.2.13, vitest 4.1.12 with `@cloudflare/vitest-plugin` 1.4.9; versions at least two weeks old). 9 Worker tests green, types clean. The app's `bridge.js` now calls `/api/*` with the same exports; images at `/api/files/:id`. Checked in Chrome against `wrangler dev` with a local D1 and R2: quiz progress and Question Records saved, plan, a trade with a screenshot (served back as image/png), reload keeps everything (disclaimer stays dismissed, "Progress saved to your account"), Delete this entry removes the trade and the emptied run. Claude calls answer "not connected yet" until Phase 19.*
 
 **Exit check:** the whole app works against `wrangler dev` with a local D1: progress, plan, checklist, journal, delete, screenshots.
 

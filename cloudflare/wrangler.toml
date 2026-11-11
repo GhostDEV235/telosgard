@@ -1,0 +1,25 @@
+# Telosgard on Cloudflare (ADR 0003): one Worker serves the app's static files and the /api routes.
+name = "telosgard"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[assets]
+directory = "../crates/app/dist"
+binding = "ASSETS"
+# The Worker only runs for /api/*; everything else is a static file.
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "telosgard"
+database_id = "00000000-0000-0000-0000-000000000000" # replaced by `wrangler d1 create telosgard` in Phase 20
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "telosgard-files"
+
+[vars]
+# Set in Phase 20 from the Access application: the team domain (https://<team>.cloudflareaccess.com) and its audience tag.
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""

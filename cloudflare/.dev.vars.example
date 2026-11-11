@@ -1,0 +1,2 @@
+# Copy to .dev.vars for `wrangler dev`. DEV_USER is honoured only for requests to localhost, never in production.
+DEV_USER=local-learner

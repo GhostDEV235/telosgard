@@ -81,30 +81,22 @@ trade_school/
 
 ## 4. The bridge
 
-`bridge.js` exposes plain async functions. It never leaks a platform namespace object into Rust.
+> **Since Wave 1.9 (ADR 0003)** the bridge talks to Telosgard's own Cloudflare Worker instead of `window.claude`. Its exports and the JSON-string result shape did not change, so the Rust side is the same.
 
-```js
-// bridge.js (sketch)
-const cap = (n) => window.claude?.use ? window.claude.use(n) : Promise.resolve(null);
+`bridge.js` exposes plain async functions that each resolve to `{"ok":true,"value":…}` or `{"ok":false,"code":…,"message":…}` and never reject: `init`, `dbGet`, `dbSet`, `dbDelete`, `dbList(kind)`, `dbSetShared` (grader lab → the Learner's own `lab-…` document), `sampleJson`, `sampleText`, `uploadFromInput`. Each is one `fetch` to `/api/…` on the same origin (the Cloudflare Access cookie rides along), with a timeout and one retry for transient failures. Error codes from the Worker (`not_granted`, `invalid_argument`, `quota_exceeded`, `rate_limited`, `unavailable`) map onto `PlatformError` in `platform.rs`.
 
-export async function available(name) { return (await cap(name)) !== null; }
+**Absence by design:** if the Worker says the viewer is signed out, the app still renders and teaches; only saving and Claude actions show a "not available" state.
 
-export async function sampleJson(messages, opts) {          // → parsed JSON, or throws {code,message}
-  const s = await cap("sample"); if (!s) throw { code: "unavailable" };
-  return s.json(messages, opts);
-}
-export async function userId() { const u = await cap("user"); return u ? u.id() : null; }
-export async function dbGet(path) { … }        export async function dbSet(path, data) { … }
-export async function dbUpdate(path, data) { … } export async function dbQuery(coll, field, eq) { … }
-```
+### The Worker (`cloudflare/`)
+- One Worker with **static assets**: `crates/app/dist` is served as files; the Worker runs only for `/api/*` (`run_worker_first`).
+- **Identity:** the `Cf-Access-Jwt-Assertion` header, verified with `jose` against the Access team's keys, issuer and audience; `sub` is the user id. `DEV_USER` (from `.dev.vars`) stands in only for requests to localhost.
+- **Routes:** `GET /api/me`; `GET /api/docs?kind=`; `GET|PUT|DELETE /api/docs/:id`; `POST /api/files`, `GET /api/files/:id`; `POST /api/claude/json|text` (Phase 19).
+- **Storage:** D1 table `docs (user_id, doc_id, kind, body, updated_at)`, primary key `(user_id, doc_id)`, index `(user_id, kind)`; `files` table for screenshot ownership; images in R2 under `<user_id>/<id>`.
+- **Tests:** Vitest with `@cloudflare/vitest-plugin` (Workers runtime, local D1 and R2): identity, isolation between users, validation, files.
 
-On the Rust side, `platform::` wraps each import into a typed `async fn` returning `Result<T, PlatformError>`. `PlatformError` mirrors the codes from the platform's type definitions (`not_granted`, `rate_limited`, `upstream_error`, …) plus `Unavailable`.
+## 5. Data model (D1 `docs` table; formerly the Artifact DB)
 
-**Absence by design:** `claude.use()` may resolve `null` (preview, signed out, or permission denied). Every screen renders without the platform; only Save and Grade actions show a "not available here" state. Nothing calls the platform during the first synchronous render.
-
-## 5. Data model (Artifact DB)
-
-The platform's rule is that a path with an even number of segments is a document and an odd number is a collection, and each viewer's `data/users/<id>/` subtree is private. The Learner's data therefore lives in **one private collection**, `data/users/<id>`, with documents tagged by `kind`:
+Each row of D1's `docs` table is one of the Learner's documents (keyed by user and doc id), tagged by `kind`. The shapes are unchanged from the Artifact database, so data moves across as-is:
 
 | Doc id | `kind` | Fields |
 |---|---|---|
@@ -119,19 +111,9 @@ The platform's rule is that a path with an even number of segments is a document
 | `run-<N>` | run | `number`, `startedAt`, `startingBalance`, `endedAt?`, `endReason?` (`breach`). Max total loss is measured against the run's starting balance |
 | `readiness` | readiness | `reachedAt?` (written once; unlocks the Live and Advanced Tracks permanently) |
 
-- Queries use `where("kind", "==", …)` on that single collection.
-- Documents stay well under the 256 KiB limit. Screenshots are stored through the `assets` capability, and only the asset **id** goes in the trade document.
+- Lists use `WHERE user_id = ? AND kind = ?` on the `(user_id, kind)` index.
+- Documents stay well under the 256 KiB limit. Screenshots are stored in R2 through `POST /api/files`, and only the file **id** goes in the trade document.
 - **Derived, not stored:** whether a lesson is unlocked, adherence %, readiness progress. These are computed in `core` from the stored documents, so a fix to the rules re-evaluates history.
-
-### Declared capabilities
-```js
-{
-  sample: { images: true },      // grading; images let Claude see an optional trade screenshot
-  db:     {},                    // data/users/<id>/ is private to its owner by default; no rules needed
-  user:   {},                    // id() for the private path
-  assets: {}                     // trade screenshots
-}
-```
 
 ## 6. Grading design
 
@@ -201,13 +183,14 @@ answer = "…"  expect = "got_it"
 
 The app runs inside an iframe at a single URL, so routing is **hash-based**. The platform passes only a **plain `#name`** (ASCII letters, digits and hyphens; never `#/path` or `#key=value`), so the routes are `#today`, `#lesson-5`, `#size`, `#plan`, `#journal`, `#readiness`, `#drill-6a`, with no hash meaning the start view. Reserved names (`settings`, `sidebar`, `customize`, `upgrade`, `downloads`, `comment-*`) are never used. A small signal-based router listens to `hashchange`. Unlock checks run on every navigation: deep-linking to a locked lesson shows its lock card.
 
-## 9. Build & publish
+## 9. Build & deploy (Cloudflare)
 
-1. `trunk build --release --public-url ./` runs the Tailwind CLI → `tailwind.css`, then builds the wasm, the glue JS and a hashed `dist/`.
-2. `node scripts/artifactify.mjs dist` rewrites `dist/index.html` into the Artifact page format: no doctype/html/head/body tags (the platform adds the skeleton); `<title>` and `<meta name="claude:viewport-fit-sides">` first, then head content, then body content. Relative paths throughout.
-   - **Gotcha:** the platform skeleton has its own *un-layered* reset (light color-scheme, 14px font, body colours). Un-layered CSS beats any `@layer`, so `html`/`body` colour and font rules must live outside `@layer base`. A local `trunk serve` does not show this; always check the published page.
-3. Publish with the Artifact tool: `file_path = dist/index.html`, `files = { "<hashed>.js", "<hashed>_bg.wasm", "<hashed>.css" }`, `capabilities` as in §5.
-4. Verification pass: one `ArtifactData list` of the Learner's collection after a test write.
+1. `cd crates/app && trunk build --release --public-url /` runs the Tailwind CLI, then builds the wasm, the glue JS and a hashed `dist/` (a normal web page; the Artifact conversion step is gone).
+2. `cd cloudflare && npm test` runs the Worker tests; `npm run typecheck` checks types.
+3. Locally: `cp .dev.vars.example .dev.vars`, `npm run db:local`, then `npm run dev` serves the app and the API on `http://localhost:8787` with a local D1 and R2.
+4. Deploy (Phase 20): `wrangler d1 create telosgard` (put its id in `wrangler.toml`), `wrangler r2 bucket create telosgard-files`, `npm run db:remote`, `wrangler secret put ANTHROPIC_API_KEY`, set `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD`, then `npm run deploy`.
+
+The claude.ai Artifact build (`scripts/artifactify.mjs`) is kept only for reference; the Artifact is frozen at version 21.
 
 ## 10. Testing strategy
 

@@ -192,7 +192,7 @@ fn AppearanceSheet(open: RwSignal<bool>) -> impl IntoView {
                 value=theme
                 options=vec![(ThemeChoice::System, "System"), (ThemeChoice::Dark, "Dark"), (ThemeChoice::Light, "Light")]
             />
-            <p class="mt-3 text-footnote text-text-muted">"System follows your device (or your claude.ai setting)."</p>
+            <p class="mt-3 text-footnote text-text-muted">"System follows your device's setting."</p>
             <hr class="my-5 border-line/30" />
             <button
                 type="button"
