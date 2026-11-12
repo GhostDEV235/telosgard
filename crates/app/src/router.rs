@@ -10,10 +10,12 @@ pub enum DrillKind {
     Distance,
     Pips,
     Orders,
+    Session,
+    NoTrade,
 }
 
 impl DrillKind {
-    pub const ALL: [DrillKind; 6] = [DrillKind::Calibration, DrillKind::Direction, DrillKind::BidAsk, DrillKind::Distance, DrillKind::Pips, DrillKind::Orders];
+    pub const ALL: [DrillKind; 8] = [DrillKind::Session, DrillKind::NoTrade, DrillKind::Calibration, DrillKind::Direction, DrillKind::BidAsk, DrillKind::Distance, DrillKind::Pips, DrillKind::Orders];
     pub fn slug(self) -> &'static str {
         match self {
             DrillKind::Calibration => "calibration",
@@ -22,6 +24,8 @@ impl DrillKind {
             DrillKind::Distance => "distance",
             DrillKind::Pips => "pips",
             DrillKind::Orders => "orders",
+            DrillKind::Session => "session",
+            DrillKind::NoTrade => "no-trade",
         }
     }
 }

@@ -46,9 +46,9 @@ Additions from the second review (Phase 9): Lesson 5 gains a step on shorts (pri
 
 **Stage 1 Chart Drills:** candle direction (up/down), find bid vs ask on a quote panel, measure the Dollar Move between two marked prices, convert "X pips" claims → Dollar Moves, pick the order type for a stated intent.
 
-### Stage 2: Sessions & Timing *(Wave 2)*
+### Stage 2: Sessions & Timing *(Wave 2, written 2026-11-12)*
 13. **The trading week & sessions:** Sunday open to Friday close (New York time), the daily break, Asian / London / New York sessions, the LBMA auctions (10:30 and 15:00 London)
-14. **The overlap, in your local time:** why 13:00–17:00 UTC is gold's prime window; the app's session clock shows it in the Learner's own timezone; the Asian high and low as levels London tests
+14. **The overlap, in your local time:** why the London–New York overlap (roughly 8 am–noon New York time: 13:00–17:00 UTC in winter, 12:00–16:00 UTC in summer, shifting for a few weeks when US and UK clocks change on different dates) is usually gold's best window for a beginner; the app's session clock shows it in the Learner's own timezone; the Asian high and low as levels London tests
 15. **Windows to avoid:** the daily rollover, the Sunday open, the minutes around tier-1 releases (these become the **No-Trade Windows** Hard Rule)
 
 ### Stage 3: What Moves Gold *(Wave 3)*

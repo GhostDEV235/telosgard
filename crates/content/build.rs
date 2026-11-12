@@ -7,7 +7,7 @@ use std::{env, fs, path::Path};
 
 const READ_WPM: usize = 130;
 const MAX_STEP_WORDS: usize = 60;
-const WIDGETS: &[&str] = &["price_drag", "lots_money", "one_percent", "stop_first", "short_risk", "leverage_toggle", "bid_ask", "win_rate", "pip_convert"];
+const WIDGETS: &[&str] = &["price_drag", "lots_money", "one_percent", "stop_first", "short_risk", "leverage_toggle", "bid_ask", "win_rate", "pip_convert", "session_clock"];
 /// The lesson about pips, the only one allowed to use the word.
 const PIPS_LESSON: u8 = 7;
 
@@ -91,7 +91,7 @@ struct Fixture {
     expect: String,
 }
 
-const DRILLS: &[&str] = &["candle_direction", "bid_ask", "dollar_distance", "pip_convert", "order_type"];
+const DRILLS: &[&str] = &["candle_direction", "bid_ask", "dollar_distance", "pip_convert", "order_type", "session", "no_trade"];
 
 fn is_date(s: &str) -> bool {
     let b = s.as_bytes();

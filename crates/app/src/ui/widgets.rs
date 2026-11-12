@@ -56,11 +56,12 @@ pub fn Widget(kind: &'static str) -> impl IntoView {
         "bid_ask" => bid_ask().into_any(),
         "win_rate" => win_rate().into_any(),
         "pip_convert" => pip_convert().into_any(),
+        "session_clock" => session_clock().into_any(),
         _ => ().into_any(),
     };
     view! {
         <figure class=BOX>
-            <figcaption class="text-eyebrow text-eyebrow-ink">"Try it · illustrative prices"</figcaption>
+            <figcaption class="text-eyebrow text-eyebrow-ink">{if kind == "session_clock" { "Try it · drag the time" } else { "Try it · illustrative prices" }}</figcaption>
             {body}
         </figure>
     }
@@ -240,5 +241,45 @@ fn pip_convert() -> impl IntoView {
         <p class="tabular mt-3 text-headline" aria-live="polite">
             {move || format!("50 pips × {} = a {} Dollar Move", Usd(size.get()), Usd(50 * size.get()))}
         </p>
+    }
+}
+
+/// Drag a time across one New York weekday and see every city's clock, the sessions open and the
+/// rollover window. Uses the same session rules as the app's clock and Hard Rules.
+fn session_clock() -> impl IntoView {
+    use telosgard_core::stage2_drills::{City, SessionAnswer, city_to_utc};
+    use telosgard_core::time::{london, no_trade_window, ny, sessions_at};
+    let minute = RwSignal::new(10 * 60i64); // New York minutes since midnight
+    let summer = RwSignal::new(false);
+    let utc = move || if summer.get() { city_to_utc(City::NewYork, 2026, 7, 15, minute.get() as u32) } else { city_to_utc(City::NewYork, 2026, 11, 18, minute.get() as u32) };
+    let hm = |m: u32| format!("{:02}:{:02}", m / 60, m % 60);
+    let text = Signal::derive(move || format!("{} New York time", hm(minute.get() as u32)));
+    view! {
+        <p class="mt-2 text-callout">"A Wednesday. Drag through the New York day:"</p>
+        <div class="mt-3"><Segmented label="Season" value=summer options=vec![(false, "November"), (true, "July")] /></div>
+        <Slider label="New York time" value=minute min=0 max=1410 step=30 valuetext=text />
+        {move || {
+            let u = utc();
+            let tokyo = ((u.rem_euclid(telosgard_core::DAY_MS) / 60_000) as u32 + 9 * 60) % 1440;
+            let d = js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(u as f64));
+            let mine = format!("{:02}:{:02}", d.get_hours(), d.get_minutes());
+            let session = SessionAnswer::from_sessions(&sessions_at(u));
+            let window = no_trade_window(u, &[]);
+            let (status, tone) = match (&window, session) {
+                (Some(telosgard_core::time::NoTrade::Rollover), _) => ("No-Trade Window: the daily rollover (5–6 pm New York)", "bg-bad-bg text-bad-ink"),
+                (_, SessionAnswer::Overlap) => ("London and New York: the overlap", "bg-ok-bg text-ok-ink"),
+                (_, SessionAnswer::NoneOpen) => ("Between sessions: quiet", "bg-raised text-text-muted"),
+                (_, s) => (s.label(), "bg-warn-bg text-warn-ink"),
+            };
+            view! {
+                <dl class="tabular mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-callout sm:grid-cols-4" aria-live="polite">
+                    <div><dt class="text-footnote text-text-muted">"New York"</dt><dd class="font-semibold">{hm(ny(u).minute)}</dd></div>
+                    <div><dt class="text-footnote text-text-muted">"London"</dt><dd class="font-semibold">{hm(london(u).minute)}</dd></div>
+                    <div><dt class="text-footnote text-text-muted">"Tokyo"</dt><dd class="font-semibold">{hm(tokyo)}</dd></div>
+                    <div><dt class="text-footnote text-text-muted">"You"</dt><dd class="font-semibold">{mine}</dd></div>
+                </dl>
+                <p class=format!("mt-3 inline-block rounded-full px-3 py-1 text-footnote font-semibold {tone}")>{status}</p>
+            }
+        }}
     }
 }

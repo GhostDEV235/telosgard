@@ -17,13 +17,15 @@ struct DrillInfo {
     lesson: &'static str,
 }
 
-const DRILLS: [DrillInfo; 6] = [
+const DRILLS: [DrillInfo; 8] = [
     DrillInfo { kind: DrillKind::Calibration, title: "Can you call the next candle?", blurb: "Ten charts: predict up or down, then see your hit rate.", lesson: "Lesson 2" },
     DrillInfo { kind: DrillKind::Distance, title: "Measure the move", blurb: "Turn two prices into a Dollar Move.", lesson: "Lesson 4" },
     DrillInfo { kind: DrillKind::Direction, title: "Bullish or bearish?", blurb: "Read a candle's direction from its open and close.", lesson: "Lesson 5" },
     DrillInfo { kind: DrillKind::BidAsk, title: "Spot the spread", blurb: "Find the bid, the ask, and the cost of getting in.", lesson: "Lesson 6" },
     DrillInfo { kind: DrillKind::Pips, title: "Translate the pips", blurb: "Convert someone else's “pips” into dollars.", lesson: "Lesson 7" },
     DrillInfo { kind: DrillKind::Orders, title: "Pick the order", blurb: "Market, limit or stop: match the order to the intent.", lesson: "Lesson 10" },
+    DrillInfo { kind: DrillKind::Session, title: "Which session is it?", blurb: "Turn a time in New York or London into the session that's open.", lesson: "Lesson 13" },
+    DrillInfo { kind: DrillKind::NoTrade, title: "Is this a No-Trade Window?", blurb: "Spot the rollover, the Sunday open and the minutes around big releases.", lesson: "Lesson 15" },
 ];
 
 #[component]
@@ -139,6 +141,33 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                 answer,
                 why: format!("{} pips × {size} = {}. Always convert before you trust a pip number.", q.pips, q.answer()),
             }
+        }
+        DrillKind::Session => {
+            use telosgard_core::stage2_drills::{SessionAnswer, SessionQ};
+            let q = SessionQ::new(seed);
+            let (options, answer) = shuffle_choice(SessionAnswer::ALL.iter().map(|a| (a.label().to_string(), *a == q.answer)).collect(), seed);
+            let hm = |m: u32| format!("{:02}:{:02}", m / 60, m % 60);
+            let ny = telosgard_core::time::ny(q.utc).minute;
+            let ldn = telosgard_core::time::london(q.utc).minute;
+            let tokyo = ((q.utc.rem_euclid(telosgard_core::DAY_MS) / 60_000) as u32 + 9 * 60) % 1440;
+            let why = format!(
+                "At that moment it's {} in New York, {} in London and {} in Tokyo. Sessions: Asian 09:00–16:00 Tokyo, London 08:00–17:00 London, New York 08:00–17:00 New York.",
+                hm(ny), hm(ldn), hm(tokyo)
+            );
+            Choice { prompt: q.prompt(), detail: None, options, answer, why }
+        }
+        DrillKind::NoTrade => {
+            use telosgard_core::stage2_drills::{NoTradeQ, WindowAnswer};
+            let q = NoTradeQ::new(seed);
+            let (options, answer) = shuffle_choice(WindowAnswer::ALL.iter().map(|a| (a.label().to_string(), *a == q.answer)).collect(), seed);
+            let why = match q.answer {
+                WindowAnswer::Rollover => "Monday to Thursday, 5–6 pm New York time is the daily rollover: no new trades.".to_string(),
+                WindowAnswer::SundayOpen => "Gold reopens at 6 pm New York time on Sunday; the first hour is a No-Trade Window because price can gap.".to_string(),
+                WindowAnswer::NearEvent => format!("{} is a tier-1 release: the window runs from 5 minutes before to 5 minutes after it.", q.event.map_or("This", |(n, _)| n)),
+                WindowAnswer::Closed => "Gold doesn't trade from Friday 5 pm to Sunday 6 pm New York time.".to_string(),
+                WindowAnswer::Clear => "None of the three windows applies: not the rollover, not the Sunday open, and more than 5 minutes from any tier-1 release.".to_string(),
+            };
+            Choice { prompt: q.prompt(), detail: None, options, answer, why }
         }
         _ => {
             let q = OrderQ::new(seed);

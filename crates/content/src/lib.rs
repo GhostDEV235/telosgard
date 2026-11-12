@@ -40,7 +40,7 @@ pub struct Step {
 }
 
 /// Every Widget id a lesson may use; the app has a component for each.
-pub const WIDGETS: &[&str] = &["price_drag", "lots_money", "one_percent", "stop_first", "short_risk", "leverage_toggle", "bid_ask", "win_rate", "pip_convert"];
+pub const WIDGETS: &[&str] = &["price_drag", "lots_money", "one_percent", "stop_first", "short_risk", "leverage_toggle", "bid_ask", "win_rate", "pip_convert", "session_clock"];
 
 #[derive(Debug)]
 pub struct Video {
@@ -112,10 +112,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn stage_one_is_complete_and_ordered() {
+    fn written_lessons_are_contiguous_and_in_their_stages() {
         let ids: Vec<u8> = LESSONS.iter().map(|l| l.id).collect();
-        assert_eq!(ids, (1..=12).collect::<Vec<_>>());
-        assert!(LESSONS.iter().all(|l| l.stage == 1));
+        assert_eq!(ids, (1..=ids.len() as u8).collect::<Vec<_>>(), "written lessons run 1..n with no gaps");
+        assert!(ids.len() >= 15, "Stages 1 and 2 are written");
+        // Course map v3: Stage 1 = L1–12, Stage 2 = L13–15.
+        for l in LESSONS {
+            let stage = match l.id {
+                1..=12 => 1,
+                13..=15 => 2,
+                _ => continue,
+            };
+            assert_eq!(l.stage, stage, "L{} belongs to Stage {stage}", l.id);
+        }
     }
 
     #[test]

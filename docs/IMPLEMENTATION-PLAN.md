@@ -243,7 +243,7 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:
-- Wave 2: session drills ("which session is it?", "is this a No-Trade Window?")
+- Wave 2 ✅ *(2026-11-12)*: Stage 2 written (L13 The trading week & sessions, L14 The overlap, in your local time, L15 Windows to avoid), every fact sourced (CME, LBMA, BLS, Federal Reserve, GOV.UK, US Naval Observatory, World Gold Council, FOREX.com and FXCM for broker rollover practice), 6 videos verified by oEmbed. New `session_clock` widget; drills "Which session is it?" and "Is this a No-Trade Window?" (`telosgard_core::stage2_drills`, answers computed by the same `sessions_at` / `no_trade_window` the clock and Hard Rules use; 6 tests). Curriculum's "13:00–17:00 UTC" overlap corrected (winter only). axe clean on the new lessons, widget and drills in both themes. Open: grader lab for the 9 new Explain-Back fixtures (real Claude calls), then deploy
 - Wave 3: "hot or soft surprise → which way does gold usually go?"
 - Wave 4: **candle reconstruction** (given open, high, low and close, pick the matching candle and say who won it; added from the second review)
 - Wave 5: tap the level, name the structure (HH/HL/LH/LL, BOS/CHoCH), confirmation candle at a location
