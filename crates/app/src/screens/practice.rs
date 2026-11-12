@@ -1,5 +1,7 @@
 //! Practice tab: Chart Drills. Phase 3 ships the "Bullish or bearish?" drill; the rest come in Phase 7.
 
+use crate::catalog::Tx;
+use crate::i18n::{t, ts};
 use crate::screens::shell::{LargeTitle, SubBar};
 use crate::state::now;
 use crate::ui::chart::CandleChart;
@@ -12,20 +14,20 @@ use leptos::prelude::*;
 
 struct DrillInfo {
     kind: DrillKind,
-    title: &'static str,
-    blurb: &'static str,
-    lesson: &'static str,
+    title: Tx,
+    blurb: Tx,
+    lesson: Tx,
 }
 
 const DRILLS: [DrillInfo; 8] = [
-    DrillInfo { kind: DrillKind::Calibration, title: "Can you call the next candle?", blurb: "Ten charts: predict up or down, then see your hit rate.", lesson: "Lesson 2" },
-    DrillInfo { kind: DrillKind::Distance, title: "Measure the move", blurb: "Turn two prices into a Dollar Move.", lesson: "Lesson 4" },
-    DrillInfo { kind: DrillKind::Direction, title: "Bullish or bearish?", blurb: "Read a candle's direction from its open and close.", lesson: "Lesson 5" },
-    DrillInfo { kind: DrillKind::BidAsk, title: "Spot the spread", blurb: "Find the bid, the ask, and the cost of getting in.", lesson: "Lesson 6" },
-    DrillInfo { kind: DrillKind::Pips, title: "Translate the pips", blurb: "Convert someone else's “pips” into dollars.", lesson: "Lesson 7" },
-    DrillInfo { kind: DrillKind::Orders, title: "Pick the order", blurb: "Market, limit or stop: match the order to the intent.", lesson: "Lesson 10" },
-    DrillInfo { kind: DrillKind::Session, title: "Which session is it?", blurb: "Turn a time in New York or London into the session that's open.", lesson: "Lesson 13" },
-    DrillInfo { kind: DrillKind::NoTrade, title: "Is this a No-Trade Window?", blurb: "Spot the rollover, the Sunday open and the minutes around big releases.", lesson: "Lesson 15" },
+    DrillInfo { kind: DrillKind::Calibration, title: Tx("Can you call the next candle?", "Peux-tu deviner la prochaine bougie ?"), blurb: Tx("Ten charts: predict up or down, then see your hit rate.", "Dix graphiques : prédis hausse ou baisse, puis découvre ton taux de réussite."), lesson: Tx("Lesson 2", "Leçon 2") },
+    DrillInfo { kind: DrillKind::Distance, title: Tx("Measure the move", "Mesure le mouvement"), blurb: Tx("Turn two prices into a Dollar Move.", "Transforme deux prix en Mouvement en dollars."), lesson: Tx("Lesson 4", "Leçon 4") },
+    DrillInfo { kind: DrillKind::Direction, title: Tx("Bullish or bearish?", "Haussière ou baissière ?"), blurb: Tx("Read a candle's direction from its open and close.", "Lis le sens d’une bougie à partir de son ouverture et de sa clôture."), lesson: Tx("Lesson 5", "Leçon 5") },
+    DrillInfo { kind: DrillKind::BidAsk, title: Tx("Spot the spread", "Repère le spread"), blurb: Tx("Find the bid, the ask, and the cost of getting in.", "Trouve le bid, l’ask, et ce que coûte l’entrée."), lesson: Tx("Lesson 6", "Leçon 6") },
+    DrillInfo { kind: DrillKind::Pips, title: Tx("Translate the pips", "Traduis les pips"), blurb: Tx("Convert someone else's “pips” into dollars.", "Convertis les « pips » des autres en dollars."), lesson: Tx("Lesson 7", "Leçon 7") },
+    DrillInfo { kind: DrillKind::Orders, title: Tx("Pick the order", "Choisis l’ordre"), blurb: Tx("Market, limit or stop: match the order to the intent.", "Au marché, limite ou stop : associe l’ordre à l’intention."), lesson: Tx("Lesson 10", "Leçon 10") },
+    DrillInfo { kind: DrillKind::Session, title: Tx("Which session is it?", "Quelle séance est-ce ?"), blurb: Tx("Turn a time in New York or London into the session that's open.", "Transforme une heure de New York ou de Londres en séance ouverte."), lesson: Tx("Lesson 13", "Leçon 13") },
+    DrillInfo { kind: DrillKind::NoTrade, title: Tx("Is this a No-Trade Window?", "Est-ce une Fenêtre sans trade ?"), blurb: Tx("Spot the rollover, the Sunday open and the minutes around big releases.", "Repère le rollover, l’ouverture du dimanche et les minutes autour des grandes annonces."), lesson: Tx("Lesson 15", "Leçon 15") },
 ];
 
 #[component]
@@ -33,9 +35,9 @@ pub fn Practice() -> impl IntoView {
     let store = expect_context::<crate::store::Store>();
     view! {
         <main class="gutter mx-auto max-w-[1040px] pb-8">
-            <LargeTitle title="Practice," accent="without pressure." />
+            <LargeTitle title=t("Practice,", "L’entraînement,") accent=t("without pressure.", "sans pression.") />
             <p class="mt-2 max-w-xl text-callout text-text-muted">
-                "Quick drills on illustrative prices and charts. They train your eye and never count towards a Gate."
+                {t("Quick drills on illustrative prices and charts. They train your eye and never count towards a Gate.", "Des exercices rapides sur des prix et des graphiques d’exemple. Ils entraînent ton œil et ne comptent jamais pour une validation.")}
             </p>
             <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {DRILLS
@@ -44,15 +46,15 @@ pub fn Practice() -> impl IntoView {
                         let slug = d.kind.slug();
                         view! {
                             <a href=format!("#drill-{slug}") class="lift flex h-full flex-col rounded-card bg-surface p-5 shadow-card">
-                                <span class="block text-eyebrow text-eyebrow-ink">{d.lesson}</span>
-                                <span class="mt-1 block text-headline">{d.title}</span>
-                                <span class="mt-1 block text-callout text-text-muted">{d.blurb}</span>
+                                <span class="block text-eyebrow text-eyebrow-ink">{d.lesson.get()}</span>
+                                <span class="mt-1 block text-headline">{d.title.get()}</span>
+                                <span class="mt-1 block text-callout text-text-muted">{d.blurb.get()}</span>
                                 <span class="tabular mt-auto block pt-4 text-footnote font-semibold">
                                     {move || {
                                         store
                                             .drills
                                             .with(|m| m.get(slug).map(|r| (r.correct, r.answered)))
-                                            .map_or("Start ›".to_string(), |(c, a)| format!("{c} of {a} right · Continue ›"))
+                                            .map_or(t("Start ›", "Commencer ›").to_string(), |(c, a)| ts(format!("{c} of {a} right · Continue ›"), format!("{c} sur {a} justes · Continuer ›")))
                                     }}
                                 </span>
                             </a>
@@ -64,8 +66,9 @@ pub fn Practice() -> impl IntoView {
     }
 }
 
+/// A quote without the dollar sign: "4,100.00" or, in French, "4 100,00".
 fn money(p: Price) -> String {
-    p.to_string().trim_start_matches('$').to_string()
+    p.to_string().trim_start_matches('$').trim_end_matches('$').trim_end_matches('\u{a0}').to_string()
 }
 
 struct Choice {
@@ -93,34 +96,34 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
             let spread = q.ask - q.bid;
             let (prompt, opts, why) = match q.asked {
                 BidAskAsk::Spread => (
-                    "What is the spread?".to_string(),
+                    t("What is the spread?", "Quel est le spread ?").to_string(),
                     vec![(spread.to_string(), true), (DollarMove(spread.0 * 10).to_string(), false), (DollarMove(spread.0 * 100).to_string(), false), (DollarMove((spread.0 / 10).max(1) + spread.0).to_string(), false)],
                     format!("ask − bid = {} − {} = {spread}.", money(q.ask), money(q.bid)),
                 ),
                 BidAskAsk::BuyPrice => (
-                    "You buy now. Which price do you pay?".to_string(),
+                    t("You buy now. Which price do you pay?", "Tu achètes maintenant. Quel prix paies-tu ?").to_string(),
                     vec![(money(q.ask), true), (money(q.bid), false), (money(Price((q.ask.0 + q.bid.0) / 2)), false)],
-                    "You buy at the ask, the higher price.".to_string(),
+                    t("You buy at the ask, the higher price.", "Tu achètes à l’ask, le prix le plus haut.").to_string(),
                 ),
                 BidAskAsk::SellPrice => (
-                    "You sell (go short) now. Which price do you get?".to_string(),
+                    t("You sell (go short) now. Which price do you get?", "Tu vends (position courte) maintenant. Quel prix obtiens-tu ?").to_string(),
                     vec![(money(q.bid), true), (money(q.ask), false), (money(Price((q.ask.0 + q.bid.0) / 2)), false)],
-                    "You sell at the bid, the lower price.".to_string(),
+                    t("You sell at the bid, the lower price.", "Tu vends au bid, le prix le plus bas.").to_string(),
                 ),
             };
             let (options, answer) = shuffle_choice(opts, seed);
-            Choice { prompt, detail: Some(format!("Bid (sell) {}  ·  Ask (buy) {}", money(q.bid), money(q.ask))), options, answer, why }
+            Choice { prompt, detail: Some(ts(format!("Bid (sell) {}  ·  Ask (buy) {}", money(q.bid), money(q.ask)), format!("Bid (vente) {}  ·  Ask (achat) {}", money(q.bid), money(q.ask)))), options, answer, why }
         }
         DrillKind::Distance => {
             let q = DistanceQ::new(seed);
             let a = q.answer();
-            let way = if q.to > q.from { "up" } else { "down" };
+            let way = if q.to > q.from { t("up", "à la hausse") } else { t("down", "à la baisse") };
             let (options, answer) = shuffle_choice(
                 vec![(a.to_string(), true), (DollarMove(a.0 * 10).to_string(), false), (DollarMove((a.0 / 10).max(1)).to_string(), false), (DollarMove(a.0 + 100).to_string(), false)],
                 seed,
             );
             Choice {
-                prompt: format!("Gold moves from {} to {}. How big was the move?", money(q.from), money(q.to)),
+                prompt: ts(format!("Gold moves from {} to {}. How big was the move?", money(q.from), money(q.to)), format!("L’or passe de {} à {}. De combien a-t-il bougé ?", money(q.from), money(q.to))),
                 detail: None,
                 options,
                 answer,
@@ -135,11 +138,11 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                 seed,
             );
             Choice {
-                prompt: format!("A trader says “a {}-pip stop on gold” and, when you ask, they mean {size} per pip. What Dollar Move is that?", q.pips),
+                prompt: ts(format!("A trader says “a {}-pip stop on gold” and, when you ask, they mean {size} per pip. What Dollar Move is that?", q.pips), format!("Un trader parle d’un « stop de {} pips sur l’or » et, quand tu demandes, il compte {size} par pip. Quel Mouvement en dollars est-ce ?", q.pips)),
                 detail: None,
                 options,
                 answer,
-                why: format!("{} pips × {size} = {}. Always convert before you trust a pip number.", q.pips, q.answer()),
+                why: ts(format!("{} pips × {size} = {}. Always convert before you trust a pip number.", q.pips, q.answer()), format!("{} pips × {size} = {}. Convertis toujours avant de te fier à un nombre de pips.", q.pips, q.answer())),
             }
         }
         DrillKind::Session => {
@@ -150,9 +153,15 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
             let ny = telosgard_core::time::ny(q.utc).minute;
             let ldn = telosgard_core::time::london(q.utc).minute;
             let tokyo = ((q.utc.rem_euclid(telosgard_core::DAY_MS) / 60_000) as u32 + 9 * 60) % 1440;
-            let why = format!(
-                "At that moment it's {} in New York, {} in London and {} in Tokyo. Sessions: Asian 09:00–16:00 Tokyo, London 08:00–17:00 London, New York 08:00–17:00 New York.",
-                hm(ny), hm(ldn), hm(tokyo)
+            let why = ts(
+                format!(
+                    "At that moment it's {} in New York, {} in London and {} in Tokyo. Sessions: Asian 09:00–16:00 Tokyo, London 08:00–17:00 London, New York 08:00–17:00 New York.",
+                    hm(ny), hm(ldn), hm(tokyo)
+                ),
+                format!(
+                    "À ce moment-là, il est {} à New York, {} à Londres et {} à Tokyo. Séances : Asie 09:00–16:00 heure de Tokyo, Londres 08:00–17:00 heure de Londres, New York 08:00–17:00 heure de New York.",
+                    hm(ny), hm(ldn), hm(tokyo)
+                ),
             );
             Choice { prompt: q.prompt(), detail: None, options, answer, why }
         }
@@ -161,32 +170,38 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
             let q = NoTradeQ::new(seed);
             let (options, answer) = shuffle_choice(WindowAnswer::ALL.iter().map(|a| (a.label().to_string(), *a == q.answer)).collect(), seed);
             let why = match q.answer {
-                WindowAnswer::Rollover => "Monday to Thursday, 5–6 pm New York time is the daily rollover: no new trades.".to_string(),
-                WindowAnswer::SundayOpen => "Gold reopens at 6 pm New York time on Sunday; the first hour is a No-Trade Window because price can gap.".to_string(),
-                WindowAnswer::NearEvent => format!("{} is a tier-1 release: the window runs from 5 minutes before to 5 minutes after it.", q.event.map_or("This", |(n, _)| n)),
-                WindowAnswer::Closed => "Gold doesn't trade from Friday 5 pm to Sunday 6 pm New York time.".to_string(),
-                WindowAnswer::Clear => "None of the three windows applies: not the rollover, not the Sunday open, and more than 5 minutes from any tier-1 release.".to_string(),
+                WindowAnswer::Rollover => t("Monday to Thursday, 5–6 pm New York time is the daily rollover: no new trades.", "Du lundi au jeudi, 17 h–18 h heure de New York, c’est le rollover quotidien : aucun nouveau trade.").to_string(),
+                WindowAnswer::SundayOpen => t("Gold reopens at 6 pm New York time on Sunday; the first hour is a No-Trade Window because price can gap.", "L’or rouvre le dimanche à 18 h, heure de New York ; la première heure est une Fenêtre sans trade parce que le prix peut faire un gap.").to_string(),
+                WindowAnswer::NearEvent => ts(
+                    format!("{} is a tier-1 release: the window runs from 5 minutes before to 5 minutes after it.", q.event.map_or("This", |(n, _)| n)),
+                    format!("{} est une grande statistique : la fenêtre va de 5 minutes avant à 5 minutes après.", q.event.map_or("Ceci", |(n, _)| telosgard_core::stage2_drills::event_fr(n))),
+                ),
+                WindowAnswer::Closed => t("Gold doesn't trade from Friday 5 pm to Sunday 6 pm New York time.", "L’or ne se trade pas du vendredi 17 h au dimanche 18 h, heure de New York.").to_string(),
+                WindowAnswer::Clear => t("None of the three windows applies: not the rollover, not the Sunday open, and more than 5 minutes from any tier-1 release.", "Aucune des trois fenêtres ne s’applique : ni le rollover, ni l’ouverture du dimanche, et plus de 5 minutes avant ou après toute grande statistique.").to_string(),
             };
             Choice { prompt: q.prompt(), detail: None, options, answer, why }
         }
         _ => {
             let q = OrderQ::new(seed);
             let want = match (q.buy, q.target) {
-                (true, None) => "buy right now".to_string(),
-                (false, None) => "sell right now".to_string(),
-                (b, Some(t)) => format!("{} only if price {} {}", if b { "buy" } else { "sell" }, if t > q.current { "rises to" } else { "falls to" }, money(t)),
+                (true, None) => t("buy right now", "acheter tout de suite").to_string(),
+                (false, None) => t("sell right now", "vendre tout de suite").to_string(),
+                (b, Some(lvl)) => ts(
+                    format!("{} only if price {} {}", if b { "buy" } else { "sell" }, if lvl > q.current { "rises to" } else { "falls to" }, money(lvl)),
+                    format!("{} seulement si le prix {} {}", if b { "acheter" } else { "vendre" }, if lvl > q.current { "monte à" } else { "descend à" }, money(lvl)),
+                ),
             };
-            let all = [(OrderKind::Market, "Market order"), (OrderKind::BuyLimit, "Buy limit"), (OrderKind::SellLimit, "Sell limit"), (OrderKind::BuyStop, "Buy stop"), (OrderKind::SellStop, "Sell stop")];
+            let all = [(OrderKind::Market, t("Market order", "Ordre au marché")), (OrderKind::BuyLimit, "Buy limit"), (OrderKind::SellLimit, "Sell limit"), (OrderKind::BuyStop, "Buy stop"), (OrderKind::SellStop, "Sell stop")];
             let correct = q.answer();
             let (options, answer) = shuffle_choice(all.iter().map(|(k, n)| (n.to_string(), *k == correct)).collect(), seed);
             let why = match correct {
-                OrderKind::Market => "To act now, use a market order.",
-                OrderKind::BuyLimit => "Buying below the current price is a buy limit: it waits for a better price.",
-                OrderKind::SellLimit => "Selling above the current price is a sell limit: it waits for a better price.",
-                OrderKind::BuyStop => "Buying only once price rises through a level is a buy stop.",
-                OrderKind::SellStop => "Selling only once price falls through a level is a sell stop.",
+                OrderKind::Market => t("To act now, use a market order.", "Pour agir tout de suite, utilise un ordre au marché."),
+                OrderKind::BuyLimit => t("Buying below the current price is a buy limit: it waits for a better price.", "Acheter sous le prix actuel, c’est un buy limit : il attend un meilleur prix."),
+                OrderKind::SellLimit => t("Selling above the current price is a sell limit: it waits for a better price.", "Vendre au-dessus du prix actuel, c’est un sell limit : il attend un meilleur prix."),
+                OrderKind::BuyStop => t("Buying only once price rises through a level is a buy stop.", "Acheter seulement une fois que le prix a franchi un niveau à la hausse, c’est un buy stop."),
+                OrderKind::SellStop => t("Selling only once price falls through a level is a sell stop.", "Vendre seulement une fois que le prix a franchi un niveau à la baisse, c’est un sell stop."),
             };
-            Choice { prompt: format!("Gold is at {}. You want to {want}. Which order?", money(q.current)), detail: None, options, answer, why: why.into() }
+            Choice { prompt: ts(format!("Gold is at {}. You want to {want}. Which order?", money(q.current)), format!("L’or est à {}. Tu veux {want}. Quel ordre ?", money(q.current))), detail: None, options, answer, why: why.into() }
         }
     }
 }
@@ -219,13 +234,13 @@ pub fn ChoiceDrill(kind: DrillKind) -> impl IntoView {
         picked.set(None);
     };
     view! {
-        <SubBar back="#practice" back_label="Practice" title=info.title />
+        <SubBar back="#practice" back_label=t("Practice", "Entraînement") title=info.title.get() />
         <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
             <div class="flex items-baseline justify-between gap-4">
-                <h1 class="text-title1">{info.title}</h1>
-                <p class="tabular shrink-0 whitespace-nowrap text-callout text-text-muted">{move || { let (r, t) = score.get(); format!("{r} of {t} right") }}</p>
+                <h1 class="text-title1">{info.title.get()}</h1>
+                <p class="tabular shrink-0 whitespace-nowrap text-callout text-text-muted">{move || { let (r, t) = score.get(); ts(format!("{r} of {t} right"), format!("{r} sur {t} justes")) }}</p>
             </div>
-            <p class="mt-2 text-callout text-text-muted">{info.blurb} " Prices are illustrative."</p>
+            <p class="mt-2 text-callout text-text-muted">{info.blurb.get()} {t(" Prices are illustrative.", " Prix donnés à titre d’exemple.")}</p>
             <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
                 {move || {
                     let (prompt, detail, options, answer, why) = choice.get();
@@ -262,13 +277,13 @@ pub fn ChoiceDrill(kind: DrillKind) -> impl IntoView {
                         <Show when=move || picked.get().is_some()>
                             <div class="anim-fade mt-4 rounded-btn bg-bg p-4" aria-live="polite">
                                 {move || if picked.get() == Some(answer) {
-                                    view! { <p class="text-headline text-up">"✓ Right"</p> }.into_any()
+                                    view! { <p class="text-headline text-up">{t("✓ Right", "✓ Juste")}</p> }.into_any()
                                 } else {
-                                    view! { <p class="text-headline text-down">"✗ Not quite"</p> }.into_any()
+                                    view! { <p class="text-headline text-down">{t("✗ Not quite", "✗ Pas tout à fait")}</p> }.into_any()
                                 }}
                                 <p class="mt-1 text-callout">{why.clone()}</p>
                             </div>
-                            <button type="button" class=format!("{PILL} mt-4") on:click=next>"Next question ›"</button>
+                            <button type="button" class=format!("{PILL} mt-4") on:click=next>{t("Next question ›", "Question suivante ›")}</button>
                         </Show>
                     }
                 }}
@@ -336,32 +351,32 @@ pub fn DirectionDrill() -> impl IntoView {
     };
 
     view! {
-        <SubBar back="#practice" back_label="Practice" title="Bullish or bearish?" />
+        <SubBar back="#practice" back_label=t("Practice", "Entraînement") title=t("Bullish or bearish?", "Haussière ou baissière ?") />
         <main class="gutter mx-auto max-w-[760px] pt-6 pb-10">
             <div class="flex items-baseline justify-between gap-4">
-                <h1 class="text-title1">"Bullish or bearish?"</h1>
-                <p class="tabular shrink-0 whitespace-nowrap text-callout text-text-muted">{move || { let (r, t) = score.get(); format!("{r} of {t} right") }}</p>
+                <h1 class="text-title1">{t("Bullish or bearish?", "Haussière ou baissière ?")}</h1>
+                <p class="tabular shrink-0 whitespace-nowrap text-callout text-text-muted">{move || { let (r, n) = score.get(); ts(format!("{r} of {n} right"), format!("{r} sur {n} justes")) }}</p>
             </div>
             <p class="mt-2 text-callout text-text-muted">
-                "Look at the highlighted candle. Did buyers or sellers win it? Hollow candles closed higher; filled candles closed lower."
+                {t("Look at the highlighted candle. Did buyers or sellers win it? Hollow candles closed higher; filled candles closed lower.", "Regarde la bougie mise en avant. Qui l’a emporté, acheteurs ou vendeurs ? Les bougies creuses ont clôturé plus haut ; les bougies pleines, plus bas.")}
             </p>
             {move || {
                 store
                     .drills
                     .with(|m| m.get("direction").cloned())
                     .filter(|d| d.answered > 0)
-                    .map(|d| view! { <p class="tabular mt-1 text-footnote text-text-muted">{format!("All time: {} of {} right", d.correct, d.answered)}</p> })
+                    .map(|d| view! { <p class="tabular mt-1 text-footnote text-text-muted">{ts(format!("All time: {} of {} right", d.correct, d.answered), format!("Depuis le début : {} sur {} justes", d.correct, d.answered))}</p> })
             }}
             <section class="mt-5 rounded-card bg-surface p-4 shadow-card md:p-5">
                 <CandleChart
                     candles=Signal::derive(move || candles.get())
                     highlight=Signal::derive(move || Some(candles.with(|c| c.len() - 1)))
-                    label="Illustrative candlestick chart with the last candle highlighted"
+                    label=t("Illustrative candlestick chart with the last candle highlighted", "Graphique en chandeliers d’exemple, dernière bougie mise en avant")
                 />
             </section>
             <div class="mt-5 flex gap-3">
-                {choice(CandleDirection::Bullish, "Bullish", "▲", "text-up")}
-                {choice(CandleDirection::Bearish, "Bearish", "▼", "text-down")}
+                {choice(CandleDirection::Bullish, t("Bullish", "Haussière"), "▲", "text-up")}
+                {choice(CandleDirection::Bearish, t("Bearish", "Baissière"), "▼", "text-down")}
             </div>
             {move || {
                 answer
@@ -370,16 +385,16 @@ pub fn DirectionDrill() -> impl IntoView {
                         let c = last();
                         let moved = (c.close - c.open).abs();
                         let truth = c.direction();
-                        let (verdict, tone) = if a == truth { ("✓ Right", "text-up") } else { ("✗ Not quite", "text-down") };
+                        let (verdict, tone) = if a == truth { (t("✓ Right", "✓ Juste"), "text-up") } else { (t("✗ Not quite", "✗ Pas tout à fait"), "text-down") };
                         let explain = match truth {
-                            CandleDirection::Bullish => format!("It closed {moved} above where it opened, so buyers won that candle."),
-                            _ => format!("It closed {moved} below where it opened, so sellers won that candle."),
+                            CandleDirection::Bullish => ts(format!("It closed {moved} above where it opened, so buyers won that candle."), format!("Elle a clôturé {moved} au-dessus de son ouverture : les acheteurs ont gagné cette bougie.")),
+                            _ => ts(format!("It closed {moved} below where it opened, so sellers won that candle."), format!("Elle a clôturé {moved} sous son ouverture : les vendeurs ont gagné cette bougie.")),
                         };
                         view! {
                             <div class="anim-fade mt-5 rounded-card bg-surface p-5 shadow-card" aria-live="polite">
                                 <p class=format!("text-headline {tone}")>{verdict}</p>
                                 <p class="mt-1 text-callout">{explain}</p>
-                                <button type="button" class=format!("{PILL} mt-4") on:click=next>"Next chart ›"</button>
+                                <button type="button" class=format!("{PILL} mt-4") on:click=next>{t("Next chart ›", "Graphique suivant ›")}</button>
                             </div>
                         }
                     })
@@ -458,34 +473,34 @@ pub fn CalibrationDrill() -> impl IntoView {
     };
 
     view! {
-        <SubBar back="#practice" back_label="Practice" title="Call the next candle" />
+        <SubBar back="#practice" back_label=t("Practice", "Entraînement") title=t("Call the next candle", "Devine la prochaine bougie") />
         <main class="gutter mx-auto max-w-[760px] pt-6 pb-10">
-            <h1 class="text-title1">"Can you call the next candle?"</h1>
+            <h1 class="text-title1">{t("Can you call the next candle?", "Peux-tu deviner la prochaine bougie ?")}</h1>
             <p class="mt-2 text-callout text-text-muted">
-                "Ten illustrative charts. For each, predict whether the next candle closes higher or lower. Give it your best read."
+                {t("Ten illustrative charts. For each, predict whether the next candle closes higher or lower. Give it your best read.", "Dix graphiques d’exemple. Pour chacun, prédis si la prochaine bougie clôture plus haut ou plus bas. Fais de ton mieux.")}
             </p>
             <Show
                 when=move || done.get()
                 fallback=move || view! {
-                    <p class="tabular mt-4 text-eyebrow text-eyebrow-ink">{move || format!("Chart {} of {ROUND_LEN}", idx.get() + 1)}</p>
+                    <p class="tabular mt-4 text-eyebrow text-eyebrow-ink">{move || ts(format!("Chart {} of {ROUND_LEN}", idx.get() + 1), format!("Graphique {} sur {ROUND_LEN}", idx.get() + 1))}</p>
                     <section class="mt-2 rounded-card bg-surface p-4 shadow-card md:p-5">
-                        <CandleChart candles=shown highlight=highlight label="Illustrative candlestick chart; predict the next candle" />
+                        <CandleChart candles=shown highlight=highlight label=t("Illustrative candlestick chart; predict the next candle", "Graphique en chandeliers d’exemple ; prédis la prochaine bougie") />
                     </section>
                     <div class="mt-5 flex gap-3">
-                        {choice(true, "Higher", "▲", "text-up")}
-                        {choice(false, "Lower", "▼", "text-down")}
+                        {choice(true, t("Higher", "Plus haut"), "▲", "text-up")}
+                        {choice(false, t("Lower", "Plus bas"), "▼", "text-down")}
                     </div>
                     {move || guess.get().map(|g| {
                         let c = chart();
                         let up = c.went_up();
                         let moved = (c.next.close - c.next.open).abs();
-                        let (verdict, tone) = if g == up { ("✓ Called it", "text-up") } else { ("✗ Missed", "text-down") };
+                        let (verdict, tone) = if g == up { (t("✓ Called it", "✓ Bien vu"), "text-up") } else { (t("✗ Missed", "✗ Raté"), "text-down") };
                         view! {
                             <div class="anim-fade mt-5 rounded-card bg-surface p-5 shadow-card" aria-live="polite">
                                 <p class=format!("text-headline {tone}")>{verdict}</p>
-                                <p class="mt-1 text-callout">{format!("The next candle closed {moved} {}.", if up { "higher" } else { "lower" })}</p>
+                                <p class="mt-1 text-callout">{ts(format!("The next candle closed {moved} {}.", if up { "higher" } else { "lower" }), format!("La bougie suivante a clôturé {moved} plus {}.", if up { "haut" } else { "bas" }))}</p>
                                 <button type="button" class=format!("{PILL} mt-4") on:click=next>
-                                    {move || if idx.get() + 1 >= ROUND_LEN { "See your hit rate" } else { "Next chart ›" }}
+                                    {move || if idx.get() + 1 >= ROUND_LEN { t("See your hit rate", "Voir ton taux de réussite") } else { t("Next chart ›", "Graphique suivant ›") }}
                                 </button>
                             </div>
                         }
@@ -493,16 +508,16 @@ pub fn CalibrationDrill() -> impl IntoView {
                 }
             >
                 <section class="anim-fade mt-5 rounded-card bg-surface p-5 shadow-card" aria-live="polite">
-                    <p class="text-eyebrow text-eyebrow-ink">"Your hit rate"</p>
+                    <p class="text-eyebrow text-eyebrow-ink">{t("Your hit rate", "Ton taux de réussite")}</p>
                     <p class="tabular mt-2 text-large">{move || view! { <crate::ui::moments::CountUp value=hit_rate(right.get(), ROUND_LEN as u32).0 as i64 fmt=|v| telosgard_core::money::Percent(v as u32).to_string() /> }}</p>
-                    <p class="tabular text-callout text-text-muted">{move || format!("{} of {ROUND_LEN} called right", right.get())}</p>
+                    <p class="tabular text-callout text-text-muted">{move || ts(format!("{} of {ROUND_LEN} called right", right.get()), format!("{} sur {ROUND_LEN} bien vus", right.get()))}</p>
                     <p class="mt-4 text-callout">
-                        "These charts move at random, so anyone lands around 50% over many rounds; a high or low score here is luck. Real charts aren't much kinder: nobody can reliably call the next candle."
+                        {t("These charts move at random, so anyone lands around 50% over many rounds; a high or low score here is luck. Real charts aren't much kinder: nobody can reliably call the next candle.", "Ces graphiques bougent au hasard : sur beaucoup de séries, tout le monde tombe autour de 50 % ; un score haut ou bas, ici, c’est de la chance. Les vrais graphiques ne sont guère plus tendres : personne ne peut deviner la prochaine bougie de façon fiable.")}
                     </p>
                     <p class="mt-2 text-callout">
-                        "That's why a trader doesn't need to predict. As in Lesson 2, you win by keeping every loss small and planned and letting wins be bigger, over many trades."
+                        {t("That's why a trader doesn't need to predict. As in Lesson 2, you win by keeping every loss small and planned and letting wins be bigger, over many trades.", "C’est pour ça qu’un trader n’a pas besoin de prédire. Comme à la leçon 2, on gagne en gardant chaque perte petite et prévue, et en laissant les gains être plus gros, sur beaucoup de trades.")}
                     </p>
-                    <button type="button" class=format!("{PILL} mt-4") on:click=again>"New round"</button>
+                    <button type="button" class=format!("{PILL} mt-4") on:click=again>{t("New round", "Nouvelle série")}</button>
                 </section>
             </Show>
         </main>

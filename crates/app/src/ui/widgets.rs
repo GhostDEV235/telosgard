@@ -1,15 +1,29 @@
 //! Lesson Widgets (FR-1.4): move one number, watch one result. Readouts state both prices and the
 //! difference, never just a verdict. Anything that opens a trade asks for the stop first.
 
+use crate::i18n::{t, ts};
 use crate::ui::controls::{PILL, Segmented};
-use telosgard_core::money::{Price, Usd};
+use telosgard_core::money::{Lots, Price, Usd};
 use leptos::prelude::*;
 
 const BOX: &str = "mt-1 rounded-card border border-line/40 bg-bg p-4";
 const RANGE: &str = "mt-3 w-full accent-[var(--color-text)]";
 
+/// A quote without the dollar sign: "4,100.00" or, in French, "4 100,00".
 fn price(cents: i64) -> String {
-    Price(cents).to_string().trim_start_matches('$').to_string()
+    Price(cents).to_string().trim_start_matches('$').trim_end_matches('$').trim_end_matches('\u{a0}').to_string()
+}
+
+/// Two decimals with the language's decimal mark.
+fn dec2(v: f64) -> String {
+    let s = format!("{v:.2}");
+    if crate::i18n::is_fr() { s.replace('.', ",") } else { s }
+}
+
+/// A percentage with one decimal: "4.9%" or "4,9 %".
+fn pct1(v: f64) -> String {
+    let s = format!("{v:.1}");
+    if crate::i18n::is_fr() { format!("{}\u{a0}%", s.replace('.', ",")) } else { format!("{s}%") }
 }
 
 fn signed(cents: i64) -> (String, &'static str, &'static str) {
@@ -18,7 +32,7 @@ fn signed(cents: i64) -> (String, &'static str, &'static str) {
     } else if cents < 0 {
         (Usd(cents).to_string(), "text-down", "▼")
     } else {
-        ("$0.00".into(), "text-text-muted", "•")
+        (Usd(0).to_string(), "text-text-muted", "•")
     }
 }
 
@@ -61,7 +75,7 @@ pub fn Widget(kind: &'static str) -> impl IntoView {
     };
     view! {
         <figure class=BOX>
-            <figcaption class="text-eyebrow text-eyebrow-ink">{if kind == "session_clock" { "Try it · drag the time" } else { "Try it · illustrative prices" }}</figcaption>
+            <figcaption class="text-eyebrow text-eyebrow-ink">{if kind == "session_clock" { t("Try it · drag the time", "Essaie · fais glisser l’heure") } else { t("Try it · illustrative prices", "Essaie · prix d’exemple") }}</figcaption>
             {body}
         </figure>
     }
@@ -70,14 +84,14 @@ pub fn Widget(kind: &'static str) -> impl IntoView {
 fn price_drag() -> impl IntoView {
     const BUY: i64 = 410_000;
     let sell = RwSignal::new(412_000i64);
-    let text = Signal::derive(move || format!("Sell at {}", price(sell.get())));
+    let text = Signal::derive(move || ts(format!("Sell at {}", price(sell.get())), format!("Vente à {}", price(sell.get()))));
     view! {
-        <p class="mt-2 text-callout">"You bought gold at " <strong class="tabular">"4,100.00"</strong> ". Drag to where you sell:"</p>
-        <Slider label="Sell price" value=sell min=405_000 max=415_000 step=50 valuetext=text />
+        <p class="mt-2 text-callout">{t("You bought gold at ", "Tu as acheté de l’or à ")} <strong class="tabular">{price(410_000)}</strong> {t(". Drag to where you sell:", ". Fais glisser jusqu’à ton prix de vente :")}</p>
+        <Slider label=t("Sell price", "Prix de vente") value=sell min=405_000 max=415_000 step=50 valuetext=text />
         <p class="tabular mt-2 text-headline" aria-live="polite">
             {move || {
                 let (d, tone, arrow) = signed(sell.get() - BUY);
-                view! { "Buy 4,100.00 → sell " {price(sell.get())} " = " <span class=tone>{arrow} " " {d} " per ounce"</span> }
+                view! { {t("Buy ", "Achat ")} {price(BUY)} {t(" → sell ", " → vente ")} {price(sell.get())} " = " <span class=tone>{arrow} " " {d} {t(" per ounce", " par once")}</span> }
             }}
         </p>
     }
@@ -85,18 +99,18 @@ fn price_drag() -> impl IntoView {
 
 fn lots_money() -> impl IntoView {
     let lots = RwSignal::new(20i64); // hundredths
-    let text = Signal::derive(move || format!("{:.2} lots", lots.get() as f64 / 100.0));
+    let text = Signal::derive(move || ts(format!("{} lots", Lots(lots.get())), format!("{} lot", Lots(lots.get()))));
     view! {
-        <p class="mt-2 text-callout">"Gold moves " <strong>"$4"</strong> " your way. Choose your size:"</p>
-        <Slider label="Size in lots" value=lots min=1 max=100 step=1 valuetext=text />
+        <p class="mt-2 text-callout">{t("Gold moves ", "L’or bouge de ")} <strong>{t("$4", "4 $")}</strong> {t(" your way. Choose your size:", " dans ton sens. Choisis ta taille :")}</p>
+        <Slider label=t("Size in lots", "Taille en lots") value=lots min=1 max=100 step=1 valuetext=text />
         <p class="tabular mt-2 text-headline" aria-live="polite">
             {move || {
                 let l = lots.get();
                 let money = Usd(l * 100 * 400 / 100);
-                format!("{:.2} lots × 100 oz × $4.00 = {}", l as f64 / 100.0, money)
+                ts(format!("{} lots × 100 oz × $4.00 = {}", Lots(l), money), format!("{} lot × 100 oz × 4,00 $ = {}", Lots(l), money))
             }}
         </p>
-        <p class="mt-1 text-footnote text-text-muted">"Same move, bigger size: bigger result, in both directions."</p>
+        <p class="mt-1 text-footnote text-text-muted">{t("Same move, bigger size: bigger result, in both directions.", "Même mouvement, plus grosse taille : plus gros résultat, dans les deux sens.")}</p>
     }
 }
 
@@ -104,12 +118,12 @@ fn one_percent() -> impl IntoView {
     let bal = RwSignal::new(10_000i64);
     let text = Signal::derive(move || Usd(bal.get() * 100).to_string());
     view! {
-        <p class="mt-2 text-callout">"Your account balance:"</p>
-        <Slider label="Account balance" value=bal min=500 max=50_000 step=500 valuetext=text />
+        <p class="mt-2 text-callout">{t("Your account balance:", "Le solde de ton compte :")}</p>
+        <Slider label=t("Account balance", "Solde du compte") value=bal min=500 max=50_000 step=500 valuetext=text />
         <p class="tabular mt-2 text-headline" aria-live="polite">
-            {move || format!("1% of {} = {}", Usd(bal.get() * 100), Usd(bal.get()))}
+            {move || ts(format!("1% of {} = {}", Usd(bal.get() * 100), Usd(bal.get())), format!("1 % de {} = {}", Usd(bal.get() * 100), Usd(bal.get())))}
         </p>
-        <p class="mt-1 text-footnote text-text-muted">"The most you'd plan to lose on one trade. Size the trade so your stop costs about this much."</p>
+        <p class="mt-1 text-footnote text-text-muted">{t("The most you'd plan to lose on one trade. Size the trade so your stop costs about this much.", "Le maximum que tu prévois de perdre sur un trade. Choisis la taille pour que ton stop coûte à peu près ça.")}</p>
     }
 }
 
@@ -119,7 +133,7 @@ fn stop_first() -> impl IntoView {
     let stop = RwSignal::new(409_500i64);
     let set = RwSignal::new(false);
     let entered = RwSignal::new(false);
-    let text = Signal::derive(move || format!("Stop at {}", price(stop.get())));
+    let text = Signal::derive(move || ts(format!("Stop at {}", price(stop.get())), format!("Stop à {}", price(stop.get()))));
     Effect::new(move |prev: Option<i64>| {
         let s = stop.get();
         if prev.is_some_and(|p| p != s) {
@@ -130,16 +144,16 @@ fn stop_first() -> impl IntoView {
     });
     let loss = move || (ENTRY - stop.get()) * OZ;
     view! {
-        <p class="mt-2 text-callout">"Buy 0.10 lots at " <strong class="tabular">"4,100.00"</strong> ". First, set your stop-loss:"</p>
-        <Slider label="Stop-loss price" value=stop min=407_000 max=409_950 step=50 valuetext=text />
+        <p class="mt-2 text-callout">{t("Buy 0.10 lots at ", "Achat de 0,10 lot à ")} <strong class="tabular">{price(ENTRY)}</strong> {t(". First, set your stop-loss:", ". D’abord, place ton stop-loss :")}</p>
+        <Slider label=t("Stop-loss price", "Prix du stop-loss") value=stop min=407_000 max=409_950 step=50 valuetext=text />
         <p class="tabular mt-2 text-callout" aria-live="polite">
-            {move || format!("Stop at {}: if it's hit you lose {} per ounce, {} on this trade.", price(stop.get()), Usd(ENTRY - stop.get()), Usd(loss()))}
+            {move || ts(format!("Stop at {}: if it's hit you lose {} per ounce, {} on this trade.", price(stop.get()), Usd(ENTRY - stop.get()), Usd(loss())), format!("Stop à {} : s’il est touché, tu perds {} par once, soit {} sur ce trade.", price(stop.get()), Usd(ENTRY - stop.get()), Usd(loss())))}
         </p>
         <button type="button" class=format!("{PILL} mt-3") disabled=move || !set.get() on:click=move |_| entered.set(true)>
-            {move || if set.get() { "Enter the trade" } else { "Move the stop first" }}
+            {move || if set.get() { t("Enter the trade", "Entrer dans le trade") } else { t("Move the stop first", "Déplace d’abord le stop") }}
         </button>
         {move || entered.get().then(|| view! {
-            <p class="anim-fade mt-3 text-callout text-up" role="status">{format!("✓ Trade open with a stop at {}. The most it can lose is {}.", price(stop.get()), Usd(loss()))}</p>
+            <p class="anim-fade mt-3 text-callout text-up" role="status">{ts(format!("✓ Trade open with a stop at {}. The most it can lose is {}.", price(stop.get()), Usd(loss())), format!("✓ Trade ouvert avec un stop à {}. Il peut perdre au maximum {}.", price(stop.get()), Usd(loss())))}</p>
         })}
     }
 }
@@ -149,22 +163,22 @@ fn short_risk() -> impl IntoView {
     const OZ: i64 = 10;
     const ACCOUNT: i64 = 100_000; // $1,000
     let now = RwSignal::new(410_000i64);
-    let text = Signal::derive(move || format!("Price {}", price(now.get())));
+    let text = Signal::derive(move || ts(format!("Price {}", price(now.get())), format!("Prix {}", price(now.get()))));
     view! {
-        <p class="mt-2 text-callout">"You sold (went short) 0.10 lots at " <strong class="tabular">"4,100.00"</strong> " with no stop, on a $1,000 account. Drag the price up:"</p>
-        <Slider label="Current price" value=now min=410_000 max=425_000 step=100 valuetext=text />
+        <p class="mt-2 text-callout">{t("You sold (went short) 0.10 lots at ", "Tu as vendu (position courte) 0,10 lot à ")} <strong class="tabular">{price(SELL)}</strong> {t(" with no stop, on a $1,000 account. Drag the price up:", " sans stop, sur un compte de 1 000 $. Fais monter le prix :")}</p>
+        <Slider label=t("Current price", "Prix actuel") value=now min=410_000 max=425_000 step=100 valuetext=text />
         {move || {
             let loss = (now.get() - SELL) * OZ;
             let gone = loss >= ACCOUNT;
             view! {
                 <p class="tabular mt-2 text-headline" aria-live="polite">
-                    "Price " {price(now.get())} ": " <span class="text-down">"▼ " {Usd(-loss.min(ACCOUNT)).to_string()}</span>
+                    {t("Price ", "Prix ")} {price(now.get())} {t(": ", " : ")} <span class="text-down">"▼ " {Usd(-loss.min(ACCOUNT)).to_string()}</span>
                 </p>
                 <p class=format!("mt-1 text-footnote {}", if gone { "text-down" } else { "text-text-muted" })>
                     {if gone {
-                        "Your whole $1,000 is gone. The broker's margin close-out ends it here; with negative balance protection you can't lose more than the account."
+                        t("Your whole $1,000 is gone. The broker's margin close-out ends it here; with negative balance protection you can't lose more than the account.", "Tes 1 000 $ sont partis en entier. La clôture forcée du courtier s’arrête là ; avec la protection contre le solde négatif, tu ne peux pas perdre plus que le compte.")
                     } else {
-                        "Price has no ceiling, so with no stop the loss keeps growing as long as price rises."
+                        t("Price has no ceiling, so with no stop the loss keeps growing as long as price rises.", "Le prix n’a pas de plafond : sans stop, la perte continue de grossir tant que le prix monte.")
                     }}
                 </p>
             }
@@ -177,35 +191,35 @@ fn leverage_toggle() -> impl IntoView {
     const PRICE: f64 = 4_100.0;
     let lev = RwSignal::new(10u32);
     view! {
-        <p class="mt-2 text-callout">"A $1,000 account with gold at 4,100. Choose your leverage:"</p>
-        <div class="mt-3"><Segmented label="Leverage" value=lev options=vec![(1, "1×"), (10, "10×"), (50, "50×")] /></div>
+        <p class="mt-2 text-callout">{t("A $1,000 account with gold at 4,100. Choose your leverage:", "Un compte de 1 000 $ avec l’or à 4 100. Choisis ton effet de levier :")}</p>
+        <div class="mt-3"><Segmented label=t("Leverage", "Effet de levier") value=lev options=vec![(1, "1×"), (10, "10×"), (50, "50×")] /></div>
         {move || {
             let oz = ACCOUNT * lev.get() as f64 / PRICE;
             let per20 = oz * 20.0;
             let gone_after = ACCOUNT / oz;
             view! {
                 <dl class="tabular mt-3 grid gap-1 text-callout" aria-live="polite">
-                    <div class="flex justify-between gap-3"><dt>"Position"</dt><dd>{format!("{oz:.2} oz (≈ {})", Usd((oz * PRICE * 100.0).round() as i64))}</dd></div>
-                    <div class="flex justify-between gap-3"><dt>"Gold moves $20 your way"</dt><dd class="text-up">{format!("▲ +${per20:.2} ({:.1}%)", per20 / ACCOUNT * 100.0)}</dd></div>
-                    <div class="flex justify-between gap-3"><dt>"Gold moves $20 against you"</dt><dd class="text-down">{format!("▼ −${per20:.2} ({:.1}%)", per20 / ACCOUNT * 100.0)}</dd></div>
-                    <div class="flex justify-between gap-3"><dt>"Account wiped out after a move against you of"</dt><dd class="text-down">{format!("${gone_after:.2}")}</dd></div>
+                    <div class="flex justify-between gap-3"><dt>"Position"</dt><dd>{format!("{} oz (≈ {})", dec2(oz), Usd((oz * PRICE * 100.0).round() as i64))}</dd></div>
+                    <div class="flex justify-between gap-3"><dt>{t("Gold moves $20 your way", "L’or bouge de 20 $ dans ton sens")}</dt><dd class="text-up">{format!("▲ +{} ({})", Usd((per20 * 100.0).round() as i64), pct1(per20 / ACCOUNT * 100.0))}</dd></div>
+                    <div class="flex justify-between gap-3"><dt>{t("Gold moves $20 against you", "L’or bouge de 20 $ contre toi")}</dt><dd class="text-down">{format!("▼ {} ({})", Usd(-(per20 * 100.0).round() as i64), pct1(per20 / ACCOUNT * 100.0))}</dd></div>
+                    <div class="flex justify-between gap-3"><dt>{t("Account wiped out after a move against you of", "Compte vidé après un mouvement contre toi de")}</dt><dd class="text-down">{Usd((gone_after * 100.0).round() as i64).to_string()}</dd></div>
                 </dl>
             }
         }}
-        <p class="mt-2 text-footnote text-text-muted">"Leverage changes the size you can open, so it magnifies losses exactly as much as gains."</p>
+        <p class="mt-2 text-footnote text-text-muted">{t("Leverage changes the size you can open, so it magnifies losses exactly as much as gains.", "L’effet de levier change la taille que tu peux ouvrir : il grossit donc les pertes exactement autant que les gains.")}</p>
     }
 }
 
 fn bid_ask() -> impl IntoView {
     let buy = RwSignal::new(true);
     view! {
-        <p class="tabular mt-2 text-headline">"Bid (sell) 4,150.20 · Ask (buy) 4,150.50"</p>
-        <div class="mt-3"><Segmented label="Action" value=buy options=vec![(true, "▲ Buy"), (false, "▼ Sell")] /></div>
+        <p class="tabular mt-2 text-headline">{ts(format!("Bid (sell) {} · Ask (buy) {}", price(415_020), price(415_050)), format!("Bid (vente) {} · Ask (achat) {}", price(415_020), price(415_050)))}</p>
+        <div class="mt-3"><Segmented label=t("Action", "Action") value=buy options=vec![(true, t("▲ Buy", "▲ Acheter")), (false, t("▼ Sell", "▼ Vendre"))] /></div>
         <p class="tabular mt-3 text-callout" aria-live="polite">
             {move || if buy.get() {
-                "You buy at the ask: 4,150.50. Selling straight back at the bid (4,150.20) would lose $0.30 per ounce: the spread."
+                t("You buy at the ask: 4,150.50. Selling straight back at the bid (4,150.20) would lose $0.30 per ounce: the spread.", "Tu achètes à l’ask : 4 150,50. Revendre aussitôt au bid (4 150,20) ferait perdre 0,30 $ par once : c’est le spread.")
             } else {
-                "You sell at the bid: 4,150.20. Buying straight back at the ask (4,150.50) would lose $0.30 per ounce: the spread."
+                t("You sell at the bid: 4,150.20. Buying straight back at the ask (4,150.50) would lose $0.30 per ounce: the spread.", "Tu vends au bid : 4 150,20. Racheter aussitôt à l’ask (4 150,50) ferait perdre 0,30 $ par once : c’est le spread.")
             }}
         </p>
     }
@@ -213,10 +227,10 @@ fn bid_ask() -> impl IntoView {
 
 fn win_rate() -> impl IntoView {
     let rate = RwSignal::new(40i64);
-    let text = Signal::derive(move || format!("{}% of trades win", rate.get()));
+    let text = Signal::derive(move || ts(format!("{}% of trades win", rate.get()), format!("{} % de trades gagnants", rate.get())));
     view! {
-        <p class="mt-2 text-callout">"Every win is +2R (twice the risk), every loss −1R. Risk $100 a trade. Set your win rate:"</p>
-        <Slider label="Win rate" value=rate min=20 max=80 step=5 valuetext=text />
+        <p class="mt-2 text-callout">{t("Every win is +2R (twice the risk), every loss −1R. Risk $100 a trade. Set your win rate:", "Chaque gain vaut +2R (deux fois le risque), chaque perte −1R. Risque 100 $ par trade. Règle ton taux de réussite :")}</p>
+        <Slider label=t("Win rate", "Taux de réussite") value=rate min=20 max=80 step=5 valuetext=text />
         {move || {
             let w = rate.get();
             // Expectancy per trade in hundredths of R: w×2 − (1−w)×1 = 3w − 1.
@@ -224,22 +238,22 @@ fn win_rate() -> impl IntoView {
             let (total, tone, arrow) = signed(exp_r100 * 100 * 100); // 100 trades × $100 per R, in cents
             view! {
                 <p class="tabular mt-2 text-headline" aria-live="polite">
-                    {format!("Win {w}% → {}{:.2}R per trade → over 100 trades: ", if exp_r100 >= 0 { "+" } else { "−" }, exp_r100.abs() as f64 / 100.0)}
+                    {ts(format!("Win {w}% → {}{}R per trade → over 100 trades: ", if exp_r100 >= 0 { "+" } else { "−" }, dec2(exp_r100.abs() as f64 / 100.0)), format!("Réussite {w} % → {}{}R par trade → sur 100 trades : ", if exp_r100 >= 0 { "+" } else { "−" }, dec2(exp_r100.abs() as f64 / 100.0)))}
                     <span class=tone>{arrow} " " {total}</span>
                 </p>
             }
         }}
-        <p class="mt-1 text-footnote text-text-muted">"With wins twice the size of losses, the break-even win rate is about 33%."</p>
+        <p class="mt-1 text-footnote text-text-muted">{t("With wins twice the size of losses, the break-even win rate is about 33%.", "Avec des gains deux fois plus gros que les pertes, le taux de réussite d’équilibre est d’environ 33 %.")}</p>
     }
 }
 
 fn pip_convert() -> impl IntoView {
     let size = RwSignal::new(10i64); // cents per pip
     view! {
-        <p class="mt-2 text-callout">"Someone says “a 50-pip stop on gold”. What do they mean by a pip?"</p>
-        <div class="mt-3"><Segmented label="Their pip size" value=size options=vec![(1, "$0.01"), (10, "$0.10"), (100, "$1")] /></div>
+        <p class="mt-2 text-callout">{t("Someone says “a 50-pip stop on gold”. What do they mean by a pip?", "Quelqu’un parle d’un « stop de 50 pips sur l’or ». Que veut-il dire par pip ?")}</p>
+        <div class="mt-3"><Segmented label=t("Their pip size", "Sa taille de pip") value=size options=vec![(1, t("$0.01", "0,01 $")), (10, t("$0.10", "0,10 $")), (100, t("$1", "1 $"))] /></div>
         <p class="tabular mt-3 text-headline" aria-live="polite">
-            {move || format!("50 pips × {} = a {} Dollar Move", Usd(size.get()), Usd(50 * size.get()))}
+            {move || ts(format!("50 pips × {} = a {} Dollar Move", Usd(size.get()), Usd(50 * size.get())), format!("50 pips × {} = un Mouvement en dollars de {}", Usd(size.get()), Usd(50 * size.get())))}
         </p>
     }
 }
@@ -253,11 +267,11 @@ fn session_clock() -> impl IntoView {
     let summer = RwSignal::new(false);
     let utc = move || if summer.get() { city_to_utc(City::NewYork, 2026, 7, 15, minute.get() as u32) } else { city_to_utc(City::NewYork, 2026, 11, 18, minute.get() as u32) };
     let hm = |m: u32| format!("{:02}:{:02}", m / 60, m % 60);
-    let text = Signal::derive(move || format!("{} New York time", hm(minute.get() as u32)));
+    let text = Signal::derive(move || ts(format!("{} New York time", hm(minute.get() as u32)), format!("{}, heure de New York", hm(minute.get() as u32))));
     view! {
-        <p class="mt-2 text-callout">"A Wednesday. Drag through the New York day:"</p>
-        <div class="mt-3"><Segmented label="Season" value=summer options=vec![(false, "November"), (true, "July")] /></div>
-        <Slider label="New York time" value=minute min=0 max=1410 step=30 valuetext=text />
+        <p class="mt-2 text-callout">{t("A Wednesday. Drag through the New York day:", "Un mercredi. Fais défiler la journée de New York :")}</p>
+        <div class="mt-3"><Segmented label=t("Season", "Saison") value=summer options=vec![(false, t("November", "Novembre")), (true, t("July", "Juillet"))] /></div>
+        <Slider label=t("New York time", "Heure de New York") value=minute min=0 max=1410 step=30 valuetext=text />
         {move || {
             let u = utc();
             let tokyo = ((u.rem_euclid(telosgard_core::DAY_MS) / 60_000) as u32 + 9 * 60) % 1440;
@@ -266,17 +280,17 @@ fn session_clock() -> impl IntoView {
             let session = SessionAnswer::from_sessions(&sessions_at(u));
             let window = no_trade_window(u, &[]);
             let (status, tone) = match (&window, session) {
-                (Some(telosgard_core::time::NoTrade::Rollover), _) => ("No-Trade Window: the daily rollover (5–6 pm New York)", "bg-bad-bg text-bad-ink"),
-                (_, SessionAnswer::Overlap) => ("London and New York: the overlap", "bg-ok-bg text-ok-ink"),
-                (_, SessionAnswer::NoneOpen) => ("Between sessions: quiet", "bg-raised text-text-muted"),
+                (Some(telosgard_core::time::NoTrade::Rollover), _) => (t("No-Trade Window: the daily rollover (5–6 pm New York)", "Fenêtre sans trade : le rollover quotidien (17 h–18 h à New York)"), "bg-bad-bg text-bad-ink"),
+                (_, SessionAnswer::Overlap) => (t("London and New York: the overlap", "Londres et New York : le chevauchement"), "bg-ok-bg text-ok-ink"),
+                (_, SessionAnswer::NoneOpen) => (t("Between sessions: quiet", "Entre deux séances : calme"), "bg-raised text-text-muted"),
                 (_, s) => (s.label(), "bg-warn-bg text-warn-ink"),
             };
             view! {
                 <dl class="tabular mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-callout sm:grid-cols-4" aria-live="polite">
                     <div><dt class="text-footnote text-text-muted">"New York"</dt><dd class="font-semibold">{hm(ny(u).minute)}</dd></div>
-                    <div><dt class="text-footnote text-text-muted">"London"</dt><dd class="font-semibold">{hm(london(u).minute)}</dd></div>
+                    <div><dt class="text-footnote text-text-muted">{t("London", "Londres")}</dt><dd class="font-semibold">{hm(london(u).minute)}</dd></div>
                     <div><dt class="text-footnote text-text-muted">"Tokyo"</dt><dd class="font-semibold">{hm(tokyo)}</dd></div>
-                    <div><dt class="text-footnote text-text-muted">"You"</dt><dd class="font-semibold">{mine}</dd></div>
+                    <div><dt class="text-footnote text-text-muted">{t("You", "Toi")}</dt><dd class="font-semibold">{mine}</dd></div>
                 </dl>
                 <p class=format!("mt-3 inline-block rounded-full px-3 py-1 text-footnote font-semibold {tone}")>{status}</p>
             }

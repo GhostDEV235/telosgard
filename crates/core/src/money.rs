@@ -130,8 +130,12 @@ impl Percent {
 }
 
 /// Parses a decimal string with up to two decimals ("2345.6", "$1,000", "-5") into hundredths.
+/// French input works too ("4 100,50", "0,20", "80 $"): a comma followed by one or two digits,
+/// with no point anywhere, is a decimal comma; any other comma groups thousands.
 fn parse_cents(s: &str) -> Option<i64> {
-    let s: String = s.trim().chars().filter(|c| !matches!(c, '$' | ',' | ' ' | '%')).collect();
+    let s: String = s.trim().replace('−', "-").chars().filter(|c| !matches!(c, '$' | ' ' | '%' | '\u{a0}' | '\u{202f}')).collect();
+    let decimal_comma = !s.contains('.') && s.rsplit_once(',').is_some_and(|(_, tail)| (1..=2).contains(&tail.len()));
+    let s: String = if decimal_comma { s.replacen(',', ".", 1) } else { s.replace(',', "") };
     let (neg, s) = match s.strip_prefix('-') {
         Some(rest) => (true, rest),
         None => (false, s.as_str()),
@@ -149,18 +153,25 @@ fn parse_cents(s: &str) -> Option<i64> {
     Some(if neg { -v } else { v })
 }
 
+/// "$4,150.00" in English; "4 150,00 $" in French (narrow no-break spaces), docs/FRENCH.md.
 fn fmt_cents(f: &mut fmt::Formatter<'_>, cents: i64, prefix: &str) -> fmt::Result {
+    let fr = crate::i18n::is_fr();
     let sign = if cents < 0 { "−" } else { "" };
     let abs = cents.unsigned_abs();
     let whole = (abs / 100).to_string();
     let mut grouped = String::new();
     for (i, ch) in whole.chars().enumerate() {
         if i > 0 && (whole.len() - i) % 3 == 0 {
-            grouped.push(',');
+            grouped.push(if fr { '\u{202f}' } else { ',' });
         }
         grouped.push(ch);
     }
-    write!(f, "{sign}{prefix}{grouped}.{:02}", abs % 100)
+    if fr {
+        let unit = if prefix.is_empty() { String::new() } else { format!("\u{a0}{prefix}") };
+        write!(f, "{sign}{grouped},{:02}{unit}", abs % 100)
+    } else {
+        write!(f, "{sign}{prefix}{grouped}.{:02}", abs % 100)
+    }
 }
 
 impl fmt::Display for Price {
@@ -180,19 +191,33 @@ impl fmt::Display for Usd {
 }
 impl fmt::Display for Lots {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}.{:02}", self.0 / 100, self.0 % 100)
+        let sep = if crate::i18n::is_fr() { ',' } else { '.' };
+        write!(f, "{}{sep}{:02}", self.0 / 100, self.0 % 100)
     }
 }
 impl fmt::Display for Percent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (w, r) = (self.0 / 100, self.0 % 100);
-        if r == 0 { write!(f, "{w}%") } else { write!(f, "{}%", format!("{w}.{r:02}").trim_end_matches('0')) }
+        let (sep, pct) = if crate::i18n::is_fr() { (",", "\u{a0}%") } else { (".", "%") };
+        if r == 0 { write!(f, "{w}{pct}") } else { write!(f, "{}{pct}", format!("{w}{sep}{r:02}").trim_end_matches('0')) }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn french_formatting_and_parsing() {
+        assert_eq!(Price::parse("4 100,50"), Price::parse("4100.50"));
+        assert_eq!(DollarMove::parse("0,30"), DollarMove::parse("0.30"));
+        assert_eq!(Usd::parse("1,000"), Usd::parse("1000"));
+        assert_eq!(Usd::parse("80 $"), Usd::parse("80"));
+        crate::i18n::set(crate::i18n::Lang::Fr);
+        let shown = (Price::parse("4150").unwrap().to_string(), Lots(20).to_string(), Percent::parse("0.5").unwrap().to_string());
+        crate::i18n::set(crate::i18n::Lang::En);
+        assert_eq!(shown, ("4\u{202f}150,00\u{a0}$".to_string(), "0,20".to_string(), "0,5\u{a0}%".to_string()));
+    }
 
     #[test]
     fn price_difference_is_a_dollar_move() {

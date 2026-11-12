@@ -107,6 +107,21 @@ pub fn lesson(id: u8) -> Option<&'static Lesson> {
     LESSONS.iter().find(|l| l.id == id)
 }
 
+/// The lesson in French when a French twin exists, otherwise in English.
+pub fn lesson_in(fr: bool, id: u8) -> Option<&'static Lesson> {
+    if fr {
+        if let Some(l) = LESSONS_FR.iter().find(|l| l.id == id) {
+            return Some(l);
+        }
+    }
+    lesson(id)
+}
+
+/// Every written lesson, each in French where a twin exists.
+pub fn lessons_in(fr: bool) -> Vec<&'static Lesson> {
+    LESSONS.iter().filter_map(|l| lesson_in(fr, l.id)).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -161,6 +176,13 @@ mod tests {
             let e: Vec<Expect> = l.explain.fixtures.iter().map(|f| f.expect).collect();
             assert_eq!(e, [Expect::GotIt, Expect::Almost, Expect::AlmostOrNotYet], "L{}", l.id);
         }
+    }
+
+    #[test]
+    fn every_lesson_has_a_french_twin() {
+        let fr: Vec<u8> = LESSONS_FR.iter().map(|l| l.id).collect();
+        let en: Vec<u8> = LESSONS.iter().map(|l| l.id).collect();
+        assert_eq!(fr, en, "lessons/fr/ must translate every written lesson");
     }
 
     #[test]

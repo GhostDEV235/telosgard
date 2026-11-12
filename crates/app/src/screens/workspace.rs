@@ -2,6 +2,7 @@
 //! and the course outline, a dot-grid canvas holding the screen as a frame, and a right panel where
 //! it adds context. Below 1024 px none of this shows; the bottom tab bar and one column remain.
 
+use crate::i18n::{t, ts};
 use crate::catalog::{self, SECTIONS};
 use crate::journal_data::{JournalData, today};
 use crate::router::{Route, Tab, lesson_href};
@@ -12,23 +13,23 @@ use leptos::prelude::*;
 /// The small Figma-style label above the frame.
 pub fn frame_label(route: &Route) -> String {
     match route {
-        Route::Today => "Today".into(),
+        Route::Today => t("Today", "Aujourd’hui").into(),
         Route::Lesson(id) => format!("{} · {}", catalog::eyebrow(*id), catalog::title(*id)),
-        Route::Practice => "Practice".into(),
-        Route::Drill(_) => "Practice · Drill".into(),
-        Route::Tools => "Tools · Position size".into(),
-        Route::Plan => "Tools · Trading Plan".into(),
+        Route::Practice => t("Practice", "Entraînement").into(),
+        Route::Drill(_) => t("Practice · Drill", "Entraînement · Exercice").into(),
+        Route::Tools => t("Tools · Position size", "Outils · Taille de position").into(),
+        Route::Plan => t("Tools · Trading Plan", "Outils · Plan de trading").into(),
         Route::Journal => "Journal".into(),
-        Route::Readiness => "Journal · Live Readiness".into(),
-        Route::Checklist => "Journal · Pre-Session Checklist".into(),
-        Route::Review => "Journal · Weekly Review".into(),
-        Route::TradeNew => "Journal · Log a Demo Trade".into(),
-        Route::TradeSkip => "Journal · Skipped setup".into(),
-        Route::Trade(_) => "Journal · Entry".into(),
+        Route::Readiness => t("Journal · Live Readiness", "Journal · Prêt pour le réel").into(),
+        Route::Checklist => t("Journal · Pre-Session Checklist", "Journal · Checklist avant la séance").into(),
+        Route::Review => t("Journal · Weekly Review", "Journal · Bilan de la semaine").into(),
+        Route::TradeNew => t("Journal · Log a Demo Trade", "Journal · Noter un Trade démo").into(),
+        Route::TradeSkip => t("Journal · Skipped setup", "Journal · Configuration écartée").into(),
+        Route::Trade(_) => t("Journal · Entry", "Journal · Entrée").into(),
         Route::GraderLab => "Lab · Grader".into(),
         Route::WidgetLab => "Lab · Widgets".into(),
         Route::QuestionStats => "Lab · Question stats".into(),
-        Route::Join(_) => "Join".into(),
+        Route::Join(_) => t("Join", "Rejoindre").into(),
     }
 }
 
@@ -45,17 +46,17 @@ fn nav_icon(tab: Tab) -> impl IntoView {
 pub fn Sidebar() -> impl IntoView {
     let route = expect_context::<RwSignal<Route>>();
     let appearance = expect_context::<crate::screens::shell::AppearanceOpen>().0;
-    let items = [(Tab::Today, "#today", "Today"), (Tab::Practice, "#practice", "Practice"), (Tab::Tools, "#size", "Tools"), (Tab::Journal, "#journal", "Journal")];
+    let items = [(Tab::Today, "#today", t("Today", "Aujourd’hui")), (Tab::Practice, "#practice", t("Practice", "Entraînement")), (Tab::Tools, "#size", t("Tools", "Outils")), (Tab::Journal, "#journal", "Journal")];
     view! {
         <aside
-            aria-label="Workspace"
+            aria-label=t("Workspace", "Espace de travail")
             class="sticky top-0 hidden h-dvh w-[240px] shrink-0 flex-col xl:w-[272px] border-r border-hairline bg-bg lg:flex"
         >
             <div class="flex items-center gap-2.5 px-5 pt-5 pb-4">
                 <span class="grid size-7 place-items-center rounded-[8px] bg-gold-fill pb-px font-display text-headline font-semibold text-on-gold" aria-hidden="true">"T"</span>
                 <span class="font-display text-headline font-medium">"Telosgard"</span>
             </div>
-            <nav aria-label="Main" class="px-3">
+            <nav aria-label=t("Main", "Principal") class="px-3">
                 <ul class="grid gap-0.5">
                     {items
                         .into_iter()
@@ -81,14 +82,14 @@ pub fn Sidebar() -> impl IntoView {
                 </ul>
             </nav>
             <div class="mx-5 mt-5 mb-2 border-t border-hairline"></div>
-            <p id="outline-h" class="px-5 pb-1 text-eyebrow text-eyebrow-ink">"Course"</p>
+            <p id="outline-h" class="px-5 pb-1 text-eyebrow text-eyebrow-ink">{t("Course", "Cours")}</p>
             <nav aria-labelledby="outline-h" class="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
                 <CourseOutline />
             </nav>
             <div class="border-t border-hairline px-3 py-3">
                 <button
                     type="button"
-                    aria-label="Appearance and about"
+                    aria-label=t("Appearance and about", "Apparence et à propos")
                     class="press flex min-h-10 w-full items-center gap-3 rounded-btn px-2.5 text-left text-callout text-text-muted hover:bg-surface/60 hover:text-text"
                     on:click=move |_| appearance.set(true)
                 >
@@ -96,7 +97,7 @@ pub fn Sidebar() -> impl IntoView {
                         <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7" />
                         <path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" />
                     </svg>
-                    "Appearance"
+                    {t("Appearance", "Apparence")}
                 </button>
             </div>
         </aside>
@@ -132,16 +133,17 @@ fn CourseOutline() -> impl IntoView {
                                     <svg viewBox="0 0 12 12" class="size-3 shrink-0 text-text-muted transition-transform group-open:rotate-90" aria-hidden="true">
                                         <path d="M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
-                                    <span class="min-w-0 flex-1 truncate">{s.title}</span>
+                                    <span class="min-w-0 flex-1 truncate">{s.title.get()}</span>
                                     <span class="tabular shrink-0 text-footnote text-text-muted">{move || format!("{}/{total}", done())}</span>
                                 </summary>
                                 <ul class="mt-0.5 mb-1 ml-4 grid grid-cols-1 gap-px border-l border-hairline pl-1.5">
-                                    {s.lessons.iter().map(|(id, title)| {
+                                    {s.lessons.iter().map(|(id, _)| {
                                         let id = *id;
+                                        let title = catalog::title(id);
                                         let state = move || {
-                                            if progress.passed(id) { ("✓", "text-gold", "passed") }
-                                            else if progress.unlocked(id) { ("●", "text-text", "open") }
-                                            else { ("🔒", "text-text-muted", "locked") }
+                                            if progress.passed(id) { ("✓", "text-gold", t("passed", "réussie")) }
+                                            else if progress.unlocked(id) { ("●", "text-text", t("open", "ouverte")) }
+                                            else { ("🔒", "text-text-muted", t("locked", "verrouillée")) }
                                         };
                                         let here = move || viewing() == Some(id);
                                         move || {
@@ -153,10 +155,10 @@ fn CourseOutline() -> impl IntoView {
                                             let inner = view! {
                                                 <span class=format!("w-4 shrink-0 text-center {tone}") aria-hidden="true">{glyph}</span>
                                                 <span class="tabular w-5 shrink-0">{catalog::label(id)}</span>
-                                                <span class="min-w-0 flex-1 truncate">{*title}</span>
+                                                <span class="min-w-0 flex-1 truncate">{title}</span>
                                                 <span class="sr-only">{format!(", {word}")}</span>
                                             };
-                                            if word == "locked" {
+                                            if glyph == "🔒" {
                                                 view! { <li><span class=row>{inner}</span></li> }.into_any()
                                             } else {
                                                 view! {
@@ -183,38 +185,38 @@ pub fn JournalPanel() -> impl IntoView {
     let journal = expect_context::<JournalData>();
     let route = expect_context::<RwSignal<Route>>();
     view! {
-        <aside aria-label="Readiness at a glance" class="sticky top-0 hidden h-dvh w-[272px] shrink-0 overflow-y-auto border-l border-hairline bg-bg px-4 xl:w-[300px] xl:px-5 py-6 lg:block">
-            <p class="text-eyebrow text-eyebrow-ink">"Live Readiness"</p>
+        <aside aria-label=t("Readiness at a glance", "Préparation en un coup d’œil") class="sticky top-0 hidden h-dvh w-[272px] shrink-0 overflow-y-auto border-l border-hairline bg-bg px-4 xl:w-[300px] xl:px-5 py-6 lg:block">
+            <p class="text-eyebrow text-eyebrow-ink">{t("Live Readiness", "Prêt pour le réel")}</p>
             {move || match journal.readiness_progress() {
                 Some((run, p)) => view! {
-                    <p class="mt-1 text-footnote text-text-muted">{format!("Run {} · started with {}", run.run.number, run.run.starting_balance)}</p>
+                    <p class="mt-1 text-footnote text-text-muted">{ts(format!("Run {} · started with {}", run.run.number, run.run.starting_balance), format!("Série {} · départ avec {}", run.run.number, run.run.starting_balance))}</p>
                     <dl class="mt-4 grid gap-3">
                         <div class="flex items-baseline justify-between gap-3 border-b border-hairline pb-2">
-                            <dt class="text-footnote text-text-muted">"Trades counted"</dt>
+                            <dt class="text-footnote text-text-muted">{t("Trades counted", "Trades comptés")}</dt>
                             <dd class="tabular text-callout font-semibold"><crate::ui::moments::CountUp value=p.counted as i64 fmt=|v| format!("{v} / 50") /></dd>
                         </div>
-                        <Stat label="Followed the plan" value=if p.counted == 0 { "—".to_string() } else { p.adherence.to_string() } />
-                        <Stat label="Days" value=format!("{} / 56", p.days) />
-                        <Stat label="Drawdown" value=format!("{} of {}", p.drawdown, p.max_loss) />
+                        <Stat label=t("Followed the plan", "Plan respecté") value=if p.counted == 0 { "—".to_string() } else { p.adherence.to_string() } />
+                        <Stat label=t("Days", "Jours") value=format!("{} / 56", p.days) />
+                        <Stat label=t("Drawdown", "Drawdown") value=ts(format!("{} of {}", p.drawdown, p.max_loss), format!("{} sur {}", p.drawdown, p.max_loss)) />
                     </dl>
                 }.into_any(),
                 None => view! {
-                    <p class="mt-2 text-callout text-text-muted">"Run 1 starts with your first journaled trade."</p>
+                    <p class="mt-2 text-callout text-text-muted">{t("Run 1 starts with your first journaled trade.", "La série 1 commence avec ton premier trade noté au journal.")}</p>
                 }.into_any(),
             }}
-            <a href="#readiness" class="mt-3 inline-block min-h-11 py-2 text-callout underline underline-offset-4">"Open Live Readiness"</a>
+            <a href="#readiness" class="mt-3 inline-block min-h-11 py-2 text-callout underline underline-offset-4">{t("Open Live Readiness", "Ouvrir « Prêt pour le réel »")}</a>
             <div class="my-5 border-t border-hairline"></div>
-            <p class="text-eyebrow text-eyebrow-ink">"Today"</p>
+            <p class="text-eyebrow text-eyebrow-ink">{t("Today", "Aujourd’hui")}</p>
             {move || {
                 let done = journal.checklist(today()).is_some();
                 view! {
                     <p class="mt-2 flex items-center gap-2 text-callout">
                         <span class=if done { "text-up" } else { "text-text-muted" } aria-hidden="true">{if done { "✓" } else { "○" }}</span>
-                        {if done { "Pre-Session Checklist done" } else { "Pre-Session Checklist not done yet" }}
+                        {if done { t("Pre-Session Checklist done", "Checklist avant la séance faite") } else { t("Pre-Session Checklist not done yet", "Checklist avant la séance pas encore faite") }}
                     </p>
                     {(route.get() != Route::Checklist).then(|| view! {
                         <a href="#checklist" class="mt-1 inline-block min-h-11 py-2 text-callout underline underline-offset-4">
-                            {if done { "Review checklist" } else { "Start checklist" }}
+                            {if done { t("Review checklist", "Revoir la checklist") } else { t("Start checklist", "Commencer la checklist") }}
                         </a>
                     })}
                 }

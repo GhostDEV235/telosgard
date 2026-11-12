@@ -1,5 +1,6 @@
 //! Lesson reader: text → videos → quiz → Explain-Back → gate (CURRICULUM authoring order).
 
+use crate::i18n::{t, ts};
 use crate::catalog;
 use crate::grading;
 use telosgard_content::Lesson;
@@ -23,7 +24,7 @@ pub fn LessonScreen(id: LessonId) -> impl IntoView {
     // whole reader on every save, which reset the quiz to question 1 and lost Explain-Back results.
     let unlocked = Memo::new(move |_| progress.unlocked(id));
     view! {
-        <crate::screens::shell::SubBar back="#today" back_label="Today" title=title />
+        <crate::screens::shell::SubBar back="#today" back_label=t("Today", "Aujourd’hui") title=title />
         <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
             <p class="text-eyebrow text-eyebrow-ink">{catalog::eyebrow(id)}</p>
             <h1 class="mt-1 text-title1">{title}</h1>
@@ -43,13 +44,16 @@ pub fn LessonScreen(id: LessonId) -> impl IntoView {
 fn locked(id: LessonId) -> impl IntoView {
     let why = match id.predecessor() {
         Some(p) if !matches!(id.track(), telosgard_core::course::Track::Live | telosgard_core::course::Track::Advanced) => {
-            format!("Pass “{}” first. Lessons build on each other, so none can be skipped.", catalog::title(p))
+            ts(
+                format!("Pass “{}” first. Lessons build on each other, so none can be skipped.", catalog::title(p)),
+                format!("Réussis d’abord « {} ». Les leçons s’appuient les unes sur les autres : aucune ne peut être sautée.", catalog::title(p)),
+            )
         }
-        _ => "This track unlocks with Live Readiness: 50 disciplined Demo Trades over at least 8 weeks.".to_string(),
+        _ => t("This track unlocks with Live Readiness: 50 disciplined Demo Trades over at least 8 weeks.", "Ce parcours se débloque avec « Prêt pour le réel » : 50 Trades démo disciplinés sur au moins 8 semaines.").to_string(),
     };
     view! {
         <section class="mt-6 rounded-card bg-locked p-5">
-            <p class="text-headline">"🔒 Locked"</p>
+            <p class="text-headline">{t("🔒 Locked", "🔒 Verrouillée")}</p>
             <p class="mt-1 text-callout">{why}</p>
         </section>
     }
@@ -57,7 +61,7 @@ fn locked(id: LessonId) -> impl IntoView {
 
 pub fn content_for(id: LessonId) -> Option<&'static Lesson> {
     match id {
-        LessonId::Numbered(n) => telosgard_content::lesson(n),
+        LessonId::Numbered(n) => crate::i18n::lesson(n),
         _ => None,
     }
 }
@@ -65,9 +69,9 @@ pub fn content_for(id: LessonId) -> Option<&'static Lesson> {
 fn not_written() -> impl IntoView {
     view! {
         <section class="mt-6 rounded-card bg-surface p-5 shadow-card">
-            <p class="text-headline">"This lesson is written when you get close to it"</p>
+            <p class="text-headline">{t("This lesson is written when you get close to it", "Cette leçon sera écrite quand tu en approcheras")}</p>
             <p class="mt-1 text-callout text-text-muted">
-                "Each stage is written using what worked for you in the one before: which analogies landed, and where you got “Almost”."
+                {t("Each stage is written using what worked for you in the one before: which analogies landed, and where you got “Almost”.", "Chaque étape est écrite à partir de ce qui a marché pour toi dans la précédente : les analogies qui ont parlé, et là où tu as eu « Presque ».")}
             </p>
         </section>
     }
@@ -99,9 +103,9 @@ pub fn screens(l: &Lesson) -> Vec<Screen> {
 fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> AnyView {
     match s {
         Screen::Hook => view! {
-            <p class="text-eyebrow text-eyebrow-ink">"Start with a question"</p>
+            <p class="text-eyebrow text-eyebrow-ink">{t("Start with a question", "Commence par une question")}</p>
             <p class="mt-2 text-title2">{l.hook}</p>
-            <p class="mt-3 text-callout text-text-muted">"Have a guess in your head, then tap Next."</p>
+            <p class="mt-3 text-callout text-text-muted">{t("Have a guess in your head, then tap Next.", "Fais une hypothèse dans ta tête, puis touche Suivant.")}</p>
         }
         .into_any(),
         Screen::Step(i) => {
@@ -112,7 +116,7 @@ fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> A
                 {st.widget.map(|w| view! { <div class="mt-4"><crate::ui::widgets::Widget kind=w /></div> })}
                 {st.why_html.map(|w| view! {
                     <details class="mt-4 rounded-btn bg-bg p-3.5">
-                        <summary class="press min-h-11 cursor-pointer py-1 text-callout font-semibold">"Why? Tell me more"</summary>
+                        <summary class="press min-h-11 cursor-pointer py-1 text-callout font-semibold">{t("Why? Tell me more", "Pourquoi ? Dis-m’en plus")}</summary>
                         <div class="lesson-prose mt-2 text-callout" inner_html=w></div>
                     </details>
                 })}
@@ -125,7 +129,7 @@ fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> A
                         ask.set(Some(i))
                     }
                 }>
-                    "Ask Professor Aurel about this step"
+                    {t("Ask Professor Aurel about this step", "Poser une question au Professeur Aurel sur cette partie")}
                 </button>
             }
             .into_any()
@@ -134,22 +138,22 @@ fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> A
         Screen::Example => view! { <Callout kind=CalloutKind::Example text=l.example /> }.into_any(),
         Screen::Mistake => view! { <Callout kind=CalloutKind::Mistake text=l.mistake /> }.into_any(),
         Screen::Takeaways => view! {
-            <h2 class="text-headline">"Key takeaways"</h2>
+            <h2 class="text-headline">{t("Key takeaways", "À retenir")}</h2>
             <ul class="mt-3 grid gap-2">
-                {l.takeaways.iter().map(|t| view! {
-                    <li class="flex gap-3 text-callout"><span class="text-text-muted" aria-hidden="true">"✓"</span><span>{*t}</span></li>
+                {l.takeaways.iter().map(|tk| view! {
+                    <li class="flex gap-3 text-callout"><span class="text-text-muted" aria-hidden="true">"✓"</span><span>{*tk}</span></li>
                 }).collect_view()}
             </ul>
         }
         .into_any(),
         Screen::Videos => view! {
-            <h2 class="text-headline">"Watch (optional)"</h2>
+            <h2 class="text-headline">{t("Watch (optional)", "À regarder (facultatif)")}</h2>
             <div class="mt-3 grid gap-3">{l.videos.iter().map(|v| view! { <VideoCard video=v /> }).collect_view()}</div>
         }
         .into_any(),
         Screen::Recall => view! {
-            <p class="text-eyebrow text-eyebrow-ink">"Recall · from memory"</p>
-            <p class="mt-1 text-callout text-text-muted">"Three quick questions before the quiz. Practice only."</p>
+            <p class="text-eyebrow text-eyebrow-ink">{t("Recall · from memory", "Rappel · de mémoire")}</p>
+            <p class="mt-1 text-callout text-text-muted">{t("Three quick questions before the quiz. Practice only.", "Trois petites questions avant le quiz. Pour s’entraîner seulement.")}</p>
             <div class="mt-3">
                 <QuizCard questions=l.recall.iter().map(|q| QuizItem::course(l.id, q)).collect() on_done=|_| {} practice=true />
             </div>
@@ -186,7 +190,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
         progress.update(id, |p| p.record_quiz(score, now()));
         store.save_lesson(progress, id);
         if !was_passed && progress.passed(id) {
-            toasts.show("🏅 Lesson passed");
+            toasts.show(t("🏅 Lesson passed", "🏅 Leçon réussie"));
             moments.lesson_passed(progress, id);
         }
     };
@@ -207,19 +211,19 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
     };
 
     view! {
-        <p class="mt-3 text-footnote text-text-muted">{format!("About {} minutes, step by step", l.read_minutes)}</p>
-        <p class="mt-2 text-callout text-text-muted">"By the end, you'll be able to " {l.objective}</p>
+        <p class="mt-3 text-footnote text-text-muted">{ts(format!("About {} minutes, step by step", l.read_minutes), format!("Environ {} minutes, pas à pas", l.read_minutes))}</p>
+        <p class="mt-2 text-callout text-text-muted">{t("By the end, you'll be able to ", "À la fin, tu sauras ")} {l.objective}</p>
         {returning.then(|| view! {
-            <button type="button" class="press mt-2 min-h-11 text-callout underline underline-offset-4" on:click=move |_| to_quiz()>"Skip to the quiz ›"</button>
+            <button type="button" class="press mt-2 min-h-11 text-callout underline underline-offset-4" on:click=move |_| to_quiz()>{t("Skip to the quiz ›", "Aller directement au quiz ›")}</button>
         })}
 
         <SpacedReview current=l.id />
 
-        <section id="lesson-stepper" class="mt-6 scroll-mt-20 rounded-card bg-surface p-5 shadow-card" aria-label="Lesson steps">
+        <section id="lesson-stepper" class="mt-6 scroll-mt-20 rounded-card bg-surface p-5 shadow-card" aria-label=t("Lesson steps", "Parties de la leçon")>
             <div class="flex items-center justify-between gap-3">
-                <p class="tabular text-eyebrow text-eyebrow-ink">{move || format!("Step {} of {n}", pos.get() + 1)}</p>
+                <p class="tabular text-eyebrow text-eyebrow-ink">{move || ts(format!("Step {} of {n}", pos.get() + 1), format!("Partie {} sur {n}", pos.get() + 1))}</p>
             </div>
-            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-bg" role="progressbar" aria-label="Lesson progress" aria-valuemin="1" aria-valuemax=n aria-valuenow=move || pos.get() + 1>
+            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-bg" role="progressbar" aria-label=t("Lesson progress", "Progression dans la leçon") aria-valuemin="1" aria-valuemax=n aria-valuenow=move || pos.get() + 1>
                 <div class="h-full rounded-full bg-fill transition-[width]" style=move || format!("width:{}%", (pos.get() + 1) * 100 / n)></div>
             </div>
             <div class="mt-5 min-h-48" aria-live="polite">
@@ -230,18 +234,18 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
                 }}
             </div>
             <div class="mt-6 flex items-center justify-between gap-3">
-                <button type="button" class=PILL_GHOST disabled=move || pos.get() == 0 on:click=move |_| go(pos.get_untracked().saturating_sub(1))>"‹ Back"</button>
+                <button type="button" class=PILL_GHOST disabled=move || pos.get() == 0 on:click=move |_| go(pos.get_untracked().saturating_sub(1))>{t("‹ Back", "‹ Retour")}</button>
                 {move || if pos.get() + 1 < n {
-                    view! { <button type="button" class=PILL on:click=move |_| go(pos.get_untracked() + 1)>"Next ›"</button> }.into_any()
+                    view! { <button type="button" class=PILL on:click=move |_| go(pos.get_untracked() + 1)>{t("Next ›", "Suivant ›")}</button> }.into_any()
                 } else {
-                    view! { <button type="button" class=PILL on:click=move |_| to_quiz()>"On to the quiz ›"</button> }.into_any()
+                    view! { <button type="button" class=PILL on:click=move |_| to_quiz()>{t("On to the quiz ›", "Place au quiz ›")}</button> }.into_any()
                 }}
             </div>
         </section>
 
         <Show when=move || reached_end.get() || returning>
             <div id="lesson-quiz" class="scroll-mt-20">
-                <h2 class="mt-10 font-display text-title2 font-medium">"Check your understanding"</h2>
+                <h2 class="mt-10 font-display text-title2 font-medium">{t("Check your understanding", "Vérifie ta compréhension")}</h2>
                 <div class="mt-3">
                     <QuizCard questions=l.quiz.iter().map(|q| QuizItem::course(l.id, q)).collect() on_done=on_quiz />
                 </div>
@@ -250,7 +254,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
                 <MorePractice lesson=l />
             </Show>
 
-            <h2 class="mt-10 font-display text-title2 font-medium">"Explain it back"</h2>
+            <h2 class="mt-10 font-display text-title2 font-medium">{t("Explain it back", "Explique-le avec tes mots")}</h2>
             <div class="mt-3">
                 <ExplainBack id=id prompt=l.explain.prompt />
             </div>
@@ -263,7 +267,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
         <AskStep lesson=l ask=ask />
 
         <details class="mt-10 text-footnote text-text-muted lg:hidden">
-            <summary class="press min-h-11 cursor-pointer py-2">"Sources for this lesson"</summary>
+            <summary class="press min-h-11 cursor-pointer py-2">{t("Sources for this lesson", "Sources de cette leçon")}</summary>
             <ul class="mt-2 grid gap-2">
                 {l.sources
                     .iter()
@@ -271,7 +275,7 @@ fn reader(id: LessonId, l: &'static Lesson) -> impl IntoView {
                         view! {
                             <li>
                                 <a href=s.url target="_blank" rel="noopener noreferrer" class="underline underline-offset-2">{s.name}</a>
-                                {format!(" · checked {}", s.checked)}
+                                {ts(format!(" · checked {}", s.checked), format!(" · vérifiée le {}", s.checked))}
                                 <span class="block">{s.claim}</span>
                             </li>
                         }
@@ -303,7 +307,7 @@ fn SpacedReview(current: u8) -> impl IntoView {
         let recs = store.qrecs.get_untracked();
         let questions: Vec<(QuestionKey, &'static telosgard_content::QuizQ)> = passed
             .iter()
-            .filter_map(|n| telosgard_content::lesson(*n))
+            .filter_map(|n| crate::i18n::lesson(*n))
             .flat_map(|l| l.quiz.iter().chain(l.recall.iter()).map(move |q| (QuestionKey::new(l.id, q.id), q)))
             .collect();
         let pool: Vec<_> = questions.iter().map(|(k, _)| (k.clone(), recs.get(&k.lesson).and_then(|m| m.get(&k.id)))).collect();
@@ -317,14 +321,14 @@ fn SpacedReview(current: u8) -> impl IntoView {
     move || {
         let items = picks.get();
         (!items.is_empty() && !skipped.get()).then(|| view! {
-            <section class="mt-6" aria-label="Spaced Review">
+            <section class="mt-6" aria-label=t("Spaced Review", "Révision espacée")>
                 <div class="flex items-baseline justify-between gap-3">
-                    <h2 class="text-headline">"A quick look back"</h2>
-                    <button type="button" class="press min-h-11 text-callout underline underline-offset-4" on:click=move |_| skipped.set(true)>"Skip"</button>
+                    <h2 class="text-headline">{t("A quick look back", "Petit retour en arrière")}</h2>
+                    <button type="button" class="press min-h-11 text-callout underline underline-offset-4" on:click=move |_| skipped.set(true)>{t("Skip", "Passer")}</button>
                 </div>
-                <p class="mt-1 text-callout text-text-muted">"Questions from earlier lessons, mostly ones you missed or guessed. Practice only."</p>
+                <p class="mt-1 text-callout text-text-muted">{t("Questions from earlier lessons, mostly ones you missed or guessed. Practice only.", "Des questions des leçons précédentes, surtout celles que tu as ratées ou devinées. Pour s’entraîner seulement.")}</p>
                 <div class="mt-3">
-                    <QuizCard questions=items on_done=|_| {} practice=true label="Spaced Review" />
+                    <QuizCard questions=items on_done=|_| {} practice=true label=t("Spaced Review", "Révision espacée") />
                 </div>
             </section>
         })
@@ -374,9 +378,9 @@ fn AskBody(lesson: &'static Lesson, #[prop(into)] step: Signal<Option<usize>>, i
         let Some(step) = step.get_untracked() else { return };
         let q = match telosgard_core::tutor::check_question(&question.get_untracked()) {
             Ok(q) => q,
-            Err(telosgard_core::tutor::QuestionError::Empty) => return error.set(Some("Type a question first.".into())),
+            Err(telosgard_core::tutor::QuestionError::Empty) => return error.set(Some(t("Type a question first.", "Écris d’abord une question.").into())),
             Err(telosgard_core::tutor::QuestionError::TooLong) => {
-                return error.set(Some(format!("Keep it under {} characters.", telosgard_core::tutor::MAX_QUESTION_CHARS)));
+                return error.set(Some(ts(format!("Keep it under {} characters.", telosgard_core::tutor::MAX_QUESTION_CHARS), format!("Reste sous les {} caractères.", telosgard_core::tutor::MAX_QUESTION_CHARS))));
             }
         };
         busy.set(true);
@@ -393,30 +397,30 @@ fn AskBody(lesson: &'static Lesson, #[prop(into)] step: Signal<Option<usize>>, i
         });
     };
     move || match step.get() {
-        None => view! { <p class="text-callout text-text-muted">"Open one of the lesson's steps to ask Professor Aurel about it."</p> }.into_any(),
+        None => view! { <p class="text-callout text-text-muted">{t("Open one of the lesson's steps to ask Professor Aurel about it.", "Ouvre une des parties de la leçon pour poser ta question au Professeur Aurel.")}</p> }.into_any(),
         Some(i) => {
             let st = &lesson.steps[i];
             let earlier = log.with(|v| v.iter().filter(|a| a.lesson == lesson.id && a.step == i).cloned().collect::<Vec<_>>());
             view! {
-                <p class="text-footnote text-text-muted">{format!("About “{}”. Professor Aurel answers about this lesson only, and never tells you what to trade. He is Telosgard's AI tutor.", st.heading)}</p>
+                <p class="text-footnote text-text-muted">{ts(format!("About “{}”. Professor Aurel answers about this lesson only, and never tells you what to trade. He is Telosgard's AI tutor.", st.heading), format!("Sur « {} ». Le Professeur Aurel ne répond que sur cette leçon, et ne te dit jamais quoi trader. C’est le tuteur IA de Telosgard.", st.heading))}</p>
                 <div class="mt-3 grid gap-3" aria-live="polite">
                     {earlier.into_iter().map(|a| view! {
                         <div class="rounded-btn bg-surface p-3.5 shadow-card">
                             <p class="text-callout font-semibold">{a.question}</p>
                             <p class="mt-1.5 whitespace-pre-line text-callout">{a.answer}</p>
-                            {a.truncated.then(|| view! { <p class="mt-1 text-footnote text-text-muted">"The answer was cut short. Try a narrower question."</p> })}
+                            {a.truncated.then(|| view! { <p class="mt-1 text-footnote text-text-muted">{t("The answer was cut short. Try a narrower question.", "La réponse a été coupée. Essaie une question plus précise.")}</p> })}
                         </div>
                     }).collect_view()}
                 </div>
                 <label class="mt-3 block">
-                    <span class="text-callout font-semibold">"Your question"</span>
-                    <textarea id=input_id rows="3" maxlength="500" class="mt-1.5 w-full rounded-field bg-surface p-3.5 text-callout shadow-card placeholder:text-text-muted" placeholder="What part of this step is unclear?" prop:value=move || question.get() on:input=move |ev| question.set(event_target_value(&ev))></textarea>
+                    <span class="text-callout font-semibold">{t("Your question", "Ta question")}</span>
+                    <textarea id=input_id rows="3" maxlength="500" class="mt-1.5 w-full rounded-field bg-surface p-3.5 text-callout shadow-card placeholder:text-text-muted" placeholder=t("What part of this step is unclear?", "Quel passage de cette partie n’est pas clair ?") prop:value=move || question.get() on:input=move |ev| question.set(event_target_value(&ev))></textarea>
                 </label>
                 {move || error.get().map(|e| view! { <p class="mt-2 text-callout text-down" role="alert">{e}</p> })}
                 <div class="mt-3 flex items-center justify-between gap-3">
-                    <p class="text-footnote text-text-muted">"Answers stay until you close the page."</p>
+                    <p class="text-footnote text-text-muted">{t("Answers stay until you close the page.", "Les réponses restent jusqu’à ce que tu fermes la page.")}</p>
                     <button type="button" class=PILL disabled=move || busy.get() on:click=move |_| send()>
-                        {move || if busy.get() { "Asking…" } else { "Ask" }}
+                        {move || if busy.get() { t("Asking…", "Question envoyée…") } else { t("Ask", "Demander") }}
                     </button>
                 </div>
             }.into_any()
@@ -442,7 +446,7 @@ fn AskStep(lesson: &'static Lesson, ask: RwSignal<Option<usize>>) -> impl IntoVi
         }
     });
     view! {
-        <Sheet open=open title="Ask Professor Aurel">
+        <Sheet open=open title=t("Ask Professor Aurel", "Demander au Professeur Aurel")>
             <AskBody lesson=lesson step=Signal::derive(move || ask.get()) input_id="ask-sheet-q" />
         </Sheet>
     }
@@ -450,14 +454,14 @@ fn AskStep(lesson: &'static Lesson, ask: RwSignal<Option<usize>>) -> impl IntoVi
 
 pub fn screen_title(l: &Lesson, s: Screen) -> &'static str {
     match s {
-        Screen::Hook => "Start with a question",
+        Screen::Hook => t("Start with a question", "Commence par une question"),
         Screen::Step(i) => l.steps[i].heading,
-        Screen::Analogy => "Analogy",
-        Screen::Example => "Real life",
-        Screen::Mistake => "Common mistake",
-        Screen::Takeaways => "Key takeaways",
-        Screen::Videos => "Watch (optional)",
-        Screen::Recall => "Recall",
+        Screen::Analogy => t("Analogy", "Analogie"),
+        Screen::Example => t("Real life", "Dans la vraie vie"),
+        Screen::Mistake => t("Common mistake", "Erreur fréquente"),
+        Screen::Takeaways => t("Key takeaways", "À retenir"),
+        Screen::Videos => t("Watch (optional)", "À regarder (facultatif)"),
+        Screen::Recall => t("Recall", "Rappel"),
     }
 }
 
@@ -481,12 +485,12 @@ pub fn LessonPanel(id: LessonId) -> impl IntoView {
             <li class="flex items-center gap-2 text-callout">
                 <span class=if met { "text-gold" } else { "text-text-muted" } aria-hidden="true">{if met { "✓" } else { "○" }}</span>
                 <span class=if met { "" } else { "text-text-muted" }>{text}</span>
-                <span class="sr-only">{if met { ", met" } else { ", not met yet" }}</span>
+                <span class="sr-only">{if met { t(", met", ", atteint") } else { t(", not met yet", ", pas encore atteint") }}</span>
             </li>
         };
         Some(view! {
-            <p class="text-eyebrow text-eyebrow-ink">"Progress"</p>
-            <p class="tabular mt-1 text-callout">{move || format!("Step {} of {n}", ui.pos.get().min(n - 1) + 1)}</p>
+            <p class="text-eyebrow text-eyebrow-ink">{t("Progress", "Progression")}</p>
+            <p class="tabular mt-1 text-callout">{move || ts(format!("Step {} of {n}", ui.pos.get().min(n - 1) + 1), format!("Partie {} sur {n}", ui.pos.get().min(n - 1) + 1))}</p>
             <div class="mt-2 h-1 overflow-hidden rounded-full bg-surface" aria-hidden="true">
                 <div class="h-full rounded-full bg-fill transition-[width] duration-200" style=move || format!("width:{}%", (ui.pos.get().min(n - 1) + 1) * 100 / n)></div>
             </div>
@@ -512,19 +516,19 @@ pub fn LessonPanel(id: LessonId) -> impl IntoView {
                 }).collect_view())}
             </ol>
             <div class="my-5 border-t border-hairline"></div>
-            <p class="text-eyebrow text-eyebrow-ink">"To unlock the next lesson"</p>
+            <p class="text-eyebrow text-eyebrow-ink">{t("To unlock the next lesson", "Pour débloquer la leçon suivante")}</p>
             {move || {
                 let p = progress.get(id);
                 view! {
                     <ul class="mt-2 grid gap-1.5">
-                        {check(p.quiz_met(), "Quiz ≥ 80%")}
-                        {check(p.explain_back_met(), "Explain-Back: Got it")}
+                        {check(p.quiz_met(), t("Quiz ≥ 80%", "Quiz ≥ 80 %"))}
+                        {check(p.explain_back_met(), t("Explain-Back: Got it", "Explique-le : Acquis"))}
                     </ul>
-                    {progress.passed(id).then(|| view! { <p class="mt-2 text-callout text-gold">"🏅 Lesson passed"</p> })}
+                    {progress.passed(id).then(|| view! { <p class="mt-2 text-callout text-gold">{t("🏅 Lesson passed", "🏅 Leçon réussie")}</p> })}
                 }
             }}
             <div class="my-5 border-t border-hairline"></div>
-            <p class="text-eyebrow text-eyebrow-ink">"Ask Professor Aurel"</p>
+            <p class="text-eyebrow text-eyebrow-ink">{t("Ask Professor Aurel", "Demander au Professeur Aurel")}</p>
             <div class="mt-2"><AskBody lesson=l step=step input_id="ask-panel-q" /></div>
             <div class="my-5 border-t border-hairline"></div>
             <p class="text-eyebrow text-eyebrow-ink">"Sources"</p>
@@ -532,14 +536,14 @@ pub fn LessonPanel(id: LessonId) -> impl IntoView {
                 {l.sources.iter().map(|s| view! {
                     <li>
                         <a href=s.url target="_blank" rel="noopener noreferrer" class="underline underline-offset-2">{s.name}</a>
-                        {format!(" · checked {}", s.checked)}
+                        {ts(format!(" · checked {}", s.checked), format!(" · vérifiée le {}", s.checked))}
                     </li>
                 }).collect_view()}
             </ul>
         })
     };
     view! {
-        <aside aria-label="Lesson panel" class="sticky top-0 hidden h-dvh w-[280px] shrink-0 overflow-y-auto border-l border-hairline bg-bg px-4 xl:w-[320px] xl:px-5 py-6 lg:block">
+        <aside aria-label=t("Lesson panel", "Panneau de la leçon") class="sticky top-0 hidden h-dvh w-[280px] shrink-0 overflow-y-auto border-l border-hairline bg-bg px-4 xl:w-[320px] xl:px-5 py-6 lg:block">
             {body}
         </aside>
     }
@@ -555,9 +559,9 @@ enum Phase {
 
 fn grade_chip(g: Grade) -> impl IntoView {
     let (label, class) = match g {
-        Grade::GotIt => ("✓ Got it", "bg-ok-bg text-ok-ink"),
-        Grade::Almost => ("Almost", "bg-warn-bg text-warn-ink"),
-        Grade::NotYet => ("Not yet", "bg-bad-bg text-bad-ink"),
+        Grade::GotIt => (t("✓ Got it", "✓ Acquis"), "bg-ok-bg text-ok-ink"),
+        Grade::Almost => (t("Almost", "Presque"), "bg-warn-bg text-warn-ink"),
+        Grade::NotYet => (t("Not yet", "Pas encore"), "bg-bad-bg text-bad-ink"),
     };
     view! { <span class=format!("inline-block rounded-full px-3 py-1 text-footnote font-semibold {class}")>{label}</span> }
 }
@@ -567,20 +571,20 @@ fn suggestion_view(s: String) -> impl IntoView {
     let parts = telosgard_core::grading::marked_segments(&s);
     view! {
         <div class="mt-3 rounded-btn border-l-4 border-fill bg-surface p-3.5">
-            <p class="text-eyebrow text-eyebrow-ink">"Your answer, with the missing piece added"</p>
+            <p class="text-eyebrow text-eyebrow-ink">{t("Your answer, with the missing piece added", "Ta réponse, avec ce qui manquait")}</p>
             <p class="mt-1.5 text-callout">
                 {parts
                     .into_iter()
-                    .map(|(t, added)| {
+                    .map(|(seg, added)| {
                         if added {
-                            view! { <mark class="rounded bg-fill/45 px-0.5 font-semibold text-text underline decoration-2 underline-offset-2">{t}</mark> }.into_any()
+                            view! { <mark class="rounded bg-fill/45 px-0.5 font-semibold text-text underline decoration-2 underline-offset-2">{seg}</mark> }.into_any()
                         } else {
-                            view! { <span>{t}</span> }.into_any()
+                            view! { <span>{seg}</span> }.into_any()
                         }
                     })
                     .collect_view()}
             </p>
-            <p class="mt-2 text-footnote text-text-muted">"The highlighted part is what was missing. Read it, then explain it again in your own words."</p>
+            <p class="mt-2 text-footnote text-text-muted">{t("The highlighted part is what was missing. Read it, then explain it again in your own words.", "La partie surlignée est ce qui manquait. Lis-la, puis réexplique avec tes propres mots.")}</p>
         </div>
     }
 }
@@ -588,7 +592,9 @@ fn suggestion_view(s: String) -> impl IntoView {
 fn short_date(ms: i64) -> String {
     let d = js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(ms as f64));
     const M: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    format!("{} {} · {:02}:{:02}", d.get_date(), M[d.get_month() as usize % 12], d.get_hours(), d.get_minutes())
+    const MF: [&str; 12] = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+    let m = d.get_month() as usize % 12;
+    format!("{} {} · {:02}:{:02}", d.get_date(), t(M[m], MF[m]), d.get_hours(), d.get_minutes())
 }
 
 #[component]
@@ -620,7 +626,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
 
     let submit = move |_| {
         let Some(lesson) = lesson else {
-            phase.set(Phase::Failed("This lesson doesn't have a grading rubric yet.".into()));
+            phase.set(Phase::Failed(t("This lesson doesn't have a grading rubric yet.", "Cette leçon n’a pas encore de grille de correction.").into()));
             return;
         };
         let answer = text.get_untracked();
@@ -645,7 +651,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                     attempts.update(|v| v.insert(0, attempt.clone()));
                     store.save_attempt(attempt);
                     if !was_passed && progress.passed(id) {
-                        toasts.show("🏅 Lesson passed");
+                        toasts.show(t("🏅 Lesson passed", "🏅 Leçon réussie"));
                         moments.lesson_passed(progress, id);
                     }
                     phase.set(Phase::Done(res));
@@ -658,25 +664,25 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
     let result = move || match phase.get() {
         Phase::Writing => ().into_any(),
         Phase::Grading => view! {
-            <p class="anim-fade mt-3 rounded-btn bg-bg p-3.5 text-callout" role="status">"Professor Aurel is reading your answer…"</p>
+            <p class="anim-fade mt-3 rounded-btn bg-bg p-3.5 text-callout" role="status">{t("Professor Aurel is reading your answer…", "Le Professeur Aurel lit ta réponse…")}</p>
         }
         .into_any(),
         Phase::Failed(msg) => view! {
             <div class="anim-fade mt-3 rounded-btn bg-bg p-3.5" role="alert">
                 <p class="text-callout">{msg}</p>
-                <button type="button" class=format!("{PILL_GHOST} mt-3") on:click=submit>"Try again"</button>
+                <button type="button" class=format!("{PILL_GHOST} mt-3") on:click=submit>{t("Try again", "Réessayer")}</button>
             </div>
         }
         .into_any(),
         Phase::Done(res) => {
             let extra = match res.grade {
                 Grade::GotIt => res.gap.clone().map(|tip| {
-                    view! { <p class="mt-3 text-callout"><span class="font-semibold">"One extra tip: "</span>{tip}</p> }.into_any()
+                    view! { <p class="mt-3 text-callout"><span class="font-semibold">{t("One extra tip: ", "Un conseil en plus : ")}</span>{tip}</p> }.into_any()
                 }),
                 Grade::Almost => res.gap.clone().map(|gap| {
                     view! {
                         <div class="mt-3 rounded-btn border-l-4 border-fill bg-surface p-3.5">
-                            <p class="text-eyebrow text-eyebrow-ink">"What's missing"</p>
+                            <p class="text-eyebrow text-eyebrow-ink">{t("What's missing", "Ce qui manque")}</p>
                             <p class="mt-1 text-callout">{gap}</p>
                         </div>
                     }
@@ -685,7 +691,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                 Grade::NotYet => res.reteach.clone().map(|r| {
                     view! {
                         <div class="mt-3 rounded-btn border-l-4 border-fill bg-surface p-3.5">
-                            <p class="text-eyebrow text-eyebrow-ink">"💡 Another way to see it"</p>
+                            <p class="text-eyebrow text-eyebrow-ink">{t("💡 Another way to see it", "💡 Une autre façon de voir")}</p>
                             <p class="mt-1 text-callout">{r}</p>
                         </div>
                     }
@@ -694,9 +700,9 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
             };
             let suggested = res.suggestion.clone().map(suggestion_view);
             let next = if res.grade == Grade::GotIt {
-                view! { <button type="button" class=format!("{PILL} mt-4") on:click=move |_| open.set(false)>"Done"</button> }.into_any()
+                view! { <button type="button" class=format!("{PILL} mt-4") on:click=move |_| open.set(false)>{t("Done", "Terminé")}</button> }.into_any()
             } else {
-                let label = if res.grade == Grade::Almost { "Rewrite my answer" } else { "Try again" };
+                let label = if res.grade == Grade::Almost { t("Rewrite my answer", "Réécrire ma réponse") } else { t("Try again", "Réessayer") };
                 view! { <button type="button" class=format!("{PILL} mt-4") on:click=move |_| phase.set(Phase::Writing)>{label}</button> }.into_any()
             };
             view! {
@@ -717,11 +723,11 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
         <section class="rounded-card bg-surface p-5 shadow-card">
             <p class="text-headline">{prompt}</p>
             <p class="mt-1 text-callout text-text-muted">
-                "Write it like you're explaining to a friend. Professor Aurel reads it for meaning, not wording."
+                {t("Write it like you're explaining to a friend. Professor Aurel reads it for meaning, not wording.", "Écris comme si tu expliquais à un ami. Le Professeur Aurel juge le sens, pas les mots.")}
             </p>
             <div class="mt-4 flex flex-wrap items-center gap-3">
                 <button type="button" class=PILL on:click=move |_| open.set(true)>
-                    {move || if progress.get(id).explain_back_met() { "Answer again" } else { "Write your answer" }}
+                    {move || if progress.get(id).explain_back_met() { t("Answer again", "Répondre à nouveau") } else { t("Write your answer", "Écrire ta réponse") }}
                 </button>
                 {move || progress.get(id).grade.map(grade_chip)}
             </div>
@@ -733,12 +739,12 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                         let reteach = (a.grade == Grade::NotYet).then_some(a.reteach.clone()).flatten();
                         view! {
                             <div class="anim-fade mt-4 rounded-btn bg-bg p-4">
-                                <p class="text-eyebrow text-eyebrow-ink">{format!("Your last answer · {}", short_date(a.at))}</p>
+                                <p class="text-eyebrow text-eyebrow-ink">{ts(format!("Your last answer · {}", short_date(a.at)), format!("Ta dernière réponse · {}", short_date(a.at)))}</p>
                                 <p class="mt-1.5 text-callout">{a.feedback.clone()}</p>
                                 {(a.grade == Grade::Almost).then_some(a.gap.clone()).flatten().map(|g| view! {
-                                    <p class="mt-2 text-callout"><span class="font-semibold">"What's missing: "</span>{g}</p>
+                                    <p class="mt-2 text-callout"><span class="font-semibold">{t("What's missing: ", "Ce qui manque : ")}</span>{g}</p>
                                 })}
-                                {reteach.map(|r| view! { <p class="mt-2 text-callout"><span class="font-semibold">"💡 Another way to see it: "</span>{r}</p> })}
+                                {reteach.map(|r| view! { <p class="mt-2 text-callout"><span class="font-semibold">{t("💡 Another way to see it: ", "💡 Une autre façon de voir : ")}</span>{r}</p> })}
                                 {a.suggestion.clone().map(suggestion_view)}
                             </div>
                         }
@@ -755,7 +761,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                                 aria-expanded=move || history_open.get().to_string()
                                 on:click=move |_| history_open.update(|o| *o = !*o)
                             >
-                                {format!("{n} previous attempt{} ", if n == 1 { "" } else { "s" })}
+                                {ts(format!("{n} previous attempt{} ", if n == 1 { "" } else { "s" }), format!("{n} tentative{} précédente{} ", if n == 1 { "" } else { "s" }, if n == 1 { "" } else { "s" }))}
                                 {move || if history_open.get() { "▴" } else { "▾" }}
                             </button>
                         }
@@ -783,24 +789,24 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
                 </ul>
             </Show>
         </section>
-        <Sheet open=open title="Explain-Back">
+        <Sheet open=open title=t("Explain-Back", "Explique-le")>
             <p class="text-callout">{prompt}</p>
             <textarea
                 rows="7"
-                aria-label="Your answer"
-                placeholder="In my own words…"
+                aria-label=t("Your answer", "Ta réponse")
+                placeholder=t("In my own words…", "Avec mes propres mots…")
                 disabled=move || !editing()
                 class="mt-3 w-full resize-y rounded-field bg-bg p-3.5 text-body text-text placeholder:text-text-muted focus:outline-2 focus:outline-text disabled:opacity-60"
                 prop:value=move || text.get()
                 on:input=move |ev| text.set(event_target_value(&ev))
             ></textarea>
-            <p class="tabular mt-1 text-right text-footnote text-text-muted">{move || format!("{} words", text.get().split_whitespace().count())}</p>
+            <p class="tabular mt-1 text-right text-footnote text-text-muted">{move || ts(format!("{} words", text.get().split_whitespace().count()), format!("{} mots", text.get().split_whitespace().count()))}</p>
             {result}
             <Show when=editing>
                 <div class="mt-4 flex flex-wrap justify-end gap-3">
-                    <button type="button" class=PILL_GHOST on:click=move |_| open.set(false)>"Close"</button>
+                    <button type="button" class=PILL_GHOST on:click=move |_| open.set(false)>{t("Close", "Fermer")}</button>
                     <button type="button" class=PILL disabled=move || text.get().split_whitespace().count() < 5 on:click=submit>
-                        "Submit for grading"
+                        {t("Submit for grading", "Envoyer pour correction")}
                     </button>
                 </div>
             </Show>
@@ -827,7 +833,7 @@ fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
     let rounds = RwSignal::new(0u32);
 
     let earlier = move || -> Vec<&'static Lesson> {
-        telosgard_content::LESSONS.iter().filter(|l| l.id < lesson.id && progress.passed(LessonId::Numbered(l.id))).collect()
+        crate::i18n::lessons().into_iter().filter(|l| l.id < lesson.id && progress.passed(LessonId::Numbered(l.id))).collect()
     };
     let start = move |scope: MoreScope| {
         let mut sources: Vec<&'static Lesson> = vec![lesson];
@@ -857,7 +863,7 @@ fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
                 round.get().map(|(n, items)| {
                     view! {
                         <div>
-                            <p class="mb-2 text-eyebrow text-eyebrow-ink">{format!("Practice round {n} · written by Professor Aurel")}</p>
+                            <p class="mb-2 text-eyebrow text-eyebrow-ink">{ts(format!("Practice round {n} · written by Professor Aurel"), format!("Série d’entraînement {n} · écrite par le Professeur Aurel"))}</p>
                             <QuizCard questions=items on_done=move |_| asking.set(true) practice=true />
                         </div>
                     }
@@ -866,14 +872,14 @@ fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
             <Show when=move || asking.get()>
                 <section class="anim-fade rounded-card bg-surface p-5 shadow-card" aria-live="polite">
                     <h3 class="text-headline">
-                        {move || if rounds.get() == 0 { "Want to be quizzed on more concepts?" } else { "Another round?" }}
+                        {move || if rounds.get() == 0 { t("Want to be quizzed on more concepts?", "Envie de questions sur d’autres notions ?") } else { t("Another round?", "Une autre série ?") }}
                     </h3>
                     <p class="mt-1 text-callout text-text-muted">
-                        "Professor Aurel writes 5 fresh questions. Practice only: it never changes your Gate."
+                        {t("Professor Aurel writes 5 fresh questions. Practice only: it never changes your Gate.", "Le Professeur Aurel écrit 5 nouvelles questions. Pour s’entraîner seulement : ça ne change jamais ta validation.")}
                     </p>
                     <div class="mt-4 flex flex-wrap gap-3">
                         <button type="button" class=PILL disabled=move || busy.get() on:click=move |_| start(MoreScope::ThisLesson)>
-                            "Yes, on this lesson"
+                            {t("Yes, on this lesson", "Oui, sur cette leçon")}
                         </button>
                         {move || {
                             let n = earlier().len();
@@ -881,16 +887,16 @@ fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
                                 .then(|| {
                                     view! {
                                         <button type="button" class=PILL_GHOST disabled=move || busy.get() on:click=move |_| start(MoreScope::SoFar)>
-                                            {format!("Yes, mix in {n} earlier lesson{}", if n == 1 { "" } else { "s" })}
+                                            {ts(format!("Yes, mix in {n} earlier lesson{}", if n == 1 { "" } else { "s" }), format!("Oui, en mélangeant {n} leçon{} précédente{}", if n == 1 { "" } else { "s" }, if n == 1 { "" } else { "s" }))}
                                         </button>
                                     }
                                 })
                         }}
                         <button type="button" class="press min-h-11 px-3 text-callout text-text-muted" on:click=move |_| asking.set(false)>
-                            "No thanks"
+                            {t("No thanks", "Non merci")}
                         </button>
                     </div>
-                    {move || busy.get().then(|| view! { <p class="mt-3 text-callout" role="status">"Professor Aurel is writing your questions…"</p> })}
+                    {move || busy.get().then(|| view! { <p class="mt-3 text-callout" role="status">{t("Professor Aurel is writing your questions…", "Le Professeur Aurel écrit tes questions…")}</p> })}
                     {move || error.get().map(|e| view! { <p class="mt-3 text-callout text-down" role="alert">"⚠ " {e}</p> })}
                 </section>
             </Show>

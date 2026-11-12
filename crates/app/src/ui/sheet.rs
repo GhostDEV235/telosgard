@@ -59,7 +59,7 @@ pub fn Sheet(
                                 view! {
                                     <button
                                         type="button"
-                                        aria-label="Close"
+                                        aria-label=crate::i18n::t("Close", "Fermer")
                                         class="press grid size-9 shrink-0 place-items-center rounded-full bg-bg text-text-muted"
                                         on:click=move |_| open.set(false)
                                     >

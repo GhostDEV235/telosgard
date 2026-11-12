@@ -1,6 +1,8 @@
 //! Explain-Back grading call: prompt from `telosgard_core::grading`, one `sample.json` call, strict check.
 //! No automatic retry on an unreadable reply (the platform asks pages not to); the UI offers "Try again".
 
+use crate::i18n::{t, ts};
+use telosgard_core::i18n::localize_prompt;
 use crate::platform::{self, PlatformError};
 use telosgard_content::{Expect, Lesson};
 use telosgard_core::gate::Grade;
@@ -16,10 +18,10 @@ impl GradeError {
     pub fn describe(&self) -> String {
         match self {
             GradeError::Platform(PlatformError::NotGranted) => {
-                "Professor Aurel can't grade right now: you may be signed out, or he isn't set up on the server yet. Nothing was graded.".into()
+                t("Professor Aurel can't grade right now: you may be signed out, or he isn't set up on the server yet. Nothing was graded.", "Le Professeur Aurel ne peut pas corriger pour l’instant : ta session a peut-être expiré, ou il n’est pas encore configuré sur le serveur. Rien n’a été corrigé.").into()
             }
-            GradeError::Platform(e) => format!("{} Nothing was graded.", e.describe()),
-            GradeError::Unreadable(_) => "Professor Aurel's reply didn't come back in the expected shape. Nothing was graded; try again.".into(),
+            GradeError::Platform(e) => ts(format!("{} Nothing was graded.", e.describe()), format!("{} Rien n’a été corrigé.", e.describe())),
+            GradeError::Unreadable(_) => t("Professor Aurel's reply didn't come back in the expected shape. Nothing was graded; try again.", "La réponse du Professeur Aurel n’est pas revenue sous la forme attendue. Rien n’a été corrigé ; réessaie.").into(),
         }
     }
 }
@@ -53,16 +55,19 @@ pub fn expect_label(e: Expect) -> &'static str {
 }
 
 pub async fn grade(lesson: &Lesson, answer: &str) -> Result<GradeResult, GradeError> {
-    let prompt = build_prompt(&input(lesson, answer));
+    let prompt = localize_prompt(build_prompt(&input(lesson, answer)));
     let value = platform::sample_json(&prompt, "default").await.map_err(GradeError::Platform)?;
     parse_grade(&value).map_err(GradeError::Unreadable)
 }
 
 /// One Adherence Verdict (or a dispute re-judgement) from Claude. Never assumes a pass.
 pub async fn judge(input: &telosgard_core::adherence::AdherenceInput<'_>) -> Result<telosgard_core::adherence::AdherenceResult, String> {
-    let prompt = telosgard_core::adherence::build_adherence_prompt(input);
-    let v = platform::sample_json(&prompt, "default").await.map_err(|e| GradeError::Platform(e).describe().replace("graded", "judged"))?;
-    telosgard_core::adherence::parse_adherence(&v).map_err(|_| "Professor Aurel's verdict didn't come back in the expected shape. Nothing was judged; try again.".to_string())
+    let prompt = localize_prompt(telosgard_core::adherence::build_adherence_prompt(input));
+    let v = platform::sample_json(&prompt, "default").await.map_err(|e| match e {
+        PlatformError::NotGranted => t("Professor Aurel can't judge right now: you may be signed out, or he isn't set up on the server yet. Nothing was judged.", "Le Professeur Aurel ne peut pas juger pour l’instant : ta session a peut-être expiré, ou il n’est pas encore configuré sur le serveur. Rien n’a été jugé.").to_string(),
+        e => ts(format!("{} Nothing was judged.", e.describe()), format!("{} Rien n’a été jugé.", e.describe())),
+    })?;
+    telosgard_core::adherence::parse_adherence(&v).map_err(|_| t("Professor Aurel's verdict didn't come back in the expected shape. Nothing was judged; try again.", "Le verdict du Professeur Aurel n’est pas revenu sous la forme attendue. Rien n’a été jugé ; réessaie.").to_string())
 }
 
 /// A Claude-written practice round (5 questions) on these lessons. Never counts towards a Gate.
@@ -74,11 +79,12 @@ pub async fn practice(lessons: &[&Lesson], avoid: &[String]) -> Result<Vec<telos
         .collect();
     let avoid: Vec<&str> = avoid.iter().map(String::as_str).collect();
     let ids: Vec<u8> = lessons.iter().map(|l| l.id).collect();
-    let prompt = build_practice_prompt(&sources, 5, &avoid);
-    let v = platform::sample_json(&prompt, "default")
-        .await
-        .map_err(|e| GradeError::Platform(e).describe().replace("Grading isn't available here", "Professor Aurel isn't available here").replace("Nothing was graded.", "No questions were written."))?;
-    parse_practice(&v, 5, &ids, &avoid).map_err(|_| "Professor Aurel's questions didn't come back in a usable shape. Try again.".to_string())
+    let prompt = localize_prompt(build_practice_prompt(&sources, 5, &avoid));
+    let v = platform::sample_json(&prompt, "default").await.map_err(|e| match e {
+        PlatformError::NotGranted => t("Professor Aurel can't write questions right now: you may be signed out, or he isn't set up on the server yet.", "Le Professeur Aurel ne peut pas écrire de questions pour l’instant : ta session a peut-être expiré, ou il n’est pas encore configuré sur le serveur.").to_string(),
+        e => ts(format!("{} No questions were written.", e.describe()), format!("{} Aucune question n’a été écrite.", e.describe())),
+    })?;
+    parse_practice(&v, 5, &ids, &avoid).map_err(|_| t("Professor Aurel's questions didn't come back in a usable shape. Try again.", "Les questions du Professeur Aurel ne sont pas revenues sous une forme utilisable. Réessaie.").to_string())
 }
 
 /// "Ask Professor Aurel about this step": one plain-text tutor call. Errors are messages to show; there is
@@ -95,9 +101,9 @@ pub async fn ask_step(l: &Lesson, step: usize, question: &str) -> Result<(String
         previous: step.checked_sub(1).zip(prev.as_deref()).map(|(i, t)| TutorStep { heading: l.steps[i].heading, text: t }),
         question,
     };
-    match platform::sample_text(&build_tutor_prompt(&input), "default").await {
-        Ok(r) => clean_answer(&r.text).map(|a| (a, r.truncated)).ok_or_else(|| "Professor Aurel sent back an empty answer. Try asking again.".to_string()),
-        Err(PlatformError::NotGranted) => Err("Professor Aurel can't answer right now: you may be signed out, or he isn't set up on the server yet.".into()),
+    match platform::sample_text(&localize_prompt(build_tutor_prompt(&input)), "default").await {
+        Ok(r) => clean_answer(&r.text).map(|a| (a, r.truncated)).ok_or_else(|| t("Professor Aurel sent back an empty answer. Try asking again.", "Le Professeur Aurel a renvoyé une réponse vide. Repose ta question.").to_string()),
+        Err(PlatformError::NotGranted) => Err(t("Professor Aurel can't answer right now: you may be signed out, or he isn't set up on the server yet.", "Le Professeur Aurel ne peut pas répondre pour l’instant : ta session a peut-être expiré, ou il n’est pas encore configuré sur le serveur.").into()),
         Err(e) => Err(e.describe()),
     }
 }

@@ -29,7 +29,14 @@ pub fn local_label(ms: Millis) -> String {
     let d = js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(ms as f64));
     const D: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const M: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    format!("{} {} {}, {:02}:{:02}", D[d.get_day() as usize % 7], d.get_date(), M[d.get_month() as usize % 12], d.get_hours(), d.get_minutes())
+    const DF: [&str; 7] = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+    const MF: [&str; 12] = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+    let (wd, m) = (d.get_day() as usize % 7, d.get_month() as usize % 12);
+    if crate::i18n::is_fr() {
+        format!("{} {} {}, {:02}:{:02}", DF[wd], d.get_date(), MF[m], d.get_hours(), d.get_minutes())
+    } else {
+        format!("{} {} {}, {:02}:{:02}", D[wd], d.get_date(), M[m], d.get_hours(), d.get_minutes())
+    }
 }
 
 pub fn local_hm(ms: Millis) -> String {

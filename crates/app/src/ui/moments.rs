@@ -3,6 +3,7 @@
 //! Moments fire only from the Learner's own action (a quiz or an Explain-Back that passes the Gate,
 //! or the readiness write), never when stored progress loads. All motion stops under reduced motion.
 
+use crate::i18n::{t, ts};
 use crate::catalog::SECTIONS;
 use crate::router::lesson_href;
 use crate::state::Progress;
@@ -34,8 +35,8 @@ impl Moments {
         let Some(i) = SECTIONS.iter().position(|s| s.lessons.iter().any(|(l, _)| *l == id)) else { return };
         let s = &SECTIONS[i];
         if s.lessons.iter().all(|(l, _)| progress.passed(*l)) {
-            let next = SECTIONS.get(i + 1).and_then(|n| n.lessons.first().map(|(l, _)| (*l, n.title)));
-            self.big.set(Some(BigMoment::Stage { eyebrow: s.eyebrow, title: s.title, lessons: s.lessons.len(), next }));
+            let next = SECTIONS.get(i + 1).and_then(|n| n.lessons.first().map(|(l, _)| (*l, n.title.get())));
+            self.big.set(Some(BigMoment::Stage { eyebrow: s.eyebrow.get(), title: s.title.get(), lessons: s.lessons.len(), next }));
         }
     }
 
@@ -88,16 +89,19 @@ pub fn BigMomentOverlay() -> impl IntoView {
         moments.big.get().map(|m| {
             let (eyebrow, title, body, action): (String, String, String, Option<(String, String)>) = match m {
                 BigMoment::Stage { eyebrow, title, lessons, next } => (
-                    format!("{eyebrow} complete"),
+                    ts(format!("{eyebrow} complete"), format!("{eyebrow} terminée")),
                     title.to_string(),
-                    format!("All {lessons} lessons understood and explained back. That's a real foundation, built one Gate at a time."),
-                    next.map(|(id, t)| (lesson_href(id), format!("Start {t} ›"))),
+                    ts(
+                        format!("All {lessons} lessons understood and explained back. That's a real foundation, built one Gate at a time."),
+                        format!("Les {lessons} leçons comprises et expliquées. C’est une vraie base, construite une validation à la fois."),
+                    ),
+                    next.map(|(id, n)| (lesson_href(id), ts(format!("Start {n} ›"), format!("Commencer « {n} » ›")))),
                 ),
                 BigMoment::Readiness => (
-                    "Live Readiness".into(),
-                    "You're ready for the Live Track".into(),
-                    "50 disciplined Demo Trades over at least 8 weeks. Profit was never the test: following your plan was. The Live Track is now open.".into(),
-                    Some(("#lesson-41".into(), "Open the Live Track ›".into())),
+                    t("Live Readiness", "Prêt pour le réel").into(),
+                    t("You're ready for the Live Track", "Le Parcours réel t’attend").into(),
+                    t("50 disciplined Demo Trades over at least 8 weeks. Profit was never the test: following your plan was. The Live Track is now open.", "50 Trades démo disciplinés sur au moins 8 semaines. Le gain n’a jamais été le critère : suivre ton plan, si. Le Parcours réel est maintenant ouvert.").into(),
+                    Some(("#lesson-41".into(), t("Open the Live Track ›", "Ouvrir le Parcours réel ›").into())),
                 ),
             };
             view! {
@@ -111,10 +115,10 @@ pub fn BigMomentOverlay() -> impl IntoView {
                         <div class="mt-6 flex flex-wrap justify-center gap-3">
                             {match action {
                                 Some((href, label)) => view! {
-                                    <button type="button" class=PILL_GHOST on:click=move |_| close()>"Close"</button>
+                                    <button type="button" class=PILL_GHOST on:click=move |_| close()>{t("Close", "Fermer")}</button>
                                     <a id="moment-primary" href=href class=PILL on:click=move |_| close()>{label}</a>
                                 }.into_any(),
-                                None => view! { <button id="moment-primary" type="button" class=PILL on:click=move |_| close()>"Close"</button> }.into_any(),
+                                None => view! { <button id="moment-primary" type="button" class=PILL on:click=move |_| close()>{t("Close", "Fermer")}</button> }.into_any(),
                             }}
                         </div>
                     </div>

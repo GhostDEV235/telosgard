@@ -3,6 +3,7 @@
 //! the same functions the session clock and the journal's Hard Rules use, so a drill can never
 //! disagree with the app.
 
+use crate::i18n::t;
 use crate::Millis;
 use crate::drills::Rng;
 use crate::plan::Session;
@@ -64,11 +65,11 @@ impl SessionAnswer {
 
     pub fn label(self) -> &'static str {
         match self {
-            SessionAnswer::Asian => "Asian (Tokyo)",
-            SessionAnswer::London => "London only",
-            SessionAnswer::Overlap => "London and New York: the overlap",
-            SessionAnswer::NewYork => "New York only",
-            SessionAnswer::NoneOpen => "None of the main sessions",
+            SessionAnswer::Asian => t("Asian (Tokyo)", "Asie (Tokyo)"),
+            SessionAnswer::London => t("London only", "Londres seulement"),
+            SessionAnswer::Overlap => t("London and New York: the overlap", "Londres et New York : le chevauchement"),
+            SessionAnswer::NewYork => t("New York only", "New York seulement"),
+            SessionAnswer::NoneOpen => t("None of the main sessions", "Aucune des grandes séances"),
         }
     }
 }
@@ -118,7 +119,15 @@ impl SessionQ {
     }
 
     pub fn prompt(&self) -> String {
-        format!("It's {} on a {} in {}, {} time. Which session is open?", self.clock(), self.day, self.month, self.city.name())
+        if crate::i18n::is_fr() {
+            let city = match self.city {
+                City::NewYork => "heure de New York",
+                City::London => "heure de Londres",
+            };
+            format!("Il est {}, {} un {} de {}. Quelle séance est ouverte ?", self.clock(), city, day_fr(self.day), month_fr(self.month))
+        } else {
+            format!("It's {} on a {} in {}, {} time. Which session is open?", self.clock(), self.day, self.month, self.city.name())
+        }
     }
 }
 
@@ -147,11 +156,11 @@ impl WindowAnswer {
 
     pub fn label(self) -> &'static str {
         match self {
-            WindowAnswer::Rollover => "Yes: the daily rollover",
-            WindowAnswer::SundayOpen => "Yes: the first hour after the Sunday open",
-            WindowAnswer::NearEvent => "Yes: within 5 minutes of a tier-1 release",
-            WindowAnswer::Closed => "Gold isn't trading then",
-            WindowAnswer::Clear => "No: you may trade if your plan allows",
+            WindowAnswer::Rollover => t("Yes: the daily rollover", "Oui : le rollover quotidien"),
+            WindowAnswer::SundayOpen => t("Yes: the first hour after the Sunday open", "Oui : la première heure après l’ouverture du dimanche"),
+            WindowAnswer::NearEvent => t("Yes: within 5 minutes of a tier-1 release", "Oui : à moins de 5 minutes d’une grande statistique"),
+            WindowAnswer::Closed => t("Gold isn't trading then", "L’or ne se trade pas à ce moment-là"),
+            WindowAnswer::Clear => t("No: you may trade if your plan allows", "Non : tu peux trader si ton plan le permet"),
         }
     }
 }
@@ -195,6 +204,9 @@ impl NoTradeQ {
 
     pub fn clock(&self) -> String {
         let (h, m) = (self.minute / 60, self.minute % 60);
+        if crate::i18n::is_fr() {
+            return format!("{h} h {m:02}");
+        }
         let (h12, ampm) = match h {
             0 => (12, "am"),
             1..=11 => (h, "am"),
@@ -205,14 +217,48 @@ impl NoTradeQ {
     }
 
     pub fn prompt(&self) -> String {
+        let fr = crate::i18n::is_fr();
         let event = match self.event {
             Some((name, at)) => {
                 let q = NoTradeQ { minute: at, ..self.clone() };
-                format!(" {name} is released at {} today.", q.clock())
+                if fr { format!(" {} est publié aujourd’hui à {}.", event_fr(name), q.clock()) } else { format!(" {name} is released at {} today.", q.clock()) }
             }
-            None => " No tier-1 release is scheduled today.".into(),
+            None => t(" No tier-1 release is scheduled today.", " Aucune grande statistique n’est prévue aujourd’hui.").into(),
         };
-        format!("{}, {} New York time.{event} Is this a No-Trade Window?", self.day, self.clock())
+        if fr {
+            format!("{}, {} heure de New York.{event} Est-ce une Fenêtre sans trade ?", day_fr(self.day), self.clock())
+        } else {
+            format!("{}, {} New York time.{event} Is this a No-Trade Window?", self.day, self.clock())
+        }
+    }
+}
+
+/// The French names used in drill prompts (the English ones are the keys).
+fn day_fr(day: &str) -> &'static str {
+    match day {
+        "Sunday" => "Dimanche",
+        "Monday" => "Lundi",
+        "Tuesday" => "Mardi",
+        "Wednesday" => "Mercredi",
+        "Thursday" => "Jeudi",
+        "Friday" => "Vendredi",
+        _ => "Samedi",
+    }
+}
+
+fn month_fr(month: &str) -> &'static str {
+    match month {
+        "July" => "juillet",
+        _ => "novembre",
+    }
+}
+
+/// French name of a tier-1 release, for prompts and explanations.
+pub fn event_fr(name: &str) -> &'static str {
+    match name {
+        "US CPI" => "Le CPI américain",
+        "The US jobs report (NFP)" => "Le rapport américain sur l’emploi (NFP)",
+        _ => "La décision du FOMC",
     }
 }
 

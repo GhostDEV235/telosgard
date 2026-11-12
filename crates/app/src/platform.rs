@@ -1,5 +1,6 @@
 //! Rust side of `bridge.js`: typed async calls over JSON strings (ARCHITECTURE §4).
 
+use crate::i18n::{t, ts};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -67,7 +68,7 @@ impl PlatformError {
             "invalid_argument" | "transform_error" | "invalid_request" | "prompt_too_large" => PlatformError::Invalid(message),
             "refused" => PlatformError::Claude(message),
             "auth" => PlatformError::Auth(message),
-            "invalid_json" => PlatformError::Claude("its reply couldn't be read".into()),
+            "invalid_json" => PlatformError::Claude(t("its reply couldn't be read", "sa réponse était illisible").into()),
             _ => PlatformError::Unavailable,
         }
     }
@@ -75,13 +76,13 @@ impl PlatformError {
     /// Short, plain-language text for a toast or banner.
     pub fn describe(&self) -> String {
         match self {
-            PlatformError::NotGranted => "This isn't available in this view (permission not granted, or signed out).".into(),
-            PlatformError::Unavailable => "Couldn't reach Telosgard's server. Check your connection and try again.".into(),
-            PlatformError::Revoked => "Access to this page changed. Reload to continue.".into(),
-            PlatformError::Quota(_) => "Storage is full. Nothing new can be saved.".into(),
-            PlatformError::RateLimited => "Too many requests. Wait a moment and try again.".into(),
-            PlatformError::Invalid(m) => format!("Something went wrong saving ({m})."),
-            PlatformError::Claude(m) => format!("Professor Aurel couldn't answer ({m})."),
+            PlatformError::NotGranted => t("This isn't available in this view (permission not granted, or signed out).", "Ce n’est pas disponible ici (autorisation refusée, ou session fermée).").into(),
+            PlatformError::Unavailable => t("Couldn't reach Telosgard's server. Check your connection and try again.", "Impossible de joindre le serveur de Telosgard. Vérifie ta connexion et réessaie.").into(),
+            PlatformError::Revoked => t("Access to this page changed. Reload to continue.", "L’accès à cette page a changé. Recharge-la pour continuer.").into(),
+            PlatformError::Quota(_) => t("Storage is full. Nothing new can be saved.", "Le stockage est plein. Plus rien de nouveau ne peut être enregistré.").into(),
+            PlatformError::RateLimited => t("Too many requests. Wait a moment and try again.", "Trop de demandes. Attends un instant et réessaie.").into(),
+            PlatformError::Invalid(m) => ts(format!("Something went wrong saving ({m})."), format!("Un problème est survenu à l’enregistrement ({m}).")),
+            PlatformError::Claude(m) => ts(format!("Professor Aurel couldn't answer ({m})."), format!("Le Professeur Aurel n’a pas pu répondre ({m}).")),
             PlatformError::Auth(m) => m.clone(),
         }
     }

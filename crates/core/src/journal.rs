@@ -1,5 +1,6 @@
 //! Journal Entries, deterministic Hard Rule evaluation, and the Adherence Verdict lifecycle (PRD FR-6).
 
+use crate::i18n::{t, ts};
 use crate::checklist::PreSessionChecklist;
 use crate::money::{Lots, Percent, Price, Usd};
 use crate::plan::{HardRules, Session};
@@ -74,37 +75,44 @@ pub fn evaluate_hard_rules(e: &TradeEntry, rules: &HardRules, day: &DayContext) 
     let risk_dist = e.stop.map(|s| -favour(s)).filter(|d| d.0 > 0);
 
     let stop = match (e.stop, risk_dist) {
-        (None, _) => r(HardRule::StopLoss, false, "No stop-loss was set. Every trade needs one.".into()),
+        (None, _) => r(HardRule::StopLoss, false, ts("No stop-loss was set. Every trade needs one.".into(), "Aucun stop-loss n’a été placé. Chaque trade en a besoin.".into())),
         (Some(s), None) => {
-            let side = if e.direction == Direction::Buy { "below" } else { "above" };
-            r(HardRule::StopLoss, false, format!("The stop at {s} must be {side} the entry at {}.", e.entry))
+            let buy = e.direction == Direction::Buy;
+            let side = if buy { "below" } else { "above" };
+            let cote = if buy { "sous" } else { "au-dessus de" };
+            r(HardRule::StopLoss, false, ts(format!("The stop at {s} must be {side} the entry at {}.", e.entry), format!("Le stop à {s} doit être {cote} l’entrée à {}.", e.entry)))
         }
-        (Some(s), Some(d)) => r(HardRule::StopLoss, true, format!("Stop-loss set at {s}, a {d} move away."))
+        (Some(s), Some(d)) => r(HardRule::StopLoss, true, ts(format!("Stop-loss set at {s}, a {d} move away."), format!("Stop-loss placé à {s}, à {d} de distance.")))
     };
 
     let risk = match risk_dist {
-        None => r(HardRule::RiskPerTrade, false, "Risk can't be measured without a valid stop-loss.".into()),
+        None => r(HardRule::RiskPerTrade, false, ts("Risk can't be measured without a valid stop-loss.".into(), "Impossible de mesurer le risque sans stop-loss valide.".into())),
         Some(d) => {
             let money = d.value(e.lots, e.contract_oz);
             let pct = Percent::of(money, e.balance_before);
             // Exact comparison: money / balance <= max_risk.
             let ok = money.0 as i128 * 10_000 <= rules.max_risk.0 as i128 * e.balance_before.0 as i128;
             let verdict = if ok { "within" } else { "above" };
-            r(HardRule::RiskPerTrade, ok, format!("Risk {money} ({pct}) is {verdict} your {} limit.", rules.max_risk))
+            let verdict_fr = if ok { "respecte" } else { "dépasse" };
+            r(HardRule::RiskPerTrade, ok, ts(format!("Risk {money} ({pct}) is {verdict} your {} limit.", rules.max_risk), format!("Le risque de {money} ({pct}) {verdict_fr} ta limite de {}.", rules.max_risk)))
         }
     };
 
     let reward_dist = e.take_profit.map(favour).filter(|d| d.0 > 0);
     let min = rules.min_reward_risk;
     let rr = match (risk_dist, e.take_profit, reward_dist) {
-        (None, _, _) => r(HardRule::MinRewardRisk, false, "Reward-to-risk can't be measured without a valid stop-loss.".into()),
-        (_, None, _) => r(HardRule::MinRewardRisk, false, "No take-profit was set, so reward-to-risk can't be measured.".into()),
-        (_, Some(tp), None) => r(HardRule::MinRewardRisk, false, format!("The take-profit at {tp} is on the losing side of the entry.")),
+        (None, _, _) => r(HardRule::MinRewardRisk, false, ts("Reward-to-risk can't be measured without a valid stop-loss.".into(), "Impossible de mesurer le rapport gain/risque sans stop-loss valide.".into())),
+        (_, None, _) => r(HardRule::MinRewardRisk, false, ts("No take-profit was set, so reward-to-risk can't be measured.".into(), "Aucun take-profit n’a été placé : impossible de mesurer le rapport gain/risque.".into())),
+        (_, Some(tp), None) => r(HardRule::MinRewardRisk, false, ts(format!("The take-profit at {tp} is on the losing side of the entry."), format!("Le take-profit à {tp} est du côté perdant de l’entrée."))),
         (Some(risk), _, Some(reward)) => {
             let ok = reward.0 * 100 >= min.0 as i64 * risk.0;
             let ratio = Percent((reward.0 * 100 / risk.0) as u32);
             let verdict = if ok { "meets" } else { "is below" };
-            r(HardRule::MinRewardRisk, ok, format!("Reward {reward} vs risk {risk} is {}R, which {verdict} your {}R minimum.", ratio_str(ratio), ratio_str(min)))
+            let verdict_fr = if ok { "atteint" } else { "est sous" };
+            r(HardRule::MinRewardRisk, ok, ts(
+                format!("Reward {reward} vs risk {risk} is {}R, which {verdict} your {}R minimum.", ratio_str(ratio), ratio_str(min)),
+                format!("Gain {reward} face à un risque de {risk} : {}R, ce qui {verdict_fr} ton minimum de {}R.", ratio_str(ratio), ratio_str(min)),
+            ))
         }
     };
 
@@ -112,7 +120,7 @@ pub fn evaluate_hard_rules(e: &TradeEntry, rules: &HardRules, day: &DayContext) 
 
     let nth = day.trades_earlier_today + 1;
     let ok = nth <= rules.max_trades_per_day;
-    let per_day = r(HardRule::TradesPerDay, ok, format!("Trade {nth} of the day; your limit is {}.", rules.max_trades_per_day));
+    let per_day = r(HardRule::TradesPerDay, ok, ts(format!("Trade {nth} of the day; your limit is {}.", rules.max_trades_per_day), format!("Trade n° {nth} de la journée ; ta limite est de {}.", rules.max_trades_per_day)));
 
     vec![stop, risk, rr, session, per_day, daily_loss_rule(e, rules, day), no_trade_rule(e, day), checklist_rule(day)]
 }
@@ -121,13 +129,17 @@ fn session_rule(e: &TradeEntry, rules: &HardRules) -> HardRuleResult {
     let now = sessions_at(e.at);
     let pass = now.iter().any(|s| rules.sessions.contains(s));
     let detail = match now.as_slice() {
-        [] => "No session was running when you entered.".to_string(),
+        [] => t("No session was running when you entered.", "Aucune séance n’était en cours au moment de ton entrée.").to_string(),
         [a, b] => {
             let verdict = if pass { "which your plan allows" } else { "neither of which your plan allows" };
-            format!("Entered in the overlap of {} and {}, {verdict}.", session_name(*a).to_lowercase(), session_name(*b).to_lowercase())
+            let verdict_fr = if pass { "que ton plan autorise" } else { "qu’aucune des deux n’est autorisée par ton plan" };
+            ts(
+                format!("Entered in the overlap of {} and {}, {verdict}.", session_name(*a).to_lowercase(), session_name(*b).to_lowercase()),
+                format!("Entrée pendant le chevauchement de {} et {}, {verdict_fr}.", session_name(*a).to_lowercase(), session_name(*b).to_lowercase()),
+            )
         }
-        [one, ..] if pass => format!("{} is one of your sessions.", session_name(*one)),
-        [one, ..] => format!("{} isn't one of your plan's sessions.", session_name(*one)),
+        [one, ..] if pass => ts(format!("{} is one of your sessions.", session_name(*one)), format!("{} fait partie de tes séances.", session_name(*one))),
+        [one, ..] => ts(format!("{} isn't one of your plan's sessions.", session_name(*one)), format!("{} ne fait pas partie des séances de ton plan.", session_name(*one))),
     };
     HardRuleResult { rule: HardRule::Session, pass, detail }
 }
@@ -139,9 +151,9 @@ fn daily_loss_rule(e: &TradeEntry, rules: &HardRules, day: &DayContext) -> HardR
     let pass = lost < limit;
     let r = ratio_str(rules.daily_loss_limit);
     let detail = if pass {
-        format!("Down {lost} today, under your {limit} ({r}R) daily limit.")
+        ts(format!("Down {lost} today, under your {limit} ({r}R) daily limit."), format!("−{lost} aujourd’hui, sous ta perte maximale du jour de {limit} ({r}R)."))
     } else {
-        format!("Down {lost} today: your {limit} ({r}R) daily limit was already reached.")
+        ts(format!("Down {lost} today: your {limit} ({r}R) daily limit was already reached."), format!("−{lost} aujourd’hui : ta perte maximale du jour de {limit} ({r}R) était déjà atteinte."))
     };
     HardRuleResult { rule: HardRule::DailyLossLimit, pass, detail }
 }
@@ -149,11 +161,11 @@ fn daily_loss_rule(e: &TradeEntry, rules: &HardRules, day: &DayContext) -> HardR
 fn no_trade_rule(e: &TradeEntry, day: &DayContext) -> HardRuleResult {
     let events = day.checklist.map(|c| c.tier_one()).unwrap_or_default();
     let (pass, detail) = match no_trade_window(e.at, &events) {
-        None => (true, "Outside every No-Trade Window.".to_string()),
-        Some(NoTrade::Rollover) => (false, "Entered during the daily rollover (17:00–18:00 New York), when spreads widen.".to_string()),
-        Some(NoTrade::SundayOpen) => (false, "Entered in the first hour after the Sunday open, when prices gap and spreads are wide.".to_string()),
-        Some(NoTrade::MarketClosed) => (false, "The market was closed at that time. Check the entry time.".to_string()),
-        Some(NoTrade::NearEvent { name }) => (false, format!("Entered within 5 minutes of {name}, a tier-1 release.")),
+        None => (true, t("Outside every No-Trade Window.", "En dehors de toute Fenêtre sans trade.").to_string()),
+        Some(NoTrade::Rollover) => (false, t("Entered during the daily rollover (17:00–18:00 New York), when spreads widen.", "Entrée pendant le rollover quotidien (17 h–18 h à New York), quand les spreads s’élargissent.").to_string()),
+        Some(NoTrade::SundayOpen) => (false, t("Entered in the first hour after the Sunday open, when prices gap and spreads are wide.", "Entrée dans la première heure après l’ouverture du dimanche, quand les prix font des gaps et que les spreads sont larges.").to_string()),
+        Some(NoTrade::MarketClosed) => (false, t("The market was closed at that time. Check the entry time.", "Le marché était fermé à cette heure-là. Vérifie l’heure d’entrée.").to_string()),
+        Some(NoTrade::NearEvent { name }) => (false, ts(format!("Entered within 5 minutes of {name}, a tier-1 release."), format!("Entrée à moins de 5 minutes de {name}, une grande statistique."))),
     };
     HardRuleResult { rule: HardRule::NoTradeWindow, pass, detail }
 }
@@ -161,22 +173,22 @@ fn no_trade_rule(e: &TradeEntry, day: &DayContext) -> HardRuleResult {
 fn checklist_rule(day: &DayContext) -> HardRuleResult {
     let pass = day.checklist.is_some();
     let detail = if pass {
-        "Pre-Session Checklist done for this day.".to_string()
+        t("Pre-Session Checklist done for this day.", "Checklist avant la séance faite pour ce jour.").to_string()
     } else {
-        "No Pre-Session Checklist was saved for this day.".to_string()
+        t("No Pre-Session Checklist was saved for this day.", "Aucune Checklist avant la séance n’a été enregistrée pour ce jour.").to_string()
     };
     HardRuleResult { rule: HardRule::ChecklistDone, pass, detail }
 }
 
 fn ratio_str(p: Percent) -> String {
-    p.to_string().trim_end_matches('%').to_string()
+    p.to_string().trim_end_matches('%').trim_end_matches('\u{a0}').to_string()
 }
 
 pub fn session_name(s: Session) -> &'static str {
     match s {
-        Session::Asian => "The Asian session",
-        Session::London => "The London session",
-        Session::NewYork => "The New York session",
+        Session::Asian => t("The Asian session", "La séance asiatique"),
+        Session::London => t("The London session", "La séance de Londres"),
+        Session::NewYork => t("The New York session", "La séance de New York"),
     }
 }
 
@@ -204,11 +216,11 @@ impl Emotion {
     pub const ALL: [Emotion; 5] = [Emotion::Calm, Emotion::Fomo, Emotion::Revenge, Emotion::Fear, Emotion::Overconfident];
     pub fn label(self) -> &'static str {
         match self {
-            Emotion::Calm => "Calm",
-            Emotion::Fomo => "FOMO",
-            Emotion::Revenge => "Revenge",
-            Emotion::Fear => "Fear",
-            Emotion::Overconfident => "Overconfident",
+            Emotion::Calm => t("Calm", "Calme"),
+            Emotion::Fomo => t("FOMO", "FOMO (peur de rater)"),
+            Emotion::Revenge => t("Revenge", "Revanche"),
+            Emotion::Fear => t("Fear", "Peur"),
+            Emotion::Overconfident => t("Overconfident", "Excès de confiance"),
         }
     }
 }
@@ -222,7 +234,8 @@ impl std::fmt::Display for RMultiple {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let tenths = (self.0.abs() + 5) / 10;
         let sign = if tenths == 0 { "" } else if self.0 < 0 { "−" } else { "+" };
-        write!(f, "{sign}{}.{}R", tenths / 10, tenths % 10)
+        let sep = if crate::i18n::is_fr() { ',' } else { '.' };
+        write!(f, "{sign}{}{sep}{}R", tenths / 10, tenths % 10)
     }
 }
 

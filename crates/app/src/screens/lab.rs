@@ -4,7 +4,6 @@
 
 use crate::grading;
 use crate::platform;
-use telosgard_content::LESSONS;
 use crate::screens::shell::SubBar;
 use crate::state::{Toasts, now};
 use crate::ui::controls::PILL;
@@ -57,7 +56,8 @@ pub fn GraderLab() -> impl IntoView {
     let results = RwSignal::new(Vec::<Outcome>::new());
     let running = RwSignal::new(false);
     let saved = RwSignal::new(None::<Result<usize, String>>);
-    let total: usize = LESSONS.iter().map(|l| l.explain.fixtures.len()).sum();
+    // In French the lab runs the French lessons' fixtures, so French grading is tuned too.
+    let total: usize = crate::i18n::lessons().iter().map(|l| l.explain.fixtures.len()).sum();
 
     // Grades one fixture. A dropped connection is retried once, so a network blip doesn't read as a miss.
     // The flag is true when every later call would fail the same way (out of quota, or not set up).
@@ -112,7 +112,7 @@ pub fn GraderLab() -> impl IntoView {
                 let n = list.len();
                 saved.set(Some(save(started_at, &list, total, false).await.map(|_| n).map_err(|e| e.describe())));
             };
-            'outer: for r in LESSONS.iter() {
+            'outer: for r in crate::i18n::lessons() {
                 for k in 0..r.explain.fixtures.len() {
                     if let Some(only) = &only {
                         if !only.contains(&(r.id, k)) {

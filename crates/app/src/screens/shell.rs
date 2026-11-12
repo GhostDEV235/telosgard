@@ -6,6 +6,7 @@ use crate::state::DisclaimerOpen;
 use crate::theme::ThemeChoice;
 use crate::ui::controls::{PILL, Segmented};
 use crate::ui::sheet::{Sheet, Toast};
+use crate::i18n::t;
 use leptos::prelude::*;
 
 const DISCLAIMER_KEY: &str = "gs-disclaimer";
@@ -14,8 +15,7 @@ const DISCLAIMER_KEY: &str = "gs-disclaimer";
 pub fn Shell() -> impl IntoView {
     let route = expect_context::<RwSignal<Route>>();
     let disclaimer = expect_context::<DisclaimerOpen>();
-    let appearance = RwSignal::new(false);
-    provide_context(AppearanceOpen(appearance));
+    let appearance = expect_context::<AppearanceOpen>().0;
     provide_context(crate::screens::lesson::TutorLog(RwSignal::new(Vec::new())));
     provide_context(crate::screens::lesson::LessonUi::new());
     provide_context(crate::ui::moments::Moments::new());
@@ -93,7 +93,7 @@ pub fn Shell() -> impl IntoView {
 fn RiskFooter() -> impl IntoView {
     view! {
         <footer class="gutter mx-auto max-w-[680px] pt-2 pb-6 text-center text-footnote text-text-muted">
-            "Education, not financial advice. Trading CFDs carries a high risk of losing money."
+            {t("Education, not financial advice. Trading CFDs carries a high risk of losing money.", "De la formation, pas du conseil financier. Trader des CFD comporte un risque élevé de perdre de l’argent.")}
         </footer>
     }
 }
@@ -124,7 +124,7 @@ pub fn LargeTitle(
             </div>
             <button
                 type="button"
-                aria-label="Appearance and about"
+                aria-label=t("Appearance and about", "Apparence et à propos")
                 class="press mb-1 grid size-10 shrink-0 place-items-center rounded-full bg-surface text-title2 shadow-card lg:hidden"
                 on:click=move |_| appearance.set(true)
             >
@@ -171,9 +171,9 @@ pub fn tab_icon(tab: Tab, class: &'static str) -> impl IntoView {
 #[component]
 fn TabBar() -> impl IntoView {
     let route = expect_context::<RwSignal<Route>>();
-    let tabs = [(Tab::Today, "#today", "Today"), (Tab::Practice, "#practice", "Practice"), (Tab::Tools, "#size", "Tools"), (Tab::Journal, "#journal", "Journal")];
+    let tabs = [(Tab::Today, "#today", t("Today", "Aujourd’hui")), (Tab::Practice, "#practice", t("Practice", "Entraînement")), (Tab::Tools, "#size", t("Tools", "Outils")), (Tab::Journal, "#journal", "Journal")];
     view! {
-        <nav aria-label="Main" class="glass gutter fixed inset-x-0 bottom-0 z-30 lg:hidden border-t border-line/30 pb-[env(safe-area-inset-bottom,0px)]">
+        <nav aria-label=t("Main", "Principal") class="glass gutter fixed inset-x-0 bottom-0 z-30 lg:hidden border-t border-line/30 pb-[env(safe-area-inset-bottom,0px)]">
             <ul class="mx-auto flex max-w-[560px] justify-around">
                 {tabs
                     .into_iter()
@@ -206,15 +206,20 @@ fn TabBar() -> impl IntoView {
 #[component]
 fn AppearanceSheet(open: RwSignal<bool>) -> impl IntoView {
     let theme = expect_context::<RwSignal<ThemeChoice>>();
+    let lang = expect_context::<crate::i18n::LangSignal>();
     let disclaimer = expect_context::<DisclaimerOpen>().0;
     view! {
-        <Sheet open=open title="Appearance">
+        <Sheet open=open title=t("Appearance", "Apparence")>
             <Segmented
-                label="Theme"
+                label=t("Theme", "Thème")
                 value=theme
-                options=vec![(ThemeChoice::System, "System"), (ThemeChoice::Dark, "Dark"), (ThemeChoice::Light, "Light")]
+                options=vec![(ThemeChoice::System, t("System", "Système")), (ThemeChoice::Dark, t("Dark", "Sombre")), (ThemeChoice::Light, t("Light", "Clair"))]
             />
-            <p class="mt-3 text-footnote text-text-muted">"System follows your device's setting."</p>
+            <p class="mt-3 text-footnote text-text-muted">{t("System follows your device's setting.", "« Système » suit le réglage de ton appareil.")}</p>
+            <div class="mt-5">
+                // Each option names itself in its own language, so either reader can find it.
+                <Segmented label=t("Language", "Langue") value=lang options=vec![(crate::i18n::Lang::En, "English"), (crate::i18n::Lang::Fr, "Français")] />
+            </div>
             <crate::screens::account::AccountSection />
             <hr class="my-5 border-line/30" />
             <button
@@ -225,7 +230,7 @@ fn AppearanceSheet(open: RwSignal<bool>) -> impl IntoView {
                     disclaimer.set(true);
                 }
             >
-                "About Telosgard & disclaimer"
+                {t("About Telosgard & disclaimer", "À propos de Telosgard et avertissement")}
             </button>
         </Sheet>
     }
@@ -243,14 +248,27 @@ fn Disclaimer(open: RwSignal<bool>) -> impl IntoView {
         store.update_profile(move |p| p.disclaimer_accepted_at = Some(at));
     };
     view! {
-        <Sheet open=open title="Before you start" dismissible=false>
-            <div class="grid gap-3 text-body">
-                <p>"Telosgard teaches you how gold trading works, step by step. It is " <strong>"education, not financial advice"</strong> "."</p>
-                <p>"It will never tell you to buy or sell, and it never shows live prices or signals. Charts in drills are illustrative, not real market data."</p>
-                <p>"Professor Aurel, who grades your explanations, judges your journal and answers your questions, is Telosgard's AI tutor."</p>
-                <p>"Trading can lose money, including more than you expect, quickly. That's why you'll practise on a " <strong>"demo account"</strong> " until your discipline is proven, and only then learn about going live."</p>
-            </div>
-            <button type="button" class=format!("{PILL} mt-6 w-full") on:click=accept>"I understand"</button>
+        <Sheet open=open title=t("Before you start", "Avant de commencer") dismissible=false>
+            {if crate::i18n::is_fr() {
+                view! {
+                    <div class="grid gap-3 text-body">
+                        <p>"Telosgard t’apprend comment fonctionne le trading de l’or, pas à pas. C’est de la " <strong>"formation, pas du conseil financier"</strong> "."</p>
+                        <p>"Il ne te dira jamais d’acheter ou de vendre, et n’affiche jamais de prix en direct ni de signaux. Les graphiques des exercices sont des illustrations, pas de vraies données de marché."</p>
+                        <p>"Le Professeur Aurel, qui note tes explications, juge ton journal et répond à tes questions, est le tuteur IA de Telosgard."</p>
+                        <p>"Le trading peut faire perdre de l’argent, parfois plus que prévu, et vite. C’est pour ça que tu t’entraîneras sur un " <strong>"compte démo"</strong> " jusqu’à ce que ta discipline soit prouvée, et seulement ensuite tu apprendras à passer au réel."</p>
+                    </div>
+                }.into_any()
+            } else {
+                view! {
+                    <div class="grid gap-3 text-body">
+                        <p>"Telosgard teaches you how gold trading works, step by step. It is " <strong>"education, not financial advice"</strong> "."</p>
+                        <p>"It will never tell you to buy or sell, and it never shows live prices or signals. Charts in drills are illustrative, not real market data."</p>
+                        <p>"Professor Aurel, who grades your explanations, judges your journal and answers your questions, is Telosgard's AI tutor."</p>
+                        <p>"Trading can lose money, including more than you expect, quickly. That's why you'll practise on a " <strong>"demo account"</strong> " until your discipline is proven, and only then learn about going live."</p>
+                    </div>
+                }.into_any()
+            }}
+            <button type="button" class=format!("{PILL} mt-6 w-full") on:click=accept>{t("I understand", "J’ai compris")}</button>
         </Sheet>
     }
 }

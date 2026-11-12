@@ -1,5 +1,8 @@
 //! Parses `lessons/NN-*.md` (TOML front matter between `+++` lines, Markdown body), enforces the
 //! CURRICULUM authoring rules, and writes `generated.rs`. Any rule broken fails the build.
+//! `lessons/fr/NN-*.md` are the French twins: same rules (with room for French running about a
+//! fifth longer), and the same structure as the English lesson: ids, answers, widgets, drills,
+//! videos and sources must match, so progress and Question Records are shared across languages.
 
 use serde::Deserialize;
 use std::fmt::Write as _;
@@ -7,6 +10,8 @@ use std::{env, fs, path::Path};
 
 const READ_WPM: usize = 130;
 const MAX_STEP_WORDS: usize = 60;
+/// French takes roughly 20% more words for the same text.
+const MAX_STEP_WORDS_FR: usize = 75;
 const WIDGETS: &[&str] = &["price_drag", "lots_money", "one_percent", "stop_first", "short_risk", "leverage_toggle", "bid_ask", "win_rate", "pip_convert", "session_clock"];
 /// The lesson about pips, the only one allowed to use the word.
 const PIPS_LESSON: u8 = 7;
@@ -106,10 +111,12 @@ fn mentions_pips(s: &str) -> bool {
     s.to_lowercase().split(|c: char| !c.is_ascii_alphanumeric()).any(|w| w == "pip" || w == "pips")
 }
 
-fn validate(file: &str, f: &Front, body: &str) -> (Vec<String>, usize) {
+fn validate(file: &str, f: &Front, body: &str, fr: bool) -> (Vec<String>, usize) {
+    let max_step = if fr { MAX_STEP_WORDS_FR } else { MAX_STEP_WORDS };
+    let max_minutes = if fr { 6 } else { 5 };
     let mut e = Vec::new();
     let mut err = |m: String| e.push(format!("{file}: {m}"));
-    let prefix: u8 = file.split('-').next().and_then(|n| n.parse().ok()).unwrap_or(0);
+    let prefix: u8 = file.rsplit('/').next().unwrap_or(file).split('-').next().and_then(|n| n.parse().ok()).unwrap_or(0);
     if prefix != f.id {
         err(format!("file number {prefix} doesn't match id {}", f.id));
     }
@@ -123,11 +130,11 @@ fn validate(file: &str, f: &Front, body: &str) -> (Vec<String>, usize) {
         err(format!("needs 3–6 steps, has {}", f.steps.len()));
     }
     for (i, st) in f.steps.iter().enumerate() {
-        if st.heading.trim().is_empty() || words(&st.heading) > 10 {
+        if st.heading.trim().is_empty() || words(&st.heading) > if fr { 12 } else { 10 } {
             err(format!("step {}: a heading of 1–10 words", i + 1));
         }
-        if words(&st.text) == 0 || words(&st.text) > MAX_STEP_WORDS {
-            err(format!("step {} has {} words of main text; keep it to {MAX_STEP_WORDS} and move detail into `why`", i + 1, words(&st.text)));
+        if words(&st.text) == 0 || words(&st.text) > max_step {
+            err(format!("step {} has {} words of main text; keep it to {max_step} and move detail into `why`", i + 1, words(&st.text)));
         }
         if let Some(w) = &st.widget {
             if !WIDGETS.contains(&w.as_str()) {
@@ -207,14 +214,53 @@ fn validate(file: &str, f: &Front, body: &str) -> (Vec<String>, usize) {
     }
     let total = words(&main) + f.takeaways.iter().map(|t| words(t)).sum::<usize>();
     let minutes = (total + READ_WPM / 2) / READ_WPM;
-    if !(2..=5).contains(&minutes) {
-        err(format!("the main path reads in ~{minutes} min ({total} words); target 2–5"));
+    if !(2..=max_minutes).contains(&minutes) {
+        err(format!("the main path reads in ~{minutes} min ({total} words); target 2–{max_minutes}"));
     }
     let with_why = total + words(&why_text.join(" "));
-    if (with_why + READ_WPM / 2) / READ_WPM > 8 {
+    if (with_why + READ_WPM / 2) / READ_WPM > if fr { 10 } else { 8 } {
         err(format!("with every \"Why?\" opened it reads in over 8 minutes ({with_why} words)"));
     }
     (e, minutes)
+}
+
+/// A French lesson must have the English lesson's shape, so one set of progress serves both.
+fn parity(file: &str, en: &Front, fr: &Front) -> Vec<String> {
+    let mut e = Vec::new();
+    let mut err = |m: &str| e.push(format!("fr/{file}: {m} differs from the English lesson"));
+    if en.stage != fr.stage {
+        err("stage");
+    }
+    let steps = |f: &Front| f.steps.iter().map(|s| (s.widget.clone(), s.why.is_some())).collect::<Vec<_>>();
+    if steps(en) != steps(fr) {
+        err("the steps (count, widgets or which have a Why?)");
+    }
+    let qs = |v: &[Quiz]| v.iter().map(|q| (q.id.clone(), q.options.len(), q.answer)).collect::<Vec<_>>();
+    if qs(&en.quiz) != qs(&fr.quiz) {
+        err("the quiz (ids, option counts or answers)");
+    }
+    if qs(&en.recall) != qs(&fr.recall) {
+        err("the Recall Set (ids, option counts or answers)");
+    }
+    if en.takeaways.len() != fr.takeaways.len() {
+        err("the number of takeaways");
+    }
+    let x = |f: &Front| (f.explain_back.must_include.len(), f.explain_back.misconceptions.len(), f.explain_back.fixtures.iter().map(|x| x.expect.clone()).collect::<Vec<_>>());
+    if x(en) != x(fr) {
+        err("the Explain-Back (key ideas, misconceptions or fixtures)");
+    }
+    let vids = |f: &Front| f.videos.iter().map(|v| (v.id.clone(), v.title.clone(), v.channel.clone(), v.duration.clone())).collect::<Vec<_>>();
+    if vids(en) != vids(fr) {
+        err("the videos (id, title, channel, duration stay as published)");
+    }
+    let srcs = |f: &Front| f.sources.iter().map(|s| s.url.clone()).collect::<Vec<_>>();
+    if srcs(en) != srcs(fr) {
+        err("the source urls");
+    }
+    if en.drills != fr.drills {
+        err("drills");
+    }
+    e
 }
 
 fn s(v: &str) -> String {
@@ -225,103 +271,132 @@ fn list(v: &[String]) -> String {
     format!("&[{}]", v.iter().map(|x| s(x)).collect::<Vec<_>>().join(", "))
 }
 
-fn main() {
-    let dir = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("lessons");
-    println!("cargo:rerun-if-changed={}", dir.display());
-    let mut files: Vec<_> = fs::read_dir(&dir).unwrap().filter_map(|e| e.ok()).map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "md")).collect();
-    files.sort();
+struct Parsed {
+    name: String,
+    front: Front,
+    body: String,
+}
 
-    let mut errors = Vec::new();
-    let mut out = String::from("pub static LESSONS: &[Lesson] = &[\n");
-    let mut seen = Vec::new();
+fn read_dir(dir: &Path, errors: &mut Vec<String>, label: &str) -> Vec<Parsed> {
+    println!("cargo:rerun-if-changed={}", dir.display());
+    let Ok(rd) = fs::read_dir(dir) else { return Vec::new() };
+    let mut files: Vec<_> = rd.filter_map(|e| e.ok()).map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "md")).collect();
+    files.sort();
+    let mut out = Vec::new();
     for path in &files {
         println!("cargo:rerun-if-changed={}", path.display());
         let name = path.file_name().unwrap().to_string_lossy().to_string();
         let text = fs::read_to_string(path).unwrap();
         let Some(rest) = text.strip_prefix("+++\n") else {
-            errors.push(format!("{name}: must start with +++ front matter"));
+            errors.push(format!("{label}{name}: must start with +++ front matter"));
             continue;
         };
         let Some((front, body)) = rest.split_once("\n+++\n") else {
-            errors.push(format!("{name}: front matter isn't closed with +++"));
+            errors.push(format!("{label}{name}: front matter isn't closed with +++"));
             continue;
         };
-        let f: Front = match toml::from_str(front) {
-            Ok(f) => f,
-            Err(e) => {
-                errors.push(format!("{name}: {e}"));
-                continue;
-            }
-        };
-        if seen.contains(&f.id) {
-            errors.push(format!("{name}: duplicate id {}", f.id));
+        match toml::from_str::<Front>(front) {
+            Ok(f) => out.push(Parsed { name, front: f, body: body.to_string() }),
+            Err(e) => errors.push(format!("{label}{name}: {e}")),
         }
-        seen.push(f.id);
-        let (errs, minutes) = validate(&name, &f, body);
+    }
+    out
+}
+
+fn emit(out: &mut String, f: &Front, minutes: usize) {
+    let md = |src: &str| {
+        let mut html = String::new();
+        pulldown_cmark::html::push_html(&mut html, pulldown_cmark::Parser::new_ext(src.trim(), pulldown_cmark::Options::ENABLE_TABLES));
+        html
+    };
+    let steps: Vec<String> = f
+        .steps
+        .iter()
+        .map(|st| {
+            let opt = |o: Option<String>| o.map_or("None".to_string(), |v| format!("Some({})", s(&v)));
+            format!("Step {{ heading: {}, text_html: {}, why_html: {}, widget: {} }}", s(&st.heading), s(&md(&st.text)), opt(st.why.as_deref().map(md)), opt(st.widget.clone()))
+        })
+        .collect();
+    let videos: Vec<String> = f
+        .videos
+        .iter()
+        .map(|v| format!("Video {{ id: {}, title: {}, channel: {}, duration: {}, watch_for: {}, fallback_search: {}, checked: {} }}", s(&v.id), s(&v.title), s(&v.channel), s(&v.duration), s(&v.watch_for), s(&v.fallback_search), s(&v.checked)))
+        .collect();
+    let sources: Vec<String> = f.sources.iter().map(|x| format!("Source {{ claim: {}, name: {}, url: {}, checked: {} }}", s(&x.claim), s(&x.name), s(&x.url), s(&x.checked))).collect();
+    let qz = |q: &Quiz| format!("QuizQ {{ id: {}, q: {}, options: {}, answer: {}, why: {} }}", s(&q.id), s(&q.q), list(&q.options), q.answer, s(&q.why));
+    let quiz: Vec<String> = f.quiz.iter().map(qz).collect();
+    let recall: Vec<String> = f.recall.iter().map(qz).collect();
+    let fixtures: Vec<String> = f
+        .explain_back
+        .fixtures
+        .iter()
+        .map(|fx| {
+            let e = match fx.expect.as_str() {
+                "got_it" => "GotIt",
+                "almost" => "Almost",
+                _ => "AlmostOrNotYet",
+            };
+            format!("Fixture {{ answer: {}, expect: Expect::{e} }}", s(&fx.answer))
+        })
+        .collect();
+    let x = &f.explain_back;
+    write!(
+        out,
+        "  Lesson {{ id: {}, stage: {}, title: {}, objective: {}, hook: {}, steps: &[{}], analogy: {}, analogy_tag: {}, example: {}, mistake: {}, takeaways: {}, read_minutes: {minutes}, videos: &[{}], sources: &[{}], quiz: &[{}], recall: &[{}], explain: ExplainBack {{ prompt: {}, must_include: {}, misconceptions: {}, fixtures: &[{}] }}, drills: {} }},\n",
+        f.id,
+        f.stage,
+        s(&f.title),
+        s(&f.objective),
+        s(&f.hook),
+        steps.join(", "),
+        s(&f.analogy),
+        s(&f.analogy_tag),
+        s(&f.example),
+        s(&f.mistake),
+        list(&f.takeaways),
+        videos.join(", "),
+        sources.join(", "),
+        quiz.join(", "),
+        recall.join(", "),
+        s(&x.prompt),
+        list(&x.must_include),
+        list(&x.misconceptions),
+        fixtures.join(", "),
+        list(&f.drills),
+    )
+    .unwrap();
+}
+
+fn main() {
+    let dir = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("lessons");
+    let mut errors = Vec::new();
+    let en = read_dir(&dir, &mut errors, "");
+    let fr = read_dir(&dir.join("fr"), &mut errors, "fr/");
+
+    let mut out = String::from("pub static LESSONS: &[Lesson] = &[\n");
+    let mut seen = Vec::new();
+    for p in &en {
+        if seen.contains(&p.front.id) {
+            errors.push(format!("{}: duplicate id {}", p.name, p.front.id));
+        }
+        seen.push(p.front.id);
+        let (errs, minutes) = validate(&p.name, &p.front, &p.body, false);
         errors.extend(errs);
-
-        let md = |src: &str| {
-            let mut html = String::new();
-            pulldown_cmark::html::push_html(&mut html, pulldown_cmark::Parser::new_ext(src.trim(), pulldown_cmark::Options::ENABLE_TABLES));
-            html
+        emit(&mut out, &p.front, minutes);
+    }
+    out.push_str("];\n\npub static LESSONS_FR: &[Lesson] = &[\n");
+    for p in &fr {
+        let Some(twin) = en.iter().find(|e| e.front.id == p.front.id) else {
+            errors.push(format!("fr/{}: no English lesson {}", p.name, p.front.id));
+            continue;
         };
-        let steps: Vec<String> = f
-            .steps
-            .iter()
-            .map(|st| {
-                let opt = |o: Option<String>| o.map_or("None".to_string(), |v| format!("Some({})", s(&v)));
-                format!("Step {{ heading: {}, text_html: {}, why_html: {}, widget: {} }}", s(&st.heading), s(&md(&st.text)), opt(st.why.as_deref().map(md)), opt(st.widget.clone()))
-            })
-            .collect();
-
-        let videos: Vec<String> = f
-            .videos
-            .iter()
-            .map(|v| format!("Video {{ id: {}, title: {}, channel: {}, duration: {}, watch_for: {}, fallback_search: {}, checked: {} }}", s(&v.id), s(&v.title), s(&v.channel), s(&v.duration), s(&v.watch_for), s(&v.fallback_search), s(&v.checked)))
-            .collect();
-        let sources: Vec<String> = f.sources.iter().map(|x| format!("Source {{ claim: {}, name: {}, url: {}, checked: {} }}", s(&x.claim), s(&x.name), s(&x.url), s(&x.checked))).collect();
-        let qz = |q: &Quiz| format!("QuizQ {{ id: {}, q: {}, options: {}, answer: {}, why: {} }}", s(&q.id), s(&q.q), list(&q.options), q.answer, s(&q.why));
-        let quiz: Vec<String> = f.quiz.iter().map(qz).collect();
-        let recall: Vec<String> = f.recall.iter().map(qz).collect();
-        let fixtures: Vec<String> = f
-            .explain_back
-            .fixtures
-            .iter()
-            .map(|fx| {
-                let e = match fx.expect.as_str() {
-                    "got_it" => "GotIt",
-                    "almost" => "Almost",
-                    _ => "AlmostOrNotYet",
-                };
-                format!("Fixture {{ answer: {}, expect: Expect::{e} }}", s(&fx.answer))
-            })
-            .collect();
-        let x = &f.explain_back;
-        write!(
-            out,
-            "  Lesson {{ id: {}, stage: {}, title: {}, objective: {}, hook: {}, steps: &[{}], analogy: {}, analogy_tag: {}, example: {}, mistake: {}, takeaways: {}, read_minutes: {minutes}, videos: &[{}], sources: &[{}], quiz: &[{}], recall: &[{}], explain: ExplainBack {{ prompt: {}, must_include: {}, misconceptions: {}, fixtures: &[{}] }}, drills: {} }},\n",
-            f.id,
-            f.stage,
-            s(&f.title),
-            s(&f.objective),
-            s(&f.hook),
-            steps.join(", "),
-            s(&f.analogy),
-            s(&f.analogy_tag),
-            s(&f.example),
-            s(&f.mistake),
-            list(&f.takeaways),
-            videos.join(", "),
-            sources.join(", "),
-            quiz.join(", "),
-            recall.join(", "),
-            s(&x.prompt),
-            list(&x.must_include),
-            list(&x.misconceptions),
-            fixtures.join(", "),
-            list(&f.drills),
-        )
-        .unwrap();
+        if twin.name != p.name {
+            errors.push(format!("fr/{}: name it {} like the English lesson", p.name, twin.name));
+        }
+        let (errs, minutes) = validate(&format!("fr/{}", p.name), &p.front, &p.body, true);
+        errors.extend(errs);
+        errors.extend(parity(&p.name, &twin.front, &p.front));
+        emit(&mut out, &p.front, minutes);
     }
     out.push_str("];\n");
     if !errors.is_empty() {

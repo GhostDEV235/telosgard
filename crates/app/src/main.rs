@@ -2,6 +2,7 @@
 
 mod catalog;
 mod grading;
+mod i18n;
 mod journal_data;
 mod platform;
 mod router;
@@ -53,17 +54,34 @@ fn App() -> impl IntoView {
     });
     provide_context(theme);
 
-    // Content renders immediately; saved progress arrives when the platform answers.
-    store.start(progress, theme, disclaimer);
+    // Language: applied before the first render, saved per device and to the profile.
+    let lang: i18n::LangSignal = RwSignal::new(i18n::load());
+    i18n::apply(lang.get_untracked());
+    provide_context(lang);
+    Effect::new(move |prev: Option<i18n::Lang>| {
+        let l = lang.get();
+        if prev.is_some_and(|p| p != l) {
+            i18n::save(l);
+            store.update_profile(move |p| p.lang = Some(l.code().to_string()));
+        }
+        l
+    });
+    // Kept outside the shell, so the Appearance sheet stays open across a language switch.
+    provide_context(screens::shell::AppearanceOpen(RwSignal::new(false)));
 
-    view! { <screens::shell::Shell /> }
+    // Content renders immediately; saved progress arrives when the platform answers.
+    store.start(progress, theme, disclaimer, lang);
+
+    // A language change re-renders the whole shell in the new language.
+    view! {
+        {move || {
+            i18n::apply(lang.get());
+            view! { <screens::shell::Shell /> }
+        }}
+    }
 }
 
 fn main() {
     console_error_panic_hook::set_once();
-    // The artifact viewer's page skeleton has no `lang`; screen readers need it (WCAG 3.1.1).
-    if let Some(root) = leptos::prelude::document().document_element() {
-        let _ = root.set_attribute("lang", "en");
-    }
     leptos::mount::mount_to_body(App);
 }

@@ -1,5 +1,6 @@
 //! StageCard, LessonRow, GateStatus, VideoCard, Callout.
 
+use crate::i18n::{t, ts};
 use crate::catalog::{self, Section};
 use telosgard_content::Video;
 use crate::router::lesson_href;
@@ -30,32 +31,32 @@ pub fn StageCard(section: &'static Section) -> impl IntoView {
         }>
             <div class="p-5 pb-4">
                 <div class="flex items-center justify-between gap-3">
-                    <p class=move || format!("text-eyebrow {}", soft())>{section.eyebrow}</p>
+                    <p class=move || format!("text-eyebrow {}", soft())>{section.eyebrow.get()}</p>
                     {move || {
                         if complete() {
-                            view! { <span class="rounded-full bg-gold-fill px-2.5 py-1 text-eyebrow text-on-gold uppercase">"✓ Complete"</span> }
+                            view! { <span class="rounded-full bg-gold-fill px-2.5 py-1 text-eyebrow text-on-gold uppercase">{t("✓ Complete", "✓ Terminé")}</span> }
                                 .into_any()
                         } else if locked() {
-                            view! { <span class="text-eyebrow">"🔒 Locked"</span> }.into_any()
+                            view! { <span class="text-eyebrow">{t("🔒 Locked", "🔒 Verrouillé")}</span> }.into_any()
                         } else {
                             ().into_any()
                         }
                     }}
                 </div>
-                <h2 class="mt-1.5 text-title1">{section.title}</h2>
-                <p class=move || format!("mt-1.5 text-callout {}", soft())>{section.blurb}</p>
-                {(!section.pace.is_empty())
+                <h2 class="mt-1.5 text-title1">{section.title.get()}</h2>
+                <p class=move || format!("mt-1.5 text-callout {}", soft())>{section.blurb.get()}</p>
+                {(!section.pace.get().is_empty())
                     .then(|| {
                         view! {
                             <p class=move || format!("mt-2 text-footnote font-semibold {}", soft())>
                                 <span aria-hidden="true">"◷ "</span>
-                                {section.pace}
+                                {section.pace.get()}
                             </p>
                         }
                     })}
                 {move || {
                     if locked() {
-                        view! { <p class="mt-4 text-callout font-semibold">{section.locked_hint}</p> }.into_any()
+                        view! { <p class="mt-4 text-callout font-semibold">{section.locked_hint.get()}</p> }.into_any()
                     } else {
                         let pct = done() * 100 / total.max(1);
                         view! {
@@ -63,7 +64,7 @@ pub fn StageCard(section: &'static Section) -> impl IntoView {
                                 <div
                                     class="h-1.5 overflow-hidden rounded-full bg-bg"
                                     role="progressbar"
-                                    aria-label=format!("{} progress", section.title)
+                                    aria-label=ts(format!("{} progress", section.title.get()), format!("Progression : {}", section.title.get()))
                                     aria-valuemin="0"
                                     aria-valuemax=total
                                     aria-valuenow=done()
@@ -73,7 +74,7 @@ pub fn StageCard(section: &'static Section) -> impl IntoView {
                                         style=format!("width:{pct}%")
                                     ></div>
                                 </div>
-                                <p class="tabular mt-2 text-footnote text-text-muted">{format!("{} of {total} lessons", done())}</p>
+                                <p class="tabular mt-2 text-footnote text-text-muted">{ts(format!("{} of {total} lessons", done()), format!("{} leçons sur {total}", done()))}</p>
                             </div>
                         }
                             .into_any()
@@ -87,20 +88,20 @@ pub fn StageCard(section: &'static Section) -> impl IntoView {
                     aria-expanded=move || open.get().to_string()
                     on:click=move |_| open.update(|o| *o = !*o)
                 >
-                    {move || if open.get() { "Hide lessons ▴" } else { "Show lessons ▾" }}
+                    {move || if open.get() { t("Hide lessons ▴", "Masquer les leçons ▴") } else { t("Show lessons ▾", "Voir les leçons ▾") }}
                 </button>
                 {move || {
                     next()
                         .filter(|_| !locked())
                         .map(|id| {
-                            let label = if progress.get(id) == Default::default() { "Start" } else { "Continue" };
+                            let label = if progress.get(id) == Default::default() { t("Start", "Commencer") } else { t("Continue", "Continuer") };
                             view! { <PillLink href=lesson_href(id)>{label} " ›"</PillLink> }
                         })
                 }}
             </div>
             <Show when=move || open.get()>
                 <ul class="anim-fade px-2 pb-3">
-                    {section.lessons.iter().map(|(id, title)| view! { <LessonRow id=*id title=*title /> }).collect_view()}
+                    {section.lessons.iter().map(|(id, _)| view! { <LessonRow id=*id title=catalog::title(*id) /> }).collect_view()}
                 </ul>
             </Show>
         </article>
@@ -114,14 +115,14 @@ pub fn LessonRow(id: LessonId, title: &'static str) -> impl IntoView {
         let unlocked = progress.unlocked(id);
         let passed = progress.passed(id);
         let (glyph, glyph_class, sr) = if passed {
-            ("✓", "text-gold", "Passed")
+            ("✓", "text-gold", t("Passed", "Réussie"))
         } else if unlocked {
-            ("●", "text-text", "Up next")
+            ("●", "text-text", t("Up next", "À suivre"))
         } else {
-            ("🔒", "", "Locked")
+            ("🔒", "", t("Locked", "Verrouillée"))
         };
         let optional = (id == LessonId::Indicators).then(|| {
-            view! { <span class="ml-2 rounded-full border border-line px-2 py-0.5 text-footnote text-text-muted">"Optional"</span> }
+            view! { <span class="ml-2 rounded-full border border-line px-2 py-0.5 text-footnote text-text-muted">{t("Optional", "Facultative")}</span> }
         });
         let inner = view! {
             <span class="tabular w-7 shrink-0 text-callout text-text-muted">{catalog::label(id)}</span>
@@ -165,26 +166,26 @@ pub fn GateStatus(id: LessonId) -> impl IntoView {
                         view! { <span class="text-title2" aria-hidden="true">"🏅"</span> }.into_any()
                     }}
                     <div>
-                        <p class="text-headline">"Lesson passed"</p>
-                        <p class="text-callout">"You understood it and explained it back. The next lesson is open."</p>
+                        <p class="text-headline">{t("Lesson passed", "Leçon réussie")}</p>
+                        <p class="text-callout">{t("You understood it and explained it back. The next lesson is open.", "Tu l’as comprise et tu l’as expliquée. La leçon suivante est ouverte.")}</p>
                     </div>
                 </div>
             </Show>
-            <h2 id="gate-h" class="text-headline">"To unlock the next lesson"</h2>
+            <h2 id="gate-h" class="text-headline">{t("To unlock the next lesson", "Pour débloquer la leçon suivante")}</h2>
             <div class="mt-3 flex flex-wrap gap-2">
                 <span class=move || pill(progress.get(id).quiz_met())>
                     {move || if progress.get(id).quiz_met() { "✓ " } else { "○ " }}
-                    "Quiz ≥ 80%"
+                    {t("Quiz ≥ 80%", "Quiz ≥ 80 %")}
                 </span>
                 <span class=move || pill(progress.get(id).explain_back_met())>
                     {move || if progress.get(id).explain_back_met() { "✓ " } else { "○ " }}
-                    "Explain-Back: Got it"
+                    {t("Explain-Back: Got it", "Explique-le : Acquis")}
                 </span>
             </div>
             <div class="mt-4">
                 {move || match next {
-                    Some(n) if progress.passed(id) => view! { <PillLink href=lesson_href(n)>"Next lesson ›"</PillLink> }.into_any(),
-                    Some(_) => view! { <button type="button" disabled class=PILL>"Next lesson ›"</button> }.into_any(),
+                    Some(n) if progress.passed(id) => view! { <PillLink href=lesson_href(n)>{t("Next lesson ›", "Leçon suivante ›")}</PillLink> }.into_any(),
+                    Some(_) => view! { <button type="button" disabled class=PILL>{t("Next lesson ›", "Leçon suivante ›")}</button> }.into_any(),
                     None => ().into_any(),
                 }}
             </div>
@@ -203,9 +204,9 @@ pub fn VideoCard(video: &'static Video) -> impl IntoView {
         >
             <span class="grid size-14 shrink-0 place-items-center rounded-btn bg-fill text-title2 text-on-fill" aria-hidden="true">"▶"</span>
             <span class="min-w-0 flex-1">
-                <span class="block text-headline">{video.title}</span>
-                <span class="block text-footnote text-text-muted">{video.channel} " · " {video.duration} " · opens YouTube"</span>
-                <span class="mt-1.5 block text-callout"><span class="font-semibold">"Watch for: "</span>{video.watch_for}</span>
+                <span class="block text-headline">{video.title}{crate::i18n::english_only_note()}</span>
+                <span class="block text-footnote text-text-muted">{video.channel} " · " {video.duration} {t(" · opens YouTube", " · ouvre YouTube")}</span>
+                <span class="mt-1.5 block text-callout"><span class="font-semibold">{t("Watch for: ", "À repérer : ")}</span>{video.watch_for}</span>
             </span>
             <span class="text-text-muted" aria-hidden="true">"↗"</span>
         </a>
@@ -222,9 +223,9 @@ pub enum CalloutKind {
 #[component]
 pub fn Callout(kind: CalloutKind, text: &'static str) -> impl IntoView {
     let label = match kind {
-        CalloutKind::Analogy => "💡 Analogy",
-        CalloutKind::Example => "🌍 Real life",
-        CalloutKind::Mistake => "⚠️ Common mistake",
+        CalloutKind::Analogy => t("💡 Analogy", "💡 Analogie"),
+        CalloutKind::Example => t("🌍 Real life", "🌍 Dans la vraie vie"),
+        CalloutKind::Mistake => t("⚠️ Common mistake", "⚠️ Erreur fréquente"),
     };
     view! {
         <aside class="rounded-card border-l-4 border-fill bg-surface p-5 shadow-card">

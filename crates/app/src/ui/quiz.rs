@@ -2,6 +2,7 @@
 //! Used for the lesson quiz (counts towards the Gate), Recall, Spaced Review and Claude-written
 //! practice rounds (never do). Questions with a key ask for Confidence before revealing the answer.
 
+use crate::i18n::{t, ts};
 use crate::state::now;
 use crate::ui::controls::{PILL, PILL_GHOST};
 use telosgard_core::drills::Rng;
@@ -151,10 +152,10 @@ pub fn QuizCard(
                 <p class="text-eyebrow text-eyebrow-ink">
                     {match (label, practice) {
                         (Some(l), _) => format!("{l} · "),
-                        (None, true) => "Practice · ".into(),
+                        (None, true) => t("Practice · ", "Entraînement · ").into(),
                         _ => String::new(),
                     }}
-                    {format!("Question {} of {n}", step.get() + 1)}
+                    {ts(format!("Question {} of {n}", step.get() + 1), format!("Question {} sur {n}", step.get() + 1))}
                 </p>
                 <div class="flex gap-1.5" aria-hidden="true">
                     {(0..n)
@@ -169,10 +170,10 @@ pub fn QuizCard(
             <div class="mt-4 grid gap-2">{options}</div>
             <Show when=move || asks && chosen.get().is_none() && picked.get().is_some()>
                 <div class="anim-fade mt-4">
-                    <p class="text-callout text-text-muted">"How sure are you? Either way, a right answer counts."</p>
+                    <p class="text-callout text-text-muted">{t("How sure are you? Either way, a right answer counts.", "Quel est ton degré de certitude ? Dans les deux cas, une bonne réponse compte.")}</p>
                     <div class="mt-2 flex flex-wrap gap-2">
-                        <button type="button" class=PILL on:click=move |_| if let Some(oi) = picked.get_untracked() { reveal(oi, Some(Confidence::Sure)) }>"I'm sure"</button>
-                        <button type="button" class=PILL_GHOST on:click=move |_| if let Some(oi) = picked.get_untracked() { reveal(oi, Some(Confidence::Guessing)) }>"I'm guessing"</button>
+                        <button type="button" class=PILL on:click=move |_| if let Some(oi) = picked.get_untracked() { reveal(oi, Some(Confidence::Sure)) }>{t("I'm sure", "Aucun doute")}</button>
+                        <button type="button" class=PILL_GHOST on:click=move |_| if let Some(oi) = picked.get_untracked() { reveal(oi, Some(Confidence::Guessing)) }>{t("I'm guessing", "Je devine")}</button>
                     </div>
                 </div>
             </Show>
@@ -180,16 +181,16 @@ pub fn QuizCard(
                 <div class="anim-fade mt-4 rounded-btn bg-bg p-4" aria-live="polite">
                     {move || {
                         if chosen.get() == Some(answer) {
-                            view! { <p class="text-headline text-up">"✓ Right"</p> }.into_any()
+                            view! { <p class="text-headline text-up">{t("✓ Right", "✓ Juste")}</p> }.into_any()
                         } else {
-                            view! { <p class="text-headline text-down">"✗ Not quite"</p> }.into_any()
+                            view! { <p class="text-headline text-down">{t("✗ Not quite", "✗ Pas tout à fait")}</p> }.into_any()
                         }
                     }}
                     <p class="mt-1 text-callout">{why.clone()}</p>
                 </div>
                 <div class="mt-4 flex justify-end">
                     <button type="button" class=PILL on:click=advance>
-                        {move || if step.get() + 1 >= n { "See score" } else { "Next ›" }}
+                        {move || if step.get() + 1 >= n { t("See score", "Voir le score") } else { t("Next ›", "Suivant ›") }}
                     </button>
                 </div>
             </Show>
@@ -200,23 +201,23 @@ pub fn QuizCard(
         let score = quiz_score(correct.get(), n as u32);
         let passed = score >= QUIZ_PASS_PERCENT;
         view! {
-            <p class="text-eyebrow text-eyebrow-ink">{if practice { "Practice result" } else { "Quiz result" }}</p>
-            <p class="tabular mt-2 text-large"><crate::ui::moments::CountUp value=score as i64 fmt=|v| format!("{v}%") /></p>
-            <p class="text-callout text-text-muted">{format!("{} of {n} right", correct.get())}</p>
+            <p class="text-eyebrow text-eyebrow-ink">{if practice { t("Practice result", "Résultat de l’entraînement") } else { t("Quiz result", "Résultat du quiz") }}</p>
+            <p class="tabular mt-2 text-large"><crate::ui::moments::CountUp value=score as i64 fmt=|v| ts(format!("{v}%"), format!("{v} %")) /></p>
+            <p class="text-callout text-text-muted">{ts(format!("{} of {n} right", correct.get()), format!("{} sur {n} justes", correct.get()))}</p>
             {if practice {
-                view! { <p class="mt-3 text-callout">"Practice only: it doesn't change your Gate."</p> }.into_any()
+                view! { <p class="mt-3 text-callout">{t("Practice only: it doesn't change your Gate.", "Pour s’entraîner seulement : ça ne change pas ta validation.")}</p> }.into_any()
             } else if passed {
-                view! { <p class="mt-3 text-headline text-gold">"✓ Quiz passed"</p> }.into_any()
+                view! { <p class="mt-3 text-headline text-gold">{t("✓ Quiz passed", "✓ Quiz réussi")}</p> }.into_any()
             } else {
                 view! {
                     <p class="mt-3 text-callout">
-                        "You need " {QUIZ_PASS_PERCENT} "%. Have another go: the questions reshuffle, and there's no penalty."
+                        {ts(format!("You need {QUIZ_PASS_PERCENT}%. Have another go: the questions reshuffle, and there's no penalty."), format!("Il te faut {QUIZ_PASS_PERCENT} %. Réessaie : les questions sont remélangées, et il n’y a aucune pénalité."))}
                     </p>
                 }
                     .into_any()
             }}
             <div class="mt-4">
-                <button type="button" class=PILL_GHOST on:click=restart>{if practice { "Retry these" } else { "Retake quiz" }}</button>
+                <button type="button" class=PILL_GHOST on:click=restart>{if practice { t("Retry these", "Refaire ces questions") } else { t("Retake quiz", "Refaire le quiz") }}</button>
             </div>
         }
     };

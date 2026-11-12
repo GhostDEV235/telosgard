@@ -61,6 +61,9 @@ pub struct Profile {
     pub disclaimer_accepted_at: Option<Millis>,
     /// "system" | "dark" | "light"
     pub theme: String,
+    /// "en" | "fr". Missing on profiles saved before the French edition (English).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lang: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -298,7 +301,7 @@ impl Store {
     }
 
     /// Connects, then loads profile, progress and drills. Called once, after first render.
-    pub fn start(self, progress: Progress, theme: RwSignal<ThemeChoice>, disclaimer: crate::state::DisclaimerOpen) {
+    pub fn start(self, progress: Progress, theme: RwSignal<ThemeChoice>, disclaimer: crate::state::DisclaimerOpen, lang: crate::i18n::LangSignal) {
         spawn_local(async move {
             let caps = match platform::init().await {
                 Ok(c) => c,
@@ -355,11 +358,18 @@ impl Store {
                         }
                     });
                     let fresh = profile.is_none();
-                    let mut profile = profile.unwrap_or(Profile { created_at: now(), disclaimer_accepted_at: None, theme: "system".into() });
+                    let mut profile = profile.unwrap_or(Profile { created_at: now(), disclaimer_accepted_at: None, theme: "system".into(), lang: None });
                     match profile.theme.as_str() {
                         "dark" => theme.set(ThemeChoice::Dark),
                         "light" => theme.set(ThemeChoice::Light),
                         _ => {}
+                    }
+                    if let Some(code) = profile.lang.as_deref() {
+                        let saved = crate::i18n::Lang::from_code(code);
+                        if saved != lang.get_untracked() {
+                            crate::i18n::save(saved);
+                            lang.set(saved);
+                        }
                     }
                     let accepted_here = !disclaimer.0.get_untracked();
                     if profile.disclaimer_accepted_at.is_some() {

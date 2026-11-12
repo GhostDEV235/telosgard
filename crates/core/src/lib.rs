@@ -10,6 +10,7 @@ pub mod daily;
 pub mod drills;
 pub mod gate;
 pub mod grading;
+pub mod i18n;
 pub mod journal;
 pub mod money;
 pub mod plan;

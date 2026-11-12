@@ -243,6 +243,13 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 *Live checks 2026-11-12:* signed out, the API refuses with 401; sign-up without an invite 403; wrong password 401; forged cookie ignored; cross-site sign-in 403. Sign-in and join screens 16/16 clean (4 widths × 2 themes). Signed in, 16 routes × 4 widths × 2 themes: 128/128 axe clean, no overflow. The Learner signed in and sees their copied progress (Lesson 1 passed, Question Records merged). **Grader lab on live: 43 of 45 as expected** (56,866 input + 29,173 output tokens, about $0.81). Misses: L8 Gap graded Got it (Professor Aurel noticed the unexplained "100" but treated it as a tip), so the first key idea now says what the 100 stands for; L13 Gap was a dropped connection, not a grade (every Worker call logged ok). The lab now retries a dropped connection once and has **Re-run misses**, so a re-check costs two calls instead of 45.
 
+## Wave 2.5: English and French *(decided 2026-11-12)*
+- [x] Language switch (Appearance, sign-in and join), saved per device and in the profile; `<html lang>` follows it
+- [x] Lessons 1–15 in French (`lessons/fr/`), checked against the English structure at build time; glossary and typography in `docs/FRENCH.md`
+- [x] Every interface string, drill, Hard Rule message and error in both languages; French number formats, and French-style input accepted
+- [x] Professor Aurel replies in French ([ADR 0005](adr/0005-english-and-french.md))
+- [ ] Grader lab in French: run the French fixtures through Professor Aurel
+
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:
 - Wave 2 ✅ *(2026-11-12)*: Stage 2 written (L13 The trading week & sessions, L14 The overlap, in your local time, L15 Windows to avoid), every fact sourced (CME, LBMA, BLS, Federal Reserve, GOV.UK, US Naval Observatory, World Gold Council, FOREX.com and FXCM for broker rollover practice), 6 videos verified by oEmbed. New `session_clock` widget; drills "Which session is it?" and "Is this a No-Trade Window?" (`telosgard_core::stage2_drills`, answers computed by the same `sessions_at` / `no_trade_window` the clock and Hard Rules use; 6 tests). Curriculum's "13:00–17:00 UTC" overlap corrected (winter only). axe clean on the new lessons, widget and drills in both themes. Open: grader lab for the 9 new Explain-Back fixtures (real Claude calls), then deploy

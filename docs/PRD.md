@@ -146,6 +146,10 @@ Later waves add one stage each, written when the Learner is near it and informed
 - FR-15.2 From 1024 px wide, a Figma-style workspace: a left sidebar with the app's sections and the course outline, a centre canvas on a faint dot grid, and a right panel where it adds context (Lesson; Journal and trade pages). Phones keep one column and the bottom tab bar.
 - FR-15.3 Quiet micro-interactions everywhere, plus **Milestone** moments, count-up numbers and screen transitions. Celebrations mark learning, never profit. Everything respects reduced motion.
 
+### FR-16 Languages *(decided 2026-11-12)*
+- FR-16.1 The whole course is available in English and French (interface, lessons, drills, rule messages, Professor Aurel's replies); French uses "tu". English by default, with a Language switch in Appearance and on the sign-in screens, saved to the account. See [ADR 0005](adr/0005-english-and-french.md).
+- FR-16.2 Videos stay in English and are labelled as such in French.
+
 ## 6. Non-functional requirements
 - **Honesty:** never fabricate prices, charts or videos. Illustrative data is labelled. Every video link is verified to exist before shipping.
 - **Safety:** a first-launch disclaimer (education, not advice). The Live Track covers scams. No content recommends a specific trade.
