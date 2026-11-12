@@ -119,6 +119,9 @@ pub struct Caps {
     /// The signed-in account is the owner (may create invites).
     #[serde(default)]
     pub owner: bool,
+    /// Every lesson is open for this account (a reviewer), whatever its progress.
+    #[serde(default)]
+    pub full_access: bool,
 }
 
 pub async fn auth_sign_in(email: &str, password: &str) -> Result<(), PlatformError> {

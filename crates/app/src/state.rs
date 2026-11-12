@@ -14,11 +14,13 @@ pub fn now() -> i64 {
 pub struct Progress {
     lessons: RwSignal<HashMap<LessonId, LessonProgress>>,
     pub readiness: RwSignal<bool>,
+    /// A reviewer account: every lesson is open. Progress is still recorded as usual.
+    pub full_access: RwSignal<bool>,
 }
 
 impl Progress {
     pub fn new() -> Progress {
-        Progress { lessons: RwSignal::new(HashMap::new()), readiness: RwSignal::new(false) }
+        Progress { lessons: RwSignal::new(HashMap::new()), readiness: RwSignal::new(false), full_access: RwSignal::new(false) }
     }
     pub fn get(&self, id: LessonId) -> LessonProgress {
         self.lessons.with(|m| m.get(&id).cloned().unwrap_or_default())
@@ -33,6 +35,9 @@ impl Progress {
         self.lessons.with(|m| m.get(&id).is_some_and(|p| p.is_passed()))
     }
     pub fn unlocked(&self, id: LessonId) -> bool {
+        if self.full_access.get() {
+            return true;
+        }
         let ready = self.readiness.get();
         self.lessons.with(|m| id.is_unlocked(|x| m.get(&x).is_some_and(|p| p.is_passed()), ready))
     }

@@ -2,7 +2,7 @@
 // runs only for /api/*. Every route needs an identity (see auth.ts) and only ever touches that user's rows.
 //
 //   *      /api/auth/*             Better Auth (sign-up with an invite, sign-in, sign-out, session)
-//   GET    /api/me                 → { signedIn, userId?, email?, isOwner? }
+//   GET    /api/me                 → { signedIn, userId?, email?, isOwner?, fullAccess? }
 //   POST   /api/invites            → { id, url, expiresAt }   (owner only)
 //   GET    /api/invites            → [{ id, createdAt, expiresAt, usedAt }]   (owner only)
 //   DELETE /api/invites/:id        (owner only)
@@ -15,7 +15,7 @@
 //   POST   /api/claude/(json|text) ← { prompt, tier } → { value } | { text, truncated }
 
 import Anthropic from "@anthropic-ai/sdk";
-import { identify, INVITE_DAYS, isOwner, makeAuth, sha256, type AuthEnv, type Identity } from "./auth";
+import { hasFullAccess, identify, INVITE_DAYS, isOwner, makeAuth, sha256, type AuthEnv, type Identity } from "./auth";
 import { askClaude, ClaudeError, parseTier, type MessagesClient, type Mode } from "./claude";
 
 export interface Env extends AuthEnv {
@@ -78,7 +78,7 @@ async function route(request: Request, env: Env, url: URL, makeClient: ClientFac
 
   const who = await identify(request, env);
   if (path[0] === "me" && path.length === 1 && method === "GET") {
-    return json(who ? { signedIn: true, userId: who.userId, email: who.email ?? null, isOwner: isOwner(env, who) } : { signedIn: false });
+    return json(who ? { signedIn: true, userId: who.userId, email: who.email ?? null, isOwner: isOwner(env, who), fullAccess: hasFullAccess(env, who) } : { signedIn: false });
   }
   if (!who) return fail(401, "not_granted", "Sign in to use Telosgard.");
 

@@ -17,3 +17,7 @@ Telosgard has its own accounts: **Better Auth 1.7.14** runs inside the Worker at
 - Better Auth's built-in rate limit (stored in D1, keyed by `cf-connecting-ip`) slows password guessing and sign-up floods. Its telemetry is switched off.
 - Secrets on the Worker: `BETTER_AUTH_SECRET` (signs sessions), `OWNER_EMAILS`, `ANTHROPIC_API_KEY`. `DEV_USER` stays for local development and tests, and only ever applies to localhost.
 - Owner and testers keep separate Claude caps (300 / 50 calls a day).
+
+## Addendum 2026-11-12: reviewers
+
+An address in the `FULL_ACCESS_EMAILS` secret is a **reviewer**: every lesson is open regardless of progress, so they can browse the whole course. Nothing else changes: they still need an invite to sign up, get the tester Claude cap, can't create invites, and their progress is their own. The list is a secret, not a `wrangler.toml` var, so addresses never reach the public repository.

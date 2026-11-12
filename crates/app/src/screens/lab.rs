@@ -1,4 +1,4 @@
-//! Grader lab (`#grader-lab`, not linked from the UI): runs every Stage 1 fixture through the real
+//! Grader lab (`#grader-lab`, not linked from the UI): runs every lesson's fixtures through the real
 //! grader and compares against expectations (IMPLEMENTATION-PLAN Phase 5, rubric tuning).
 //! Results are also written to the shared doc `lab/grader-latest` so they can be read back in Claude Code.
 
@@ -59,13 +59,52 @@ pub fn GraderLab() -> impl IntoView {
     let saved = RwSignal::new(None::<Result<usize, String>>);
     let total: usize = LESSONS.iter().map(|l| l.explain.fixtures.len()).sum();
 
-    let run = move |_| {
+    // Grades one fixture. A dropped connection is retried once, so a network blip doesn't read as a miss.
+    // The flag is true when every later call would fail the same way (out of quota, or not set up).
+    async fn grade_one(r: &'static telosgard_content::Lesson, k: usize) -> (Outcome, bool) {
+        let fx = &r.explain.fixtures[k];
+        let mut res = grading::grade(r, fx.answer).await;
+        if matches!(res, Err(grading::GradeError::Platform(platform::PlatformError::Unavailable))) {
+            res = grading::grade(r, fx.answer).await;
+        }
+        let base = Outcome {
+            lesson: r.id,
+            fixture: KINDS[k],
+            expected: grading::expect_label(fx.expect),
+            grade: None,
+            as_expected: false,
+            feedback: None,
+            gap: None,
+            reteach: None,
+            suggestion: None,
+            error: None,
+        };
+        match res {
+            Ok(g) => (Outcome {
+                grade: Some(g.grade),
+                as_expected: grading::accepts(fx.expect, g.grade),
+                feedback: Some(g.feedback),
+                gap: g.gap,
+                reteach: g.reteach,
+                suggestion: g.suggestion,
+                ..base
+            }, false),
+            Err(e) => {
+                let stop = matches!(e, grading::GradeError::Platform(platform::PlatformError::NotGranted | platform::PlatformError::RateLimited));
+                (Outcome { error: Some(e.describe()), ..base }, stop)
+            }
+        }
+    }
+    // `only`: None runs every fixture; Some(list) re-runs just those (lesson id, fixture index) in place.
+    let start = move |only: Option<Vec<(u8, usize)>>| {
         if running.get_untracked() {
             return;
         }
         running.set(true);
-        results.set(Vec::new());
         saved.set(None);
+        if only.is_none() {
+            results.set(Vec::new());
+        }
         let started_at = now();
         spawn_local(async move {
             let checkpoint = move || async move {
@@ -74,46 +113,21 @@ pub fn GraderLab() -> impl IntoView {
                 saved.set(Some(save(started_at, &list, total, false).await.map(|_| n).map_err(|e| e.describe())));
             };
             'outer: for r in LESSONS.iter() {
-                for (k, fx) in r.explain.fixtures.iter().enumerate() {
-                    let (answer, expect) = (fx.answer, fx.expect);
-                    let outcome = match grading::grade(r, answer).await {
-                        Ok(g) => Outcome {
-                            lesson: r.id,
-                            fixture: KINDS[k],
-                            expected: grading::expect_label(expect),
-                            grade: Some(g.grade),
-                            as_expected: grading::accepts(expect, g.grade),
-                            feedback: Some(g.feedback),
-                            gap: g.gap,
-                            reteach: g.reteach,
-                            suggestion: g.suggestion,
-                            error: None,
-                        },
-                        Err(e) => {
-                            let stop = matches!(e, grading::GradeError::Platform(platform::PlatformError::NotGranted | platform::PlatformError::RateLimited));
-                            results.update(|v| {
-                                v.push(Outcome {
-                                    lesson: r.id,
-                                    fixture: KINDS[k],
-                                    expected: grading::expect_label(expect),
-                                    grade: None,
-                                    as_expected: false,
-                                    feedback: None,
-                                    gap: None,
-                                    reteach: None,
-                                    suggestion: None,
-                                    error: Some(e.describe()),
-                                })
-                            });
-                            checkpoint().await;
-                            if stop {
-                                break 'outer;
-                            }
+                for k in 0..r.explain.fixtures.len() {
+                    if let Some(only) = &only {
+                        if !only.contains(&(r.id, k)) {
                             continue;
                         }
-                    };
-                    results.update(|v| v.push(outcome));
+                    }
+                    let (outcome, stop) = grade_one(r, k).await;
+                    results.update(|v| match v.iter_mut().find(|o| o.lesson == r.id && o.fixture == KINDS[k]) {
+                        Some(slot) => *slot = outcome,
+                        None => v.push(outcome),
+                    });
                     checkpoint().await;
+                    if stop {
+                        break 'outer;
+                    }
                 }
             }
             let list = results.get_untracked();
@@ -130,6 +144,16 @@ pub fn GraderLab() -> impl IntoView {
             running.set(false);
         });
     };
+    let run = move |_| start(None);
+    let misses = Memo::new(move |_| {
+        results
+            .get()
+            .iter()
+            .filter(|o| !o.as_expected)
+            .filter_map(|o| Some((o.lesson, KINDS.iter().position(|k| *k == o.fixture)?)))
+            .collect::<Vec<_>>()
+    });
+    let rerun = move |_| start(Some(misses.get_untracked()));
 
     let chip = |g: Option<Grade>| match g {
         Some(Grade::GotIt) => "Got it",
@@ -143,12 +167,17 @@ pub fn GraderLab() -> impl IntoView {
         <main class="gutter mx-auto max-w-[900px] pt-6 pb-10">
             <h1 class="text-title1">"Grader lab"</h1>
             <p class="mt-2 text-callout text-text-muted">
-                {format!("Runs all {total} test answers (a correct one, one with a gap, one with a misconception, for each Stage 1 lesson) through Professor Aurel, the same way your Explain-Backs are graded. Takes a few minutes.")}
+                {format!("Runs all {total} test answers (a correct one, one with a gap, one with a misconception, for each written lesson) through Professor Aurel, the same way your Explain-Backs are graded. Takes a few minutes.")}
             </p>
             <div class="mt-4 flex flex-wrap items-center gap-4">
                 <button type="button" class=PILL disabled=move || running.get() on:click=run>
                     {move || if running.get() { "Running…" } else { "Run all" }}
                 </button>
+                <Show when=move || !running.get() && !misses.get().is_empty()>
+                    <button type="button" class=crate::ui::controls::PILL_GHOST on:click=rerun>
+                        {move || format!("Re-run {} miss{}", misses.get().len(), if misses.get().len() == 1 { "" } else { "es" })}
+                    </button>
+                </Show>
                 <p class="tabular text-headline" aria-live="polite">
                     {move || {
                         let r = results.get();

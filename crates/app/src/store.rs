@@ -309,6 +309,7 @@ impl Store {
             };
             if caps.signed_in {
                 self.account.set(Some((caps.email.clone(), caps.owner)));
+                progress.full_access.set(caps.full_access);
             }
             if !caps.db {
                 self.state.set(SaveState::Local(if caps.user && !caps.signed_in { LocalReason::SignedOut } else { LocalReason::NoStorage }));

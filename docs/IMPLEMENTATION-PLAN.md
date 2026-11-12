@@ -226,20 +226,22 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 ### Phase 19: Claude through the Worker
 - [x] `POST /api/claude/json` and `/api/claude/text`: fixed model and output cap per call type (grading, verdict, practice, tutor), API key as a Worker secret, per-user rate limit, errors mapped to the bridge's codes (never a made-up answer)
-- [ ] The grader lab re-run against the new path (36 fixtures)
+- [x] The grader lab re-run against the new path (now 45 fixtures, Lessons 1–15)
 
 *2026-11-11: `src/claude.ts` with `@anthropic-ai/sdk` 1.3.0; model `claude-opus-5-5` (the current default; effort low / medium / high by tier), adaptive thinking, output caps, server-side refusal fallbacks (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`); usage log and daily cap in D1 (`0002_claude_calls.sql`). 7 new tests (16 in total) with a fake client; checked in Chrome that without a key the Explain-Back says grading isn't available and grades nothing. Still open: the grader lab against the real API once the Learner has put their key in `cloudflare/.dev.vars`.*
 
 **Exit check:** grading, verdicts, practice and Ask Claude work through the Worker; grader lab 36/36.
 
 ### Phase 20: Deploy and move the data
-- [ ] The Learner's one-time steps, guided: Cloudflare account and `wrangler login`, the Anthropic key as a secret, Access on the site
-- [ ] Deploy to Pages; copy the Learner's existing documents from the Artifact database into D1 (read with ArtifactData, imported by a script); the Artifact gets a note pointing to the new address
-- [ ] Phase 16's checks repeated on the deployed site
+- [x] The Learner's one-time steps, guided: Cloudflare account and `wrangler login`, the Anthropic key as a secret, sign-in on the site (Better Auth, not Access)
+- [x] Deploy (a Worker with static assets, not Pages); copy the Learner's existing documents from the Artifact database into D1; the Artifact is frozen at version 21 as a backup
+- [x] Phase 16's checks repeated on the deployed site
 
 **Exit check:** the Learner signs in through Access on the live site and sees their own progress.
 
 *2026-11-12: deployed to https://telosgard.emmaadjam.workers.dev (D1 `telosgard`, R2 `telosgard-files`, secrets `ANTHROPIC_API_KEY` and `OWNER_EMAILS`). Sign-in changed from Cloudflare Access to **Better Auth, invite-only** ([ADR 0004](adr/0004-better-auth-invite-only.md)): built and tested (25 Worker tests; local end-to-end with curl: signed-out refused, stranger sign-up 403, owner sign-up, invite created, tester joined, invalid invite 403, tester can't invite). Still open: production migration `0003_auth.sql`, the `BETTER_AUTH_SECRET` secret and the deploy (waiting for the Learner's approval), the Learner's own account via `/#join`, data copy from the Artifact, live checks.*
+
+*Live checks 2026-11-12:* signed out, the API refuses with 401; sign-up without an invite 403; wrong password 401; forged cookie ignored; cross-site sign-in 403. Sign-in and join screens 16/16 clean (4 widths × 2 themes). Signed in, 16 routes × 4 widths × 2 themes: 128/128 axe clean, no overflow. The Learner signed in and sees their copied progress (Lesson 1 passed, Question Records merged). **Grader lab on live: 43 of 45 as expected** (56,866 input + 29,173 output tokens, about $0.81). Misses: L8 Gap graded Got it (Professor Aurel noticed the unexplained "100" but treated it as a tip), so the first key idea now says what the 100 stands for; L13 Gap was a dropped connection, not a grade (every Worker call logged ok). The lab now retries a dropped connection once and has **Re-run misses**, so a re-check costs two calls instead of 45.
 
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:

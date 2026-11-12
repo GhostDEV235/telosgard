@@ -10,6 +10,8 @@ export interface AuthEnv {
   DB: D1Database;
   BETTER_AUTH_SECRET?: string;
   OWNER_EMAILS?: string;
+  /** Secret: addresses that may open every lesson without passing the ones before it (reviewers). */
+  FULL_ACCESS_EMAILS?: string;
   DEV_USER?: string;
 }
 
@@ -28,8 +30,17 @@ export function isLocalhost(url: URL): boolean {
   return url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]";
 }
 
+function emailList(raw: string | undefined): string[] {
+  return (raw ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+}
+
 export function ownerEmails(env: { OWNER_EMAILS?: string }): string[] {
-  return (env.OWNER_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return emailList(env.OWNER_EMAILS);
+}
+
+/** Every lesson open, regardless of progress. Only the course gate changes: no owner powers. */
+export function hasFullAccess(env: { FULL_ACCESS_EMAILS?: string }, who: Identity): boolean {
+  return who.email !== undefined && emailList(env.FULL_ACCESS_EMAILS).includes(who.email.toLowerCase());
 }
 
 export function isOwner(env: { OWNER_EMAILS?: string }, who: Identity): boolean {

@@ -68,7 +68,7 @@ why = "Same move, different size: money = lots × 100 × Dollar Move."
 
 [explain_back]
 prompt = "You buy 0.20 lots and gold rises $4. How much did you make, and why?"
-must_include = ["1 lot is usually 100 ounces (check the broker)", "money = lots × 100 × dollar move", "so 0.20 lots × $4 = $80"]
+must_include = ["what the 100 stands for: 1 lot is usually 100 ounces (check the broker), so 0.20 lots is 20 ounces", "money = lots × 100 × dollar move", "so 0.20 lots × $4 = $80"]
 misconceptions = ["a lot is a fixed dollar amount", "profit depends only on the price move, not the size"]
 
 [[explain_back.fixtures]]

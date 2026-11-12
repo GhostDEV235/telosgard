@@ -57,8 +57,17 @@ describe("accounts (Better Auth, invite-only)", () => {
     expect((await signUp("second@example.com", token)).status).toBe(403);
 
     const me = await call("GET", "/api/me", undefined, { cookie: tester.cookie });
-    expect(me.data).toMatchObject({ signedIn: true, email: "tester@example.com", isOwner: false });
+    expect(me.data).toMatchObject({ signedIn: true, email: "tester@example.com", isOwner: false, fullAccess: false });
     expect((await call("POST", "/api/invites", undefined, { cookie: tester.cookie })).status).toBe(403);
+
+    // A reviewer address gets every lesson open, but still needs an invite and gets no owner powers.
+    expect((await signUp("reviewer@example.com")).status).toBe(403);
+    const inv2 = await call("POST", "/api/invites", undefined, { cookie: owner });
+    const reviewer = await signUp("Reviewer@Example.com", String(inv2.data.url).split("#join-")[1]);
+    expect(reviewer.status).toBe(200);
+    const rme = await call("GET", "/api/me", undefined, { cookie: reviewer.cookie });
+    expect(rme.data).toMatchObject({ isOwner: false, fullAccess: true });
+    expect((await call("POST", "/api/invites", undefined, { cookie: reviewer.cookie })).status).toBe(403);
 
     await call("PUT", "/api/docs/plan-v1", { kind: "plan", version: 1 }, { cookie: owner });
     expect((await call("GET", "/api/docs/plan-v1", undefined, { cookie: tester.cookie })).data).toBeNull();
