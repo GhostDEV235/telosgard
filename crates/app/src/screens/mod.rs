@@ -1,3 +1,4 @@
+pub mod account;
 pub mod checklist;
 pub mod home;
 pub mod journal;

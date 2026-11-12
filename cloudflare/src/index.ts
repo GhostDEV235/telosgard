@@ -1,7 +1,11 @@
-// Telosgard's Worker (ADR 0003). Static files are served by Workers static assets; this code runs
-// only for /api/*. Every route needs an identity (see auth.ts) and only ever touches that user's rows.
+// Telosgard's Worker (ADR 0003, 0004). Static files are served by Workers static assets; this code
+// runs only for /api/*. Every route needs an identity (see auth.ts) and only ever touches that user's rows.
 //
-//   GET    /api/me                 → { signedIn, userId?, email? }
+//   *      /api/auth/*             Better Auth (sign-up with an invite, sign-in, sign-out, session)
+//   GET    /api/me                 → { signedIn, userId?, email?, isOwner? }
+//   POST   /api/invites            → { id, url, expiresAt }   (owner only)
+//   GET    /api/invites            → [{ id, createdAt, expiresAt, usedAt }]   (owner only)
+//   DELETE /api/invites/:id        (owner only)
 //   GET    /api/docs?kind=K        → [{ id, data }]          (all of the user's docs of one kind)
 //   GET    /api/docs/:id           → data | null
 //   PUT    /api/docs/:id           ← JSON with a string `kind`
@@ -11,17 +15,25 @@
 //   POST   /api/claude/(json|text) ← { prompt, tier } → { value } | { text, truncated }
 
 import Anthropic from "@anthropic-ai/sdk";
-import { identify, type AuthEnv, type Identity } from "./auth";
+import { identify, INVITE_DAYS, isOwner, makeAuth, sha256, type AuthEnv, type Identity } from "./auth";
 import { askClaude, ClaudeError, parseTier, type MessagesClient, type Mode } from "./claude";
 
 export interface Env extends AuthEnv {
-  DB: D1Database;
   FILES: R2Bucket;
   ASSETS: Fetcher;
   /** Worker secret (`wrangler secret put ANTHROPIC_API_KEY`); `.dev.vars` locally. */
   ANTHROPIC_API_KEY?: string;
-  /** Claude calls per user per 24 hours (default 300). */
+  /** Claude calls per 24 hours for the owner (default 300). */
   CLAUDE_DAILY_LIMIT?: string;
+  /** Claude calls per 24 hours for everyone else, i.e. invited testers (default 50). */
+  TESTER_DAILY_LIMIT?: string;
+}
+
+/** The owner (an OWNER_EMAILS address, or the localhost dev user) gets the full cap; testers get less. */
+export function dailyLimit(env: Env, who: Identity): number {
+  const owner = isOwner(env, who);
+  const n = Number(owner ? env.CLAUDE_DAILY_LIMIT : env.TESTER_DAILY_LIMIT);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : owner ? 300 : 50;
 }
 
 /** Builds the Anthropic client; tests swap it for a fake. */
@@ -57,15 +69,20 @@ export async function handle(request: Request, env: Env, makeClient: ClientFacto
 }
 
 async function route(request: Request, env: Env, url: URL, makeClient: ClientFactory): Promise<Response> {
-  const who = await identify(request, env);
   const path = url.pathname.slice("/api/".length).split("/").filter(Boolean);
   const method = request.method;
+  if (path[0] === "auth") {
+    if (!env.BETTER_AUTH_SECRET) return fail(503, "unavailable", "Sign-in isn't set up on the server yet.");
+    return makeAuth(env, url.origin).handler(request);
+  }
 
+  const who = await identify(request, env);
   if (path[0] === "me" && path.length === 1 && method === "GET") {
-    return json(who ? { signedIn: true, userId: who.userId, email: who.email ?? null } : { signedIn: false });
+    return json(who ? { signedIn: true, userId: who.userId, email: who.email ?? null, isOwner: isOwner(env, who) } : { signedIn: false });
   }
   if (!who) return fail(401, "not_granted", "Sign in to use Telosgard.");
 
+  if (path[0] === "invites") return invites(request, env, who, path.slice(1), url);
   if (path[0] === "docs") return docs(request, env, who, path.slice(1), url);
   if (path[0] === "files") return files(request, env, who, path.slice(1));
   if (path[0] === "claude" && path.length === 2 && (path[1] === "json" || path[1] === "text") && method === "POST") {
@@ -147,7 +164,7 @@ async function files(request: Request, env: Env, who: Identity, rest: string[]):
 }
 
 async function claude(request: Request, env: Env, who: Identity, mode: Mode, makeClient: ClientFactory): Promise<Response> {
-  if (!env.ANTHROPIC_API_KEY) return fail(503, "not_granted", "Claude isn't set up on the server yet.");
+  if (!env.ANTHROPIC_API_KEY) return fail(503, "not_granted", "Professor Aurel isn't set up on the server yet.");
   let body: { prompt?: unknown; tier?: unknown };
   try {
     body = await request.json();
@@ -156,7 +173,7 @@ async function claude(request: Request, env: Env, who: Identity, mode: Mode, mak
   }
   if (typeof body.prompt !== "string") return fail(400, "invalid_argument", "A prompt is required.");
 
-  const limit = Number(env.CLAUDE_DAILY_LIMIT ?? "300") || 300;
+  const limit = dailyLimit(env, who);
   const since = Date.now() - 24 * 3600 * 1000;
   const used = await env.DB.prepare("SELECT COUNT(*) AS n FROM claude_calls WHERE user_id = ?1 AND at > ?2").bind(who.userId, since).first<{ n: number }>();
   if ((used?.n ?? 0) >= limit) return fail(429, "rate_limited", `You've reached today's limit of ${limit} Claude requests. It resets over the next 24 hours.`);
@@ -174,4 +191,30 @@ async function claude(request: Request, env: Env, who: Identity, mode: Mode, mak
     if (e instanceof ClaudeError) return fail(e.status, e.code, e.message);
     throw e;
   }
+}
+
+async function invites(request: Request, env: Env, who: Identity, rest: string[], url: URL): Promise<Response> {
+  if (!isOwner(env, who)) return fail(403, "not_granted", "Only the owner can manage invites.");
+  if (rest.length === 0 && request.method === "POST") {
+    const bytes = crypto.getRandomValues(new Uint8Array(24));
+    const token = btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const id = crypto.randomUUID();
+    const now = Date.now();
+    const expiresAt = now + INVITE_DAYS * 24 * 3600 * 1000;
+    await env.DB.prepare("INSERT INTO invites (id, token_hash, created_by, created_at, expires_at) VALUES (?1, ?2, ?3, ?4, ?5)")
+      .bind(id, await sha256(token), who.userId, now, expiresAt)
+      .run();
+    return json({ id, url: `${url.origin}/#join-${token}`, expiresAt });
+  }
+  if (rest.length === 0 && request.method === "GET") {
+    const { results } = await env.DB.prepare("SELECT id, created_at, expires_at, used_at FROM invites WHERE created_by = ?1 ORDER BY created_at DESC LIMIT 50")
+      .bind(who.userId)
+      .all<{ id: string; created_at: number; expires_at: number; used_at: number | null }>();
+    return json(results.map((r) => ({ id: r.id, createdAt: r.created_at, expiresAt: r.expires_at, usedAt: r.used_at })));
+  }
+  if (rest.length === 1 && request.method === "DELETE") {
+    await env.DB.prepare("DELETE FROM invites WHERE id = ?1 AND created_by = ?2 AND used_at IS NULL").bind(rest[0], who.userId).run();
+    return json(null);
+  }
+  return fail(404, "invalid_argument", "No such route.");
 }

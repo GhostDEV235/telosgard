@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import { handle, type Env } from "../src/index";
+import { dailyLimit, handle, type Env } from "../src/index";
 import { extractJson, MODEL, type MessagesClient } from "../src/claude";
 
 type Reply = { text?: string; stop?: string; error?: unknown };
@@ -96,6 +96,27 @@ describe("Claude through the Worker", () => {
     expect(third.calls).toHaveLength(0);
     const row = await (env as unknown as Env).DB.prepare("SELECT COUNT(*) AS n, SUM(input_tokens) AS i FROM claude_calls WHERE user_id = ?1").bind(user).first<{ n: number; i: number }>();
     expect(row).toEqual({ n: 2, i: 240 });
+  });
+});
+
+describe("daily caps: owner and testers", () => {
+  const e = (vars: Record<string, string> = {}) => ({ ...vars }) as unknown as Env;
+  it("gives owners 300 and testers 50 by default", () => {
+    const env1 = e({ OWNER_EMAILS: "Owner@Example.com, second@example.com" });
+    expect(dailyLimit(env1, { userId: "a", email: "owner@example.com" })).toBe(300);
+    expect(dailyLimit(env1, { userId: "b", email: "SECOND@example.com" })).toBe(300);
+    expect(dailyLimit(env1, { userId: "c", email: "tester@gmail.com" })).toBe(50);
+    expect(dailyLimit(env1, { userId: "d" })).toBe(50);
+  });
+  it("treats everyone as a tester when no owner is set, except the localhost dev user", () => {
+    expect(dailyLimit(e(), { userId: "a", email: "owner@example.com" })).toBe(50);
+    expect(dailyLimit(e(), { userId: "dev", dev: true })).toBe(300);
+  });
+  it("uses the configured numbers", () => {
+    const env2 = e({ OWNER_EMAILS: "o@x.com", CLAUDE_DAILY_LIMIT: "500", TESTER_DAILY_LIMIT: "20" });
+    expect(dailyLimit(env2, { userId: "a", email: "o@x.com" })).toBe(500);
+    expect(dailyLimit(env2, { userId: "b", email: "t@x.com" })).toBe(20);
+    expect(dailyLimit(e({ TESTER_DAILY_LIMIT: "nonsense" }), { userId: "b", email: "t@x.com" })).toBe(50);
   });
 });
 

@@ -7,7 +7,7 @@ export default defineConfig(async () => {
     plugins: [
       cloudflareTest({
         wrangler: { configPath: "./wrangler.toml" },
-        miniflare: { bindings: { TEST_MIGRATIONS: migrations } },
+        miniflare: { bindings: { TEST_MIGRATIONS: migrations, BETTER_AUTH_SECRET: "test-secret-for-vitest-only-0123456789abcdef", OWNER_EMAILS: "owner@example.com" } },
       }),
     ],
     test: { setupFiles: ["./test/setup.ts"] },

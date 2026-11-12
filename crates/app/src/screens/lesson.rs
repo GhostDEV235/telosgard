@@ -125,7 +125,7 @@ fn screen_view(l: &'static Lesson, s: Screen, ask: RwSignal<Option<usize>>) -> A
                         ask.set(Some(i))
                     }
                 }>
-                    "Ask Claude about this step"
+                    "Ask Professor Aurel about this step"
                 </button>
             }
             .into_any()
@@ -393,12 +393,12 @@ fn AskBody(lesson: &'static Lesson, #[prop(into)] step: Signal<Option<usize>>, i
         });
     };
     move || match step.get() {
-        None => view! { <p class="text-callout text-text-muted">"Open one of the lesson's steps to ask Claude about it."</p> }.into_any(),
+        None => view! { <p class="text-callout text-text-muted">"Open one of the lesson's steps to ask Professor Aurel about it."</p> }.into_any(),
         Some(i) => {
             let st = &lesson.steps[i];
             let earlier = log.with(|v| v.iter().filter(|a| a.lesson == lesson.id && a.step == i).cloned().collect::<Vec<_>>());
             view! {
-                <p class="text-footnote text-text-muted">{format!("About “{}”. Claude answers about this lesson only, and never tells you what to trade.", st.heading)}</p>
+                <p class="text-footnote text-text-muted">{format!("About “{}”. Professor Aurel answers about this lesson only, and never tells you what to trade. He is Telosgard's AI tutor.", st.heading)}</p>
                 <div class="mt-3 grid gap-3" aria-live="polite">
                     {earlier.into_iter().map(|a| view! {
                         <div class="rounded-btn bg-surface p-3.5 shadow-card">
@@ -424,7 +424,7 @@ fn AskBody(lesson: &'static Lesson, #[prop(into)] step: Signal<Option<usize>>, i
     }
 }
 
-/// The phone sheet for "Ask Claude about this step".
+/// The phone sheet for "Ask Professor Aurel about this step".
 #[component]
 fn AskStep(lesson: &'static Lesson, ask: RwSignal<Option<usize>>) -> impl IntoView {
     let open = RwSignal::new(false);
@@ -442,7 +442,7 @@ fn AskStep(lesson: &'static Lesson, ask: RwSignal<Option<usize>>) -> impl IntoVi
         }
     });
     view! {
-        <Sheet open=open title="Ask Claude">
+        <Sheet open=open title="Ask Professor Aurel">
             <AskBody lesson=lesson step=Signal::derive(move || ask.get()) input_id="ask-sheet-q" />
         </Sheet>
     }
@@ -524,7 +524,7 @@ pub fn LessonPanel(id: LessonId) -> impl IntoView {
                 }
             }}
             <div class="my-5 border-t border-hairline"></div>
-            <p class="text-eyebrow text-eyebrow-ink">"Ask Claude"</p>
+            <p class="text-eyebrow text-eyebrow-ink">"Ask Professor Aurel"</p>
             <div class="mt-2"><AskBody lesson=l step=step input_id="ask-panel-q" /></div>
             <div class="my-5 border-t border-hairline"></div>
             <p class="text-eyebrow text-eyebrow-ink">"Sources"</p>
@@ -658,7 +658,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
     let result = move || match phase.get() {
         Phase::Writing => ().into_any(),
         Phase::Grading => view! {
-            <p class="anim-fade mt-3 rounded-btn bg-bg p-3.5 text-callout" role="status">"Claude is reading your answer…"</p>
+            <p class="anim-fade mt-3 rounded-btn bg-bg p-3.5 text-callout" role="status">"Professor Aurel is reading your answer…"</p>
         }
         .into_any(),
         Phase::Failed(msg) => view! {
@@ -717,7 +717,7 @@ fn ExplainBack(id: LessonId, prompt: &'static str) -> impl IntoView {
         <section class="rounded-card bg-surface p-5 shadow-card">
             <p class="text-headline">{prompt}</p>
             <p class="mt-1 text-callout text-text-muted">
-                "Write it like you're explaining to a friend. Claude reads it for meaning, not wording."
+                "Write it like you're explaining to a friend. Professor Aurel reads it for meaning, not wording."
             </p>
             <div class="mt-4 flex flex-wrap items-center gap-3">
                 <button type="button" class=PILL on:click=move |_| open.set(true)>
@@ -857,7 +857,7 @@ fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
                 round.get().map(|(n, items)| {
                     view! {
                         <div>
-                            <p class="mb-2 text-eyebrow text-eyebrow-ink">{format!("Practice round {n} · written by Claude")}</p>
+                            <p class="mb-2 text-eyebrow text-eyebrow-ink">{format!("Practice round {n} · written by Professor Aurel")}</p>
                             <QuizCard questions=items on_done=move |_| asking.set(true) practice=true />
                         </div>
                     }
@@ -869,7 +869,7 @@ fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
                         {move || if rounds.get() == 0 { "Want to be quizzed on more concepts?" } else { "Another round?" }}
                     </h3>
                     <p class="mt-1 text-callout text-text-muted">
-                        "Claude writes 5 fresh questions. Practice only: it never changes your Gate."
+                        "Professor Aurel writes 5 fresh questions. Practice only: it never changes your Gate."
                     </p>
                     <div class="mt-4 flex flex-wrap gap-3">
                         <button type="button" class=PILL disabled=move || busy.get() on:click=move |_| start(MoreScope::ThisLesson)>
@@ -890,7 +890,7 @@ fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
                             "No thanks"
                         </button>
                     </div>
-                    {move || busy.get().then(|| view! { <p class="mt-3 text-callout" role="status">"Claude is writing your questions…"</p> })}
+                    {move || busy.get().then(|| view! { <p class="mt-3 text-callout" role="status">"Professor Aurel is writing your questions…"</p> })}
                     {move || error.get().map(|e| view! { <p class="mt-3 text-callout text-down" role="alert">"⚠ " {e}</p> })}
                 </section>
             </Show>

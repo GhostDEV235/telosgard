@@ -25,6 +25,16 @@ extern "C" {
     async fn js_sample(prompt: &str, tier: &str) -> JsValue;
     #[wasm_bindgen(js_name = sampleText)]
     async fn js_sample_text(prompt: &str, tier: &str) -> JsValue;
+    #[wasm_bindgen(js_name = authSignIn)]
+    async fn js_auth_sign_in(email: &str, password: &str) -> JsValue;
+    #[wasm_bindgen(js_name = authSignUp)]
+    async fn js_auth_sign_up(name: &str, email: &str, password: &str, invite: &str) -> JsValue;
+    #[wasm_bindgen(js_name = authSignOut)]
+    async fn js_auth_sign_out() -> JsValue;
+    #[wasm_bindgen(js_name = inviteCreate)]
+    async fn js_invite_create() -> JsValue;
+    #[wasm_bindgen(js_name = copyText)]
+    async fn js_copy_text(text: &str) -> JsValue;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -43,6 +53,8 @@ pub enum PlatformError {
     Invalid(String),
     /// Claude declined or couldn't answer.
     Claude(String),
+    /// Sign-in or sign-up refused; the message is the server's own.
+    Auth(String),
 }
 
 impl PlatformError {
@@ -54,6 +66,7 @@ impl PlatformError {
             "resource_exhausted" | "rate_limited" => PlatformError::RateLimited,
             "invalid_argument" | "transform_error" | "invalid_request" | "prompt_too_large" => PlatformError::Invalid(message),
             "refused" => PlatformError::Claude(message),
+            "auth" => PlatformError::Auth(message),
             "invalid_json" => PlatformError::Claude("its reply couldn't be read".into()),
             _ => PlatformError::Unavailable,
         }
@@ -68,7 +81,8 @@ impl PlatformError {
             PlatformError::Quota(_) => "Storage is full. Nothing new can be saved.".into(),
             PlatformError::RateLimited => "Too many requests. Wait a moment and try again.".into(),
             PlatformError::Invalid(m) => format!("Something went wrong saving ({m})."),
-            PlatformError::Claude(m) => format!("Claude couldn't answer ({m})."),
+            PlatformError::Claude(m) => format!("Professor Aurel couldn't answer ({m})."),
+            PlatformError::Auth(m) => m.clone(),
         }
     }
 }
@@ -91,7 +105,7 @@ fn unwrap(v: JsValue) -> Result<Value, PlatformError> {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Caps {
     /// Storage usable: db granted AND a signed-in viewer to own the private folder.
@@ -100,6 +114,37 @@ pub struct Caps {
     /// The `user` capability answered (so a missing id means signed out, not "no platform").
     pub user: bool,
     pub signed_in: bool,
+    #[serde(default)]
+    pub email: Option<String>,
+    /// The signed-in account is the owner (may create invites).
+    #[serde(default)]
+    pub owner: bool,
+}
+
+pub async fn auth_sign_in(email: &str, password: &str) -> Result<(), PlatformError> {
+    unwrap(js_auth_sign_in(email, password).await).map(|_| ())
+}
+
+pub async fn auth_sign_up(name: &str, email: &str, password: &str, invite: &str) -> Result<(), PlatformError> {
+    unwrap(js_auth_sign_up(name, email, password, invite).await).map(|_| ())
+}
+
+pub async fn auth_sign_out() -> Result<(), PlatformError> {
+    unwrap(js_auth_sign_out().await).map(|_| ())
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Invite {
+    pub url: String,
+}
+
+pub async fn invite_create() -> Result<Invite, PlatformError> {
+    serde_json::from_value(unwrap(js_invite_create().await)?).map_err(|e| PlatformError::Invalid(e.to_string()))
+}
+
+pub async fn copy_text(text: &str) -> bool {
+    unwrap(js_copy_text(text).await).ok().and_then(|v| v.as_bool()).unwrap_or(false)
 }
 
 pub async fn init() -> Result<Caps, PlatformError> {

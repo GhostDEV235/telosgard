@@ -1,8 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import { exportJWK, generateKeyPair, SignJWT, createLocalJWKSet } from "jose";
 import worker, { type Env } from "../src/index";
-import { identify } from "../src/auth";
 
 
 /** Calls the Worker as `user` (via DEV_USER on localhost), or signed out when user is null. */
@@ -31,21 +29,6 @@ describe("identity", () => {
     expect((await call("alice", "GET", "/api/me")).data).toMatchObject({ signedIn: true, userId: "alice" });
     const remote = await call("alice", "GET", "/api/docs/profile", undefined, {}, "https://telosgard.example.workers.dev");
     expect(remote.status).toBe(401);
-  });
-
-  it("accepts a valid Access JWT and rejects a wrong audience or a forged key", async () => {
-    const team = "https://telosgard.cloudflareaccess.com";
-    const { publicKey, privateKey } = await generateKeyPair("RS256");
-    const jwk = { ...(await exportJWK(publicKey)), kid: "k1", alg: "RS256" };
-    const keys = createLocalJWKSet({ keys: [jwk] });
-    const sign = (aud: string, key = privateKey) =>
-      new SignJWT({ email: "learner@example.com" }).setProtectedHeader({ alg: "RS256", kid: "k1" }).setIssuer(team).setAudience(aud).setSubject("user-123").setIssuedAt().setExpirationTime("5m").sign(key);
-    const envA = { ACCESS_TEAM_DOMAIN: team, ACCESS_AUD: "aud-1" };
-    const req = (token: string) => new Request("https://telosgard.example.com/api/me", { headers: { "Cf-Access-Jwt-Assertion": token } });
-    expect(await identify(req(await sign("aud-1")), envA, keys)).toEqual({ userId: "user-123", email: "learner@example.com" });
-    expect(await identify(req(await sign("aud-2")), envA, keys)).toBeNull();
-    const forger = await generateKeyPair("RS256");
-    expect(await identify(req(await sign("aud-1", forger.privateKey)), envA, keys)).toBeNull();
   });
 });
 

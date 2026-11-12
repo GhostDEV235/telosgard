@@ -1,6 +1,6 @@
 # Telosgard moves from a claude.ai Artifact to Cloudflare (a Worker with static assets, D1, R2, Access)
 
-*Decided 2026-11-11. Supersedes the hosting part of [ADR 0001](0001-rust-wasm-on-claude-artifact.md); the Rust → WebAssembly app itself stays.*
+*Decided 2026-11-11. Supersedes the hosting part of [ADR 0001](0001-rust-wasm-on-claude-artifact.md); the Rust → WebAssembly app itself stays. The Cloudflare Access part is superseded by [ADR 0004](0004-better-auth-invite-only.md) (Better Auth, invite-only).*
 
 Telosgard is served by one **Cloudflare Worker with static assets** (Cloudflare's current recommendation for new projects, in place of Pages Functions): the app's files are served as static assets, and the Worker code runs for `/api/*` with three jobs: store the Learner's documents in **Cloudflare D1**, keep chart screenshots in **R2**, and call the **Anthropic API** for grading, verdicts, practice questions and Ask Claude, holding the API key as a secret. **Cloudflare Access** guards the whole site (an email one-time code or Google), and the Worker trusts only the identity Access signs. The claude.ai Artifact is frozen at version 21 and no longer updated.
 

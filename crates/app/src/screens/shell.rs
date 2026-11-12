@@ -26,7 +26,21 @@ pub fn Shell() -> impl IntoView {
         r if crate::screens::workspace::has_journal_panel(&r) => Some(view! { <crate::screens::workspace::JournalPanel /> }.into_any()),
         _ => None,
     };
-    view! {
+    // Invite-only (ADR 0004): signed-out visitors see the sign-in screen; an invite link opens Join.
+    // A Memo, so routine save-state changes never re-render the app.
+    let store = expect_context::<crate::store::Store>();
+    #[derive(Clone, PartialEq)]
+    enum Gate {
+        App,
+        SignIn,
+        Join(String),
+    }
+    let gate = Memo::new(move |_| match route.get() {
+        Route::Join(t) => Gate::Join(t),
+        _ if store.state.get() == crate::store::SaveState::Local(crate::store::LocalReason::SignedOut) => Gate::SignIn,
+        _ => Gate::App,
+    });
+    let app = move || view! {
         <div class="lg:flex">
         <crate::screens::workspace::Sidebar />
         <div class="min-h-dvh min-w-0 flex-1 pb-[calc(84px+env(safe-area-inset-bottom,0px))] lg:canvas-grid lg:px-5 lg:pt-5 lg:pb-10 xl:px-8">
@@ -52,6 +66,7 @@ pub fn Shell() -> impl IntoView {
                 Route::TradeNew => view! { <crate::screens::trade::TradeNew /> }.into_any(),
                 Route::TradeSkip => view! { <crate::screens::trade::TradeSkip /> }.into_any(),
                 Route::Trade(id) => view! { <crate::screens::trade::TradeDetail id=id /> }.into_any(),
+                Route::Join(_) => view! { <Home /> }.into_any(),
             }}</div> }}
             <RiskFooter />
             </div>
@@ -59,6 +74,13 @@ pub fn Shell() -> impl IntoView {
         {panel}
         </div>
         <TabBar />
+    };
+    view! {
+        {move || match gate.get() {
+            Gate::App => app().into_any(),
+            Gate::SignIn => view! { <crate::screens::account::SignIn /> }.into_any(),
+            Gate::Join(t) => view! { <crate::screens::account::Join token=t /> }.into_any(),
+        }}
         <Toast />
         <crate::ui::moments::BigMomentOverlay />
         <AppearanceSheet open=appearance />
@@ -193,6 +215,7 @@ fn AppearanceSheet(open: RwSignal<bool>) -> impl IntoView {
                 options=vec![(ThemeChoice::System, "System"), (ThemeChoice::Dark, "Dark"), (ThemeChoice::Light, "Light")]
             />
             <p class="mt-3 text-footnote text-text-muted">"System follows your device's setting."</p>
+            <crate::screens::account::AccountSection />
             <hr class="my-5 border-line/30" />
             <button
                 type="button"
@@ -224,6 +247,7 @@ fn Disclaimer(open: RwSignal<bool>) -> impl IntoView {
             <div class="grid gap-3 text-body">
                 <p>"Telosgard teaches you how gold trading works, step by step. It is " <strong>"education, not financial advice"</strong> "."</p>
                 <p>"It will never tell you to buy or sell, and it never shows live prices or signals. Charts in drills are illustrative, not real market data."</p>
+                <p>"Professor Aurel, who grades your explanations, judges your journal and answers your questions, is Telosgard's AI tutor."</p>
                 <p>"Trading can lose money, including more than you expect, quickly. That's why you'll practise on a " <strong>"demo account"</strong> " until your discipline is proven, and only then learn about going live."</p>
             </div>
             <button type="button" class=format!("{PILL} mt-6 w-full") on:click=accept>"I understand"</button>

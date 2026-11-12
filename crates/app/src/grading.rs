@@ -16,10 +16,10 @@ impl GradeError {
     pub fn describe(&self) -> String {
         match self {
             GradeError::Platform(PlatformError::NotGranted) => {
-                "Claude grading isn't available right now: you may be signed out, or Claude isn't set up on the server yet. Nothing was graded.".into()
+                "Professor Aurel can't grade right now: you may be signed out, or he isn't set up on the server yet. Nothing was graded.".into()
             }
             GradeError::Platform(e) => format!("{} Nothing was graded.", e.describe()),
-            GradeError::Unreadable(_) => "Claude's reply didn't come back in the expected shape. Nothing was graded; try again.".into(),
+            GradeError::Unreadable(_) => "Professor Aurel's reply didn't come back in the expected shape. Nothing was graded; try again.".into(),
         }
     }
 }
@@ -62,7 +62,7 @@ pub async fn grade(lesson: &Lesson, answer: &str) -> Result<GradeResult, GradeEr
 pub async fn judge(input: &telosgard_core::adherence::AdherenceInput<'_>) -> Result<telosgard_core::adherence::AdherenceResult, String> {
     let prompt = telosgard_core::adherence::build_adherence_prompt(input);
     let v = platform::sample_json(&prompt, "default").await.map_err(|e| GradeError::Platform(e).describe().replace("graded", "judged"))?;
-    telosgard_core::adherence::parse_adherence(&v).map_err(|_| "Claude's verdict didn't come back in the expected shape. Nothing was judged; try again.".to_string())
+    telosgard_core::adherence::parse_adherence(&v).map_err(|_| "Professor Aurel's verdict didn't come back in the expected shape. Nothing was judged; try again.".to_string())
 }
 
 /// A Claude-written practice round (5 questions) on these lessons. Never counts towards a Gate.
@@ -77,11 +77,11 @@ pub async fn practice(lessons: &[&Lesson], avoid: &[String]) -> Result<Vec<telos
     let prompt = build_practice_prompt(&sources, 5, &avoid);
     let v = platform::sample_json(&prompt, "default")
         .await
-        .map_err(|e| GradeError::Platform(e).describe().replace("Claude grading isn't available here", "Claude isn't available here").replace("Nothing was graded.", "No questions were written."))?;
-    parse_practice(&v, 5, &ids, &avoid).map_err(|_| "Claude's questions didn't come back in a usable shape. Try again.".to_string())
+        .map_err(|e| GradeError::Platform(e).describe().replace("Grading isn't available here", "Professor Aurel isn't available here").replace("Nothing was graded.", "No questions were written."))?;
+    parse_practice(&v, 5, &ids, &avoid).map_err(|_| "Professor Aurel's questions didn't come back in a usable shape. Try again.".to_string())
 }
 
-/// "Ask Claude about this step": one plain-text tutor call. Errors are messages to show; there is
+/// "Ask Professor Aurel about this step": one plain-text tutor call. Errors are messages to show; there is
 /// never a stand-in answer. Returns the answer and whether the platform cut it short.
 pub async fn ask_step(l: &Lesson, step: usize, question: &str) -> Result<(String, bool), String> {
     use telosgard_core::tutor::{TutorInput, TutorStep, build_tutor_prompt, clean_answer, plain_text};
@@ -96,8 +96,8 @@ pub async fn ask_step(l: &Lesson, step: usize, question: &str) -> Result<(String
         question,
     };
     match platform::sample_text(&build_tutor_prompt(&input), "default").await {
-        Ok(r) => clean_answer(&r.text).map(|a| (a, r.truncated)).ok_or_else(|| "Claude sent back an empty answer. Try asking again.".to_string()),
-        Err(PlatformError::NotGranted) => Err("Asking Claude isn't available right now: you may be signed out, or Claude isn't set up on the server yet.".into()),
+        Ok(r) => clean_answer(&r.text).map(|a| (a, r.truncated)).ok_or_else(|| "Professor Aurel sent back an empty answer. Try asking again.".to_string()),
+        Err(PlatformError::NotGranted) => Err("Professor Aurel can't answer right now: you may be signed out, or he isn't set up on the server yet.".into()),
         Err(e) => Err(e.describe()),
     }
 }

@@ -276,11 +276,13 @@ pub struct Store {
     pub qrecs: RwSignal<HashMap<u8, BTreeMap<String, QuestionRecord>>>,
     /// Lessons whose Question Records changed since the last save.
     qrec_dirty: RwSignal<BTreeSet<u8>>,
+    /// The signed-in account: (email, is owner). None when signed out or not yet known.
+    pub account: RwSignal<Option<(Option<String>, bool)>>,
 }
 
 impl Store {
     pub fn new(toasts: Toasts) -> Store {
-        Store { toasts, state: RwSignal::new(SaveState::Connecting), profile: RwSignal::new(None), drills: RwSignal::new(Default::default()), qrecs: RwSignal::new(Default::default()), qrec_dirty: RwSignal::new(Default::default()) }
+        Store { toasts, state: RwSignal::new(SaveState::Connecting), profile: RwSignal::new(None), drills: RwSignal::new(Default::default()), qrecs: RwSignal::new(Default::default()), qrec_dirty: RwSignal::new(Default::default()), account: RwSignal::new(None) }
     }
 
     fn enabled(&self) -> bool {
@@ -305,6 +307,9 @@ impl Store {
                     return;
                 }
             };
+            if caps.signed_in {
+                self.account.set(Some((caps.email.clone(), caps.owner)));
+            }
             if !caps.db {
                 self.state.set(SaveState::Local(if caps.user && !caps.signed_in { LocalReason::SignedOut } else { LocalReason::NoStorage }));
                 return;

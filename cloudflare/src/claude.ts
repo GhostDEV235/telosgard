@@ -18,8 +18,8 @@ const MAX_TOKENS: Record<Mode, number> = { json: 16000, text: 4000 };
 export const MAX_PROMPT_CHARS = 60000;
 
 const SYSTEM: Record<Mode, string> = {
-  json: "You are the grader and coach inside Telosgard, a course that teaches a complete beginner to trade gold. Follow the user message exactly. Reply with only the JSON it asks for: no prose, no code fences.",
-  text: "You are the tutor inside Telosgard, a course that teaches a complete beginner to trade gold. Follow the user message's rules. Reply in plain text.",
+  json: "You are Professor Aurel, the AI grader and coach inside Telosgard, a course that teaches a complete beginner to trade gold. Follow the user message exactly. Reply with only the JSON it asks for: no prose, no code fences.",
+  text: "You are Professor Aurel, the AI tutor inside Telosgard, a course that teaches a complete beginner to trade gold. If asked who you are, say you are Professor Aurel, Telosgard's AI tutor. Follow the user message's rules. Reply in plain text.",
 };
 
 export class ClaudeError extends Error {
@@ -44,15 +44,15 @@ export function extractJson(text: string): unknown {
     return JSON.parse(trimmed);
   } catch {}
   const start = trimmed.search(/[[{]/);
-  if (start < 0) throw new ClaudeError(502, "invalid_json", "Claude's reply had no JSON.");
+  if (start < 0) throw new ClaudeError(502, "invalid_json", "Professor Aurel's reply couldn't be read.");
   const open = trimmed[start];
   const close = open === "{" ? "}" : "]";
   const end = trimmed.lastIndexOf(close);
-  if (end <= start) throw new ClaudeError(502, "invalid_json", "Claude's reply had no complete JSON.");
+  if (end <= start) throw new ClaudeError(502, "invalid_json", "Professor Aurel's reply was incomplete.");
   try {
     return JSON.parse(trimmed.slice(start, end + 1));
   } catch {
-    throw new ClaudeError(502, "invalid_json", "Claude's reply couldn't be read as JSON.");
+    throw new ClaudeError(502, "invalid_json", "Professor Aurel's reply couldn't be read.");
   }
 }
 
@@ -86,7 +86,7 @@ export async function askClaude(client: MessagesClient, mode: Mode, prompt: stri
 
   const usage = { input: msg.usage.input_tokens, output: msg.usage.output_tokens };
   if (msg.stop_reason === "refusal") {
-    throw new ClaudeError(422, "refused", "Claude declined this request.");
+    throw new ClaudeError(422, "refused", "Professor Aurel declined this request.");
   }
   const text = msg.content
     .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
@@ -96,22 +96,22 @@ export async function askClaude(client: MessagesClient, mode: Mode, prompt: stri
   const truncated = msg.stop_reason === "max_tokens";
 
   if (mode === "text") {
-    if (!text) throw new ClaudeError(502, "invalid_json", "Claude sent back an empty answer.");
+    if (!text) throw new ClaudeError(502, "invalid_json", "Professor Aurel sent back an empty answer.");
     return { text, truncated, usage };
   }
-  if (truncated) throw new ClaudeError(502, "invalid_json", "Claude's reply was cut short.");
+  if (truncated) throw new ClaudeError(502, "invalid_json", "Professor Aurel's reply was cut short.");
   return { value: extractJson(text), usage };
 }
 
 /** SDK errors → the bridge's codes. Most specific first. */
 export function mapApiError(e: unknown): ClaudeError {
   if (e instanceof ClaudeError) return e;
-  if (e instanceof Anthropic.RateLimitError) return new ClaudeError(429, "rate_limited", "Claude is busy. Try again in a minute.");
+  if (e instanceof Anthropic.RateLimitError) return new ClaudeError(429, "rate_limited", "Professor Aurel is busy. Try again in a minute.");
   if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) {
-    return new ClaudeError(503, "not_granted", "Claude isn't set up on the server (the API key is missing or invalid).");
+    return new ClaudeError(503, "not_granted", "Professor Aurel isn't set up on the server (the API key is missing or invalid).");
   }
-  if (e instanceof Anthropic.BadRequestError) return new ClaudeError(400, "invalid_request", "Claude couldn't accept that request.");
-  if (e instanceof Anthropic.APIConnectionError) return new ClaudeError(503, "unavailable", "Couldn't reach Claude.");
-  if (e instanceof Anthropic.APIError) return new ClaudeError(503, "unavailable", "Claude had a problem. Try again.");
-  return new ClaudeError(500, "unavailable", "Something went wrong asking Claude.");
+  if (e instanceof Anthropic.BadRequestError) return new ClaudeError(400, "invalid_request", "Professor Aurel couldn't accept that request.");
+  if (e instanceof Anthropic.APIConnectionError) return new ClaudeError(503, "unavailable", "Couldn't reach Professor Aurel.");
+  if (e instanceof Anthropic.APIError) return new ClaudeError(503, "unavailable", "Professor Aurel had a problem. Try again.");
+  return new ClaudeError(500, "unavailable", "Something went wrong asking Professor Aurel.");
 }

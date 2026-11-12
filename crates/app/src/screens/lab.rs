@@ -143,7 +143,7 @@ pub fn GraderLab() -> impl IntoView {
         <main class="gutter mx-auto max-w-[900px] pt-6 pb-10">
             <h1 class="text-title1">"Grader lab"</h1>
             <p class="mt-2 text-callout text-text-muted">
-                {format!("Runs all {total} test answers (a correct one, one with a gap, one with a misconception, for each Stage 1 lesson) through Claude, the same way your Explain-Backs are graded. Takes a few minutes.")}
+                {format!("Runs all {total} test answers (a correct one, one with a gap, one with a misconception, for each Stage 1 lesson) through Professor Aurel, the same way your Explain-Backs are graded. Takes a few minutes.")}
             </p>
             <div class="mt-4 flex flex-wrap items-center gap-4">
                 <button type="button" class=PILL disabled=move || running.get() on:click=run>

@@ -28,6 +28,7 @@ pub fn frame_label(route: &Route) -> String {
         Route::GraderLab => "Lab · Grader".into(),
         Route::WidgetLab => "Lab · Widgets".into(),
         Route::QuestionStats => "Lab · Question stats".into(),
+        Route::Join(_) => "Join".into(),
     }
 }
 

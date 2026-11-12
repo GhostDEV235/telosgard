@@ -13,7 +13,7 @@ const fail = (code, message) => JSON.stringify({ ok: false, code: code || "unava
 const errOf = (e) => fail(e && e.code, e && e.message ? e.message : e);
 
 /** One API call. Resolves to the parsed JSON body, or throws {code, message}. */
-async function api(method, path, body, { timeout = TIMEOUT_MS, contentType = "application/json" } = {}) {
+async function api(method, path, body, { timeout = TIMEOUT_MS, contentType = "application/json", headers: extra = {} } = {}) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeout);
   let res;
@@ -21,7 +21,7 @@ async function api(method, path, body, { timeout = TIMEOUT_MS, contentType = "ap
     res = await fetch(path, {
       method,
       body,
-      headers: body === undefined ? {} : { "content-type": contentType },
+      headers: { ...(body === undefined ? {} : { "content-type": contentType }), ...extra },
       credentials: "same-origin",
       signal: ctrl.signal,
     });
@@ -65,7 +65,7 @@ export function init() {
       try {
         const me = await call(() => api("GET", "/api/me"));
         const signedIn = !!(me && me.signedIn);
-        return ok({ db: signedIn, user: true, sample: signedIn, signedIn });
+        return ok({ db: signedIn, user: true, sample: signedIn, signedIn, email: (me && me.email) || null, owner: !!(me && me.isOwner) });
       } catch (e) {
         return errOf(e);
       }
@@ -140,4 +140,44 @@ export async function uploadFromInput(inputId) {
     const r = await api("POST", "/api/files", file, { timeout: 60000, contentType: file.type });
     return ok({ id: r.id, url: r.url });
   } catch (e) { return errOf(e); }
+}
+
+// ── Accounts (Better Auth, ADR 0004). Errors come back as code "auth" with the server's message. ──
+
+const authErr = (e) => (e && (e.code === "unavailable" || e.code === "rate_limited") ? errOf(e) : fail("auth", (e && e.message) || "Sign-in failed."));
+
+export async function authSignIn(email, password) {
+  try {
+    await api("POST", "/api/auth/sign-in/email", JSON.stringify({ email, password }));
+    return ok(null);
+  } catch (e) { return authErr(e); }
+}
+
+export async function authSignUp(name, email, password, invite) {
+  try {
+    await api("POST", "/api/auth/sign-up/email", JSON.stringify({ name, email, password }), { headers: { "x-telosgard-invite": invite || "" } });
+    return ok(null);
+  } catch (e) { return authErr(e); }
+}
+
+export async function authSignOut() {
+  try {
+    await api("POST", "/api/auth/sign-out", JSON.stringify({}));
+    return ok(null);
+  } catch (e) { return authErr(e); }
+}
+
+/// Owner only: a single-use invite link, valid for 7 days. {id, url, expiresAt}
+export async function inviteCreate() {
+  try {
+    return ok(await api("POST", "/api/invites", JSON.stringify({})));
+  } catch (e) { return errOf(e); }
+}
+
+/// Copies text from a click handler; resolves ok(false) when the browser refuses.
+export async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return ok(true);
+  } catch (e) { return ok(false); }
 }

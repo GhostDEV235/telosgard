@@ -239,6 +239,8 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 
 **Exit check:** the Learner signs in through Access on the live site and sees their own progress.
 
+*2026-11-12: deployed to https://telosgard.emmaadjam.workers.dev (D1 `telosgard`, R2 `telosgard-files`, secrets `ANTHROPIC_API_KEY` and `OWNER_EMAILS`). Sign-in changed from Cloudflare Access to **Better Auth, invite-only** ([ADR 0004](adr/0004-better-auth-invite-only.md)): built and tested (25 Worker tests; local end-to-end with curl: signed-out refused, stranger sign-up 403, owner sign-up, invite created, tester joined, invalid invite 403, tester can't invite). Still open: production migration `0003_auth.sql`, the `BETTER_AUTH_SECRET` secret and the deploy (waiting for the Learner's approval), the Learner's own account via `/#join`, data copy from the Artifact, live checks.*
+
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:
 - Wave 2: session drills ("which session is it?", "is this a No-Trade Window?")

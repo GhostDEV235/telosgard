@@ -66,7 +66,7 @@ fn PlanSummary(plan: TradingPlan) -> impl IntoView {
                     })
                     .collect_view()}
             </dl>
-            <h2 class="mt-5 text-headline">"Soft Rules · checked by Claude"</h2>
+            <h2 class="mt-5 text-headline">"Soft Rules · checked by Professor Aurel"</h2>
             <p class="mt-2 text-callout">{plan.soft.setup.clone()}</p>
             <ul class="mt-2 grid gap-1 text-callout">
                 {extra.into_iter().map(|r| view! { <li>"• " {r}</li> }).collect_view()}

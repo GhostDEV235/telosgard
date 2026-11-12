@@ -152,7 +152,7 @@ pub fn TradeNew() -> impl IntoView {
             return;
         };
         if e.setup_reason.split_whitespace().count() < 5 {
-            error.set(Some("Describe why you took the trade in at least a sentence: Claude judges your plan from it.".into()));
+            error.set(Some("Describe why you took the trade in at least a sentence: Professor Aurel judges your plan from it.".into()));
             return;
         }
         if breached() {
@@ -268,7 +268,7 @@ pub fn TradeNew() -> impl IntoView {
                     {move || error.get().map(|e| view! { <p class="mt-4 text-callout text-down" role="alert">"⚠ " {e}</p> })}
                     <div class="mt-5 flex justify-end">
                         <button type="button" class=PILL disabled=move || busy.get() on:click=submit>
-                            {move || if busy.get() { "Saving…" } else { "Save and get Claude's verdict" }}
+                            {move || if busy.get() { "Saving…" } else { "Save and get Professor Aurel's verdict" }}
                         </button>
                     </div>
                 }
@@ -459,11 +459,11 @@ pub fn TradeDetail(id: String) -> impl IntoView {
                     <div class="mt-3">{hard_list(t.hard_results.clone())}</div>
                 </section>
                 <section class="mt-5 rounded-card bg-surface p-5 shadow-card" aria-live="polite">
-                    <h2 class="text-headline">{if matches!(t.adherence, Adherence::Disputed { .. }) { "Claude's second verdict (final)" } else { "Claude's verdict" }}</h2>
+                    <h2 class="text-headline">{if matches!(t.adherence, Adherence::Disputed { .. }) { "Professor Aurel's second verdict (final)" } else { "Professor Aurel's verdict" }}</h2>
                     {match t.adherence {
                         Adherence::Pending | Adherence::DisputePending { .. } => view! {
-                            <p class="mt-2 text-callout text-text-muted">{move || if busy.get() { "Claude is reading your entry…" } else { "No verdict yet. Nothing counts until one comes back." }}</p>
-                            <button type="button" class=format!("{PILL} mt-3") disabled=move || busy.get() on:click=move |_| ask()>"Get Claude's verdict"</button>
+                            <p class="mt-2 text-callout text-text-muted">{move || if busy.get() { "Professor Aurel is reading your entry…" } else { "No verdict yet. Nothing counts until one comes back." }}</p>
+                            <button type="button" class=format!("{PILL} mt-3") disabled=move || busy.get() on:click=move |_| ask()>"Get Professor Aurel's verdict"</button>
                         }.into_any(),
                         _ => view! {
                             <p class="mt-2 text-callout">{t.verdict_summary.clone().unwrap_or_default()}</p>
@@ -485,7 +485,7 @@ pub fn TradeDetail(id: String) -> impl IntoView {
                             {can_dispute.then(|| view! {
                                 <Show when=move || !dispute_open.get() fallback=move || view! {
                                     <div class="mt-4 grid gap-3">
-                                        <textarea rows="3" class="w-full rounded-field bg-bg p-3.5 text-callout placeholder:text-text-muted" placeholder="What did Claude miss? You get one dispute; the second verdict is final." prop:value=move || dispute_text.get() on:input=move |ev| dispute_text.set(event_target_value(&ev))></textarea>
+                                        <textarea rows="3" class="w-full rounded-field bg-bg p-3.5 text-callout placeholder:text-text-muted" placeholder="What did Professor Aurel miss? You get one dispute; the second verdict is final." prop:value=move || dispute_text.get() on:input=move |ev| dispute_text.set(event_target_value(&ev))></textarea>
                                         <div class="flex justify-end gap-3">
                                             <button type="button" class=PILL_GHOST on:click=move |_| dispute_open.set(false)>"Cancel"</button>
                                             <button type="button" class=PILL on:click=dispute>"Send dispute"</button>
