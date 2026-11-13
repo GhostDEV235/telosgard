@@ -72,6 +72,8 @@ pub fn Widget(kind: &'static str) -> impl IntoView {
         "pip_convert" => pip_convert().into_any(),
         "session_clock" => session_clock().into_any(),
         "surprise_meter" => surprise_meter().into_any(),
+        "candle_builder" => candle_builder().into_any(),
+        "candle_merge" => candle_merge().into_any(),
         _ => ().into_any(),
     };
     view! {
@@ -326,5 +328,76 @@ fn surprise_meter() -> impl IntoView {
             }
         }}
         <p class="mt-1 text-footnote text-text-muted">{t("Usually, not always: the details and revisions can flip the reaction. And never trade the release candle.", "En général, pas toujours : les détails et les révisions peuvent inverser la réaction. Et ne trade jamais la bougie de la publication.")}</p>
+    }
+}
+
+/// Lesson 21: the open, high and low are fixed; drag the close and watch the body and the winner change.
+fn candle_builder() -> impl IntoView {
+    use telosgard_core::drills::Candle;
+    use telosgard_core::stage4_drills::{Winner, wicks};
+    const OPEN: i64 = 410_000;
+    const HIGH: i64 = 411_200;
+    const LOW: i64 = 409_400;
+    let close = RwSignal::new(410_800i64);
+    let text = Signal::derive(move || ts(format!("Close {}", price(close.get())), format!("Clôture {}", price(close.get()))));
+    view! {
+        <p class="mt-2 text-callout">{ts(format!("One 1-hour candle: open {}, high {}, low {}. Move the close:", price(OPEN), price(HIGH), price(LOW)), format!("Une bougie 1 heure : ouverture {}, plus haut {}, plus bas {}. Fais varier la clôture :", price(OPEN), price(HIGH), price(LOW)))}</p>
+        <Slider label=t("Close", "Clôture") value=close min=LOW max=HIGH step=100 valuetext=text />
+        {move || {
+            let c = Candle { open: Price(OPEN), high: Price(HIGH), low: Price(LOW), close: Price(close.get()) };
+            let (up, down) = wicks(&c);
+            let body = c.close.0 - c.open.0;
+            let (who, tone) = match Winner::of(&c) {
+                Winner::Buyers => (t("Buyers won the hour", "Les acheteurs ont gagné l’heure"), "bg-ok-bg text-ok-ink"),
+                Winner::Sellers => (t("Sellers won the hour", "Les vendeurs ont gagné l’heure"), "bg-bad-bg text-bad-ink"),
+                Winner::Draw => (t("A draw (doji)", "Match nul (doji)"), "bg-raised text-text-muted"),
+            };
+            let (b, _, _) = signed(body);
+            view! {
+                <div class="mt-3 grid items-center gap-4 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)]">
+                    {crate::ui::chart::candle_strip(&[c], Price(LOW - 100), Price(HIGH + 100), t("The candle you built", "La bougie que tu as construite").into())}
+                    <div aria-live="polite">
+                        <p><span class=format!("rounded-full px-2.5 py-0.5 text-callout font-semibold {tone}")>{who}</span></p>
+                        <p class="tabular mt-2 text-callout">{ts(format!("Body: {} → {} ({b})", price(OPEN), price(c.close.0)), format!("Corps : {} → {} ({b})", price(OPEN), price(c.close.0)))}</p>
+                        <p class="tabular text-callout">{ts(format!("Upper wick {} · lower wick {}", Usd(up), Usd(down)), format!("Mèche haute {} · mèche basse {}", Usd(up), Usd(down)))}</p>
+                    </div>
+                </div>
+            }
+        }}
+        <p class="mt-1 text-footnote text-text-muted">{t("The high and low stay put: only the close decides who won.", "Le plus haut et le plus bas ne bougent pas : seule la clôture décide qui a gagné.")}</p>
+    }
+}
+
+/// Lesson 22: four 15-minute candles, or the one 1-hour candle they make.
+fn candle_merge() -> impl IntoView {
+    use telosgard_core::drills::Candle;
+    use telosgard_core::stage4_drills::merge;
+    let c = |o: i64, h: i64, l: i64, cl: i64| Candle { open: Price(o * 100), high: Price(h * 100), low: Price(l * 100), close: Price(cl * 100) };
+    let quarter = [c(4100, 4105, 4098, 4104), c(4104, 4112, 4102, 4109), c(4109, 4110, 4099, 4101), c(4101, 4106, 4100, 4105)];
+    let hour = merge(&quarter).expect("four candles");
+    #[derive(Clone, Copy, PartialEq)]
+    enum View {
+        Quarter,
+        Hour,
+    }
+    let view_as = RwSignal::new(View::Quarter);
+    let (lo, hi) = (Price(409_700), Price(411_300));
+    view! {
+        <div class="mt-3">
+            <Segmented label=t("Timeframe", "Unité de temps") value=view_as options=vec![(View::Quarter, t("4 × M15", "4 × M15")), (View::Hour, t("1 × H1", "1 × H1"))] />
+        </div>
+        <div class="mt-3">
+            {move || match view_as.get() {
+                View::Quarter => crate::ui::chart::candle_strip(&quarter, lo, hi, t("Four 15-minute candles", "Quatre bougies de 15 minutes").into()).into_any(),
+                View::Hour => crate::ui::chart::candle_strip(&[hour], lo, hi, t("The 1-hour candle they make", "La bougie de 1 heure qu’elles forment").into()).into_any(),
+            }}
+        </div>
+        <p class="tabular mt-2 text-callout" aria-live="polite">
+            {ts(
+                format!("The hour: open {} (first open), high {} (highest), low {} (lowest), close {} (last close).", price(hour.open.0), price(hour.high.0), price(hour.low.0), price(hour.close.0)),
+                format!("L’heure : ouverture {} (première ouverture), plus haut {} (le plus haut), plus bas {} (le plus bas), clôture {} (dernière clôture).", price(hour.open.0), price(hour.high.0), price(hour.low.0), price(hour.close.0)),
+            )}
+        </p>
+        <p class="mt-1 text-footnote text-text-muted">{t("Same trades, grouped differently: the dip inside the hour disappears into the 1-hour candle's lower wick.", "Les mêmes échanges, regroupés autrement : le creux à l’intérieur de l’heure disparaît dans la mèche basse de la bougie de 1 heure.")}</p>
     }
 }

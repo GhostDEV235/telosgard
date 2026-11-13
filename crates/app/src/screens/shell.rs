@@ -55,6 +55,7 @@ pub fn Shell() -> impl IntoView {
                 Route::Practice => view! { <practice::Practice /> }.into_any(),
                 Route::Drill(DrillKind::Calibration) => view! { <practice::CalibrationDrill /> }.into_any(),
                 Route::Drill(DrillKind::Direction) => view! { <practice::DirectionDrill /> }.into_any(),
+                Route::Drill(DrillKind::BuildCandle) => view! { <practice::BuildCandleDrill /> }.into_any(),
                 Route::Drill(kind) => view! { <practice::ChoiceDrill kind=kind /> }.into_any(),
                 Route::Tools => view! { <tools::Tools /> }.into_any(),
                 Route::Plan => view! { <crate::screens::plan::Plan /> }.into_any(),
@@ -144,7 +145,7 @@ pub fn LargeTitle(
 #[component]
 pub fn SubBar(back: &'static str, back_label: &'static str, #[prop(into)] title: String) -> impl IntoView {
     view! {
-        <div class="glass sticky top-[env(safe-area-inset-top,0px)] z-20 border-b border-line/30">
+        <header class="glass sticky top-[env(safe-area-inset-top,0px)] z-20 border-b border-line/30">
             <div class="gutter mx-auto grid min-h-12 max-w-[1040px] grid-cols-[1fr_auto_1fr] items-center gap-2">
                 <a href=back class="press -ml-2 inline-flex min-h-11 items-center gap-1 justify-self-start rounded-btn px-2 text-body">
                     <span aria-hidden="true" class="text-title2 leading-none">"‹"</span>
@@ -153,7 +154,7 @@ pub fn SubBar(back: &'static str, back_label: &'static str, #[prop(into)] title:
                 <p class="max-w-[52vw] truncate text-headline">{title}</p>
                 <span></span>
             </div>
-        </div>
+        </header>
     }
 }
 

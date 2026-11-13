@@ -12,7 +12,7 @@ const READ_WPM: usize = 130;
 const MAX_STEP_WORDS: usize = 60;
 /// French takes roughly 20% more words for the same text.
 const MAX_STEP_WORDS_FR: usize = 75;
-const WIDGETS: &[&str] = &["price_drag", "lots_money", "one_percent", "stop_first", "short_risk", "leverage_toggle", "bid_ask", "win_rate", "pip_convert", "session_clock", "surprise_meter"];
+const WIDGETS: &[&str] = &["price_drag", "lots_money", "one_percent", "stop_first", "short_risk", "leverage_toggle", "bid_ask", "win_rate", "pip_convert", "session_clock", "surprise_meter", "candle_builder", "candle_merge"];
 /// The lesson about pips, the only one allowed to use the word.
 const PIPS_LESSON: u8 = 7;
 
@@ -96,7 +96,7 @@ struct Fixture {
     expect: String,
 }
 
-const DRILLS: &[&str] = &["candle_direction", "bid_ask", "dollar_distance", "pip_convert", "order_type", "session", "no_trade", "surprise"];
+const DRILLS: &[&str] = &["candle_direction", "bid_ask", "dollar_distance", "pip_convert", "order_type", "session", "no_trade", "surprise", "build_candle"];
 
 fn is_date(s: &str) -> bool {
     let b = s.as_bytes();

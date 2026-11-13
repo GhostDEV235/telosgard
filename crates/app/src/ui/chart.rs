@@ -122,3 +122,47 @@ pub fn Ring(
         </div>
     }
 }
+
+/// A few candles drawn large on a fixed price scale, for widgets and the "Build the candle" drill.
+/// `lo` and `hi` set the scale, so several drawings can be compared; the price axis is on the right.
+pub fn candle_strip(cs: &[Candle], lo: Price, hi: Price, label: String) -> impl IntoView + use<> {
+    const SLOT: f64 = 70.0;
+    const TOP: f64 = 10.0;
+    const BOTTOM: f64 = 190.0;
+    let plot_r = SLOT * cs.len() as f64;
+    let w = plot_r + 86.0;
+    let (lo_f, hi_f) = (lo.0 as f64, hi.0 as f64);
+    let y = move |p: Price| TOP + (hi_f - p.0 as f64) / (hi_f - lo_f).max(1.0) * (BOTTOM - TOP);
+    let grid = (0..=3)
+        .map(|i| {
+            // Whole dollars, so the axis reads like a chart, not a calculator.
+            let price = Price(((lo_f + (hi_f - lo_f) * i as f64 / 3.0) / 100.0).round() as i64 * 100);
+            let yy = y(price);
+            view! {
+                <line x1="0" x2=plot_r y1=yy y2=yy class="stroke-line/30" stroke-width="1" />
+                <text x=plot_r + 8.0 y=yy + 5.0 class="fill-text-muted tabular" font-size="15">{axis_label(price)}</text>
+            }
+        })
+        .collect_view();
+    let candles = cs
+        .iter()
+        .enumerate()
+        .map(|(i, c)| {
+            let cx = SLOT * (i as f64 + 0.5);
+            let up = c.close >= c.open;
+            let top = y(c.open.max(c.close));
+            let h = (y(c.open.min(c.close)) - top).max(2.0);
+            let (wick, rect) = if up { ("stroke-up", "fill-bg stroke-up") } else { ("stroke-down", "fill-down stroke-down") };
+            view! {
+                <line x1=cx x2=cx y1=y(c.high) y2=y(c.low) class=wick stroke-width="2" />
+                <rect x=cx - 14.0 y=top width="28" height=h rx="2" class=rect stroke-width="2" />
+            }
+        })
+        .collect_view();
+    view! {
+        <svg viewBox=format!("0 0 {w} 200") class="h-auto w-full max-w-[520px]" role="img" aria-label=label>
+            {grid}
+            {candles}
+        </svg>
+    }
+}

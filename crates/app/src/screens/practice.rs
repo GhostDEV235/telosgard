@@ -19,7 +19,7 @@ struct DrillInfo {
     lesson: Tx,
 }
 
-const DRILLS: [DrillInfo; 9] = [
+const DRILLS: [DrillInfo; 10] = [
     DrillInfo { kind: DrillKind::Calibration, title: Tx("Can you call the next candle?", "Peux-tu deviner la prochaine bougie ?"), blurb: Tx("Ten charts: predict up or down, then see your hit rate.", "Dix graphiques : prédis hausse ou baisse, puis découvre ton taux de réussite."), lesson: Tx("Lesson 2", "Leçon 2") },
     DrillInfo { kind: DrillKind::Distance, title: Tx("Measure the move", "Mesure le mouvement"), blurb: Tx("Turn two prices into a Dollar Move.", "Transforme deux prix en Mouvement en dollars."), lesson: Tx("Lesson 4", "Leçon 4") },
     DrillInfo { kind: DrillKind::Direction, title: Tx("Bullish or bearish?", "Haussière ou baissière ?"), blurb: Tx("Read a candle's direction from its open and close.", "Lis le sens d’une bougie à partir de son ouverture et de sa clôture."), lesson: Tx("Lesson 5", "Leçon 5") },
@@ -29,6 +29,7 @@ const DRILLS: [DrillInfo; 9] = [
     DrillInfo { kind: DrillKind::Session, title: Tx("Which session is it?", "Quelle séance est-ce ?"), blurb: Tx("Turn a time in New York or London into the session that's open.", "Transforme une heure de New York ou de Londres en séance ouverte."), lesson: Tx("Lesson 13", "Leçon 13") },
     DrillInfo { kind: DrillKind::NoTrade, title: Tx("Is this a No-Trade Window?", "Est-ce une Fenêtre sans trade ?"), blurb: Tx("Spot the rollover, the Sunday open and the minutes around big releases.", "Repère le rollover, l’ouverture du dimanche et les minutes autour des grandes annonces."), lesson: Tx("Lesson 15", "Leçon 15") },
     DrillInfo { kind: DrillKind::Surprise, title: Tx("Hot or soft?", "Chaude ou molle ?"), blurb: Tx("Compare a release with its forecast and say which way gold usually goes.", "Compare une statistique à sa prévision et dis dans quel sens l’or va en général."), lesson: Tx("Lesson 19", "Leçon 19") },
+    DrillInfo { kind: DrillKind::BuildCandle, title: Tx("Build the candle", "Construis la bougie"), blurb: Tx("Turn an open, high, low and close into the right candle, then say who won it.", "Transforme une ouverture, un plus haut, un plus bas et une clôture en la bonne bougie, puis dis qui l’a gagnée."), lesson: Tx("Lesson 21", "Leçon 21") },
 ];
 
 #[component]
@@ -529,6 +530,132 @@ pub fn CalibrationDrill() -> impl IntoView {
                     <button type="button" class=format!("{PILL} mt-4") on:click=again>{t("New round", "Nouvelle série")}</button>
                 </section>
             </Show>
+        </main>
+    }
+}
+
+/// "Build the candle" (Wave 4): four drawings on one price scale, one matching the numbers; then
+/// who won it. It counts as right only when both answers are.
+#[component]
+pub fn BuildCandleDrill() -> impl IntoView {
+    use telosgard_core::stage4_drills::{CandleQ, Winner};
+    let store = expect_context::<crate::store::Store>();
+    let seed = RwSignal::new(now() as u64);
+    let q = Memo::new(move |_| CandleQ::new(seed.get()));
+    let shape = RwSignal::new(None::<usize>);
+    let winner = RwSignal::new(None::<Winner>);
+    let score = RwSignal::new((0u32, 0u32));
+    let pick_winner = move |w: Winner| {
+        if winner.get_untracked().is_some() || shape.get_untracked().is_none() {
+            return;
+        }
+        winner.set(Some(w));
+        let qq = q.get_untracked();
+        let right = shape.get_untracked() == Some(qq.answer) && w == qq.winner;
+        store.record_drill("build-candle", right);
+        score.update(|(r, n)| {
+            *n += 1;
+            *r += right as u32;
+        });
+    };
+    let next = move |_| {
+        seed.update(|s| *s = s.wrapping_add(7919));
+        shape.set(None);
+        winner.set(None);
+    };
+    const LETTERS: [&str; 4] = ["A", "B", "C", "D"];
+    view! {
+        <SubBar back="#practice" back_label=t("Practice", "Entraînement") title=t("Build the candle", "Construis la bougie") />
+        <main class="gutter mx-auto max-w-[680px] pt-6 pb-10">
+            <div class="flex items-baseline justify-between gap-4">
+                <h1 class="text-title1">{t("Build the candle", "Construis la bougie")}</h1>
+                <p class="tabular shrink-0 whitespace-nowrap text-callout text-text-muted">{move || { let (r, n) = score.get(); ts(format!("{r} of {n} right"), format!("{r} sur {n} justes")) }}</p>
+            </div>
+            <p class="mt-2 text-callout text-text-muted">{t("Read the four prices, pick the candle that draws them, then say who won it. Prices are illustrative.", "Lis les quatre prix, choisis la bougie qui les dessine, puis dis qui l’a gagnée. Prix donnés à titre d’exemple.")}</p>
+            {move || {
+                let qq = q.get();
+                let c = qq.candle;
+                let lo = qq.options.iter().map(|o| o.low.0).min().unwrap_or(c.low.0) - 200;
+                let hi = qq.options.iter().map(|o| o.high.0).max().unwrap_or(c.high.0) + 200;
+                let numbers = ts(
+                    format!("Open {} · High {} · Low {} · Close {}", money(c.open), money(c.high), money(c.low), money(c.close)),
+                    format!("Ouverture {} · Plus haut {} · Plus bas {} · Clôture {}", money(c.open), money(c.high), money(c.low), money(c.close)),
+                );
+                let describe = move |o: &telosgard_core::drills::Candle| ts(
+                    format!("opens {}, high {}, low {}, closes {}", money(o.open), money(o.high), money(o.low), money(o.close)),
+                    format!("ouvre à {}, plus haut {}, plus bas {}, clôture à {}", money(o.open), money(o.high), money(o.low), money(o.close)),
+                );
+                let options = qq.options;
+                view! {
+                    <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
+                        <p class="tabular rounded-btn bg-bg p-3 text-headline">{numbers}</p>
+                        <h2 class="mt-4 text-headline">{t("1. Which candle is it?", "1. Quelle bougie est-ce ?")}</h2>
+                        <div class="mt-3">
+                            {crate::ui::chart::candle_strip(&options, Price(lo), Price(hi), t("Four candles labelled A to D, on one price scale", "Quatre bougies notées de A à D, sur une même échelle de prix").into())}
+                            // One button under each candle: the strip is 366 units wide and its right 86 are the price axis.
+                            <div class="grid max-w-[520px] grid-cols-4 gap-2" style="padding-right:23.5%">
+                                {(0..4).map(|i| {
+                                    let label = format!("{}: {}", LETTERS[i], describe(&options[i]));
+                                    view! {
+                                        <button
+                                            type="button"
+                                            aria-label=label
+                                            disabled=move || shape.get().is_some()
+                                            on:click=move |_| shape.set(Some(i))
+                                            class=move || {
+                                                let ring = match shape.get() {
+                                                    Some(_) if i == q.with(|q| q.answer) => "ring-2 ring-up",
+                                                    Some(p) if p == i => "ring-2 ring-down",
+                                                    Some(_) => "opacity-55",
+                                                    None => "",
+                                                };
+                                                format!("press min-h-11 rounded-btn bg-bg text-headline shadow-card {ring}")
+                                            }
+                                        >{LETTERS[i]}</button>
+                                    }
+                                }).collect_view()}
+                            </div>
+                        </div>
+                        <Show when=move || shape.get().is_some()>
+                            <h2 class="mt-5 text-headline">{t("2. Who won it?", "2. Qui l’a gagnée ?")}</h2>
+                            <div class="mt-3 grid gap-2">
+                                {Winner::ALL.into_iter().map(|w| view! {
+                                    <button
+                                        type="button"
+                                        disabled=move || winner.get().is_some()
+                                        on:click=move |_| pick_winner(w)
+                                        class=move || {
+                                            let ring = match winner.get() {
+                                                Some(_) if w == q.with(|q| q.winner) => "ring-2 ring-up",
+                                                Some(p) if p == w => "ring-2 ring-down",
+                                                Some(_) => "opacity-55",
+                                                None => "",
+                                            };
+                                            format!("press min-h-12 rounded-btn bg-bg px-4 text-left text-body shadow-card {ring}")
+                                        }
+                                    >{w.label()}</button>
+                                }).collect_view()}
+                            </div>
+                        </Show>
+                        {move || winner.get().map(|_| {
+                            let qq = q.get();
+                            let c = qq.candle;
+                            let right = shape.get() == Some(qq.answer) && winner.get() == Some(qq.winner);
+                            let why = ts(
+                                format!("Candle {}: the body runs from the open {} to the close {}, and the wicks reach the high {} and the low {}. The close decides who won.", LETTERS[qq.answer], money(c.open), money(c.close), money(c.high), money(c.low)),
+                                format!("Bougie {} : le corps va de l’ouverture {} à la clôture {}, et les mèches atteignent le plus haut {} et le plus bas {}. C’est la clôture qui décide qui a gagné.", LETTERS[qq.answer], money(c.open), money(c.close), money(c.high), money(c.low)),
+                            );
+                            view! {
+                                <div class="anim-fade mt-5" role="status">
+                                    <p class=if right { "text-headline text-up" } else { "text-headline text-down" }>{if right { t("Right on both.", "Juste sur les deux.") } else { t("Not quite.", "Pas tout à fait.") }}</p>
+                                    <p class="mt-1 text-callout">{why}</p>
+                                    <button type="button" class=format!("{PILL} mt-4") on:click=next>{t("Next candle ›", "Bougie suivante ›")}</button>
+                                </div>
+                            }
+                        })}
+                    </section>
+                }
+            }}
         </main>
     }
 }

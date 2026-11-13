@@ -60,10 +60,12 @@ Additions from the second review (Phase 9): Lesson 5 gains a step on shorts (pri
 
 Written from the Learner's attempt history: their first answers named only the winning side, so every Stage 3 rubric asks for the counter-case ("usually, not always"), and each "almost" fixture is the one-sided answer.
 
-### Stage 4: Reading the Chart *(Wave 4)*
-21. **Candlesticks:** open, high, low, close, wicks and bodies
-22. **Timeframes & top-down analysis:** bias → setup → entry; the beginner stack is H4 for direction, H1 for entries (D1/H4 for swing)
-23. **The five-step chart read:** choose timeframes → mark swing highs/lows → name the structure → draw levels and the session range → only then read the latest candles
+### Stage 4: Reading the Chart *(Wave 4, written 2026-11-13)*
+21. **Candlesticks:** open, high, low and close; the body (open to close: who won the period) and the wicks (the high and low); size as strength; a candle is a record, not a forecast. Widget `candle_builder`, drill "Build the candle"
+22. **Timeframes & top-down analysis:** M5/H1/H4/D1 as the same trades grouped differently (four M15 candles make one H1); bias → entry; the beginner pair is H4 for direction, H1 for entries (D1/H4 for swing), a course choice, not a market law; when timeframes disagree the higher one wins or you stand aside. Widget `candle_merge`
+23. **The five-step chart read:** choose timeframes → mark swing highs/lows → name the structure (up, down, sideways; Lesson 25 adds the names) → draw levels and the Asian range → only then read the latest candles; the read ends in a plan, not a signal
+
+Written from the attempt history: the reviewer's first drafts in Stages 1–2 left out the limit or the downside (the stop, the loss if price rises, "may never fill") and added it on the second try, as the first Learner did in Lesson 1. So each Stage 4 rubric asks for the limit ("a record, not a forecast"; "the higher timeframe wins"; "context, not a signal"), and each "almost" fixture is the answer without it. Facts checked against CME Group Education (candle anatomy and chart timeframes, read in the browser on 2026-11-13).
 
 ### Stage 5: Price Action *(Wave 5)*
 24. **Support & resistance zones:** zones not lines; a level is real after two reactions; round numbers ($50/$100) as magnets; trade the reaction, not the level
