@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/core", "crates/content", "crates/app"]
+members = ["crates/core", "crates/content", "crates/ui", "crates/app", "crates/admin"]
 exclude = ["spike"]
 
 [workspace.package]

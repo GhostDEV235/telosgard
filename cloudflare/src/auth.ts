@@ -5,6 +5,9 @@
 
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
+import { twoFactor } from "better-auth/plugins";
+import { recordEvents } from "./events";
+import { storedRole, type Role } from "./roles";
 
 export interface AuthEnv {
   DB: D1Database;
@@ -20,6 +23,11 @@ export interface Identity {
   email?: string;
   /** The localhost-only DEV_USER (wrangler dev and tests). */
   dev?: boolean;
+  /** Stored role (instructor, support or learner); see `roleOf` for the effective one. */
+  stored?: Role;
+  twoFactorEnabled?: boolean;
+  /** When this session was signed in (ms). */
+  sessionStart?: number;
 }
 
 export const INVITE_HEADER = "x-telosgard-invite";
@@ -45,6 +53,11 @@ export function hasFullAccess(env: { FULL_ACCESS_EMAILS?: string }, who: Identit
 
 export function isOwner(env: { OWNER_EMAILS?: string }, who: Identity): boolean {
   return who.dev === true || (who.email !== undefined && ownerEmails(env).includes(who.email.toLowerCase()));
+}
+
+/** The effective role: Owner by secret (or the localhost dev user), otherwise the stored role. */
+export function roleOf(env: { OWNER_EMAILS?: string }, who: Identity): Role {
+  return isOwner(env, who) ? "owner" : (who.stored ?? "learner");
 }
 
 export async function sha256(text: string): Promise<string> {
@@ -73,6 +86,10 @@ export function makeAuth(env: AuthEnv, origin: string) {
     emailAndPassword: { enabled: true, minPasswordLength: MIN_PASSWORD, autoSignIn: true },
     rateLimit: { enabled: true, storage: "database" },
     advanced: { ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] } },
+    // Staff roles (ADR 0007): set only by the Owner through the admin API, never by sign-up.
+    user: { additionalFields: { role: { type: "string", required: false, defaultValue: "learner", input: false } } },
+    // Two-factor for staff (ADR 0007): TOTP with 10 backup codes. Learners never need it.
+    plugins: [twoFactor({ issuer: "Telosgard", backupCodeOptions: { amount: 10 } })],
     hooks: {
       // Sign-up is invite-only: a valid invite token in the header, or an owner address.
       before: createAuthMiddleware(async (ctx) => {
@@ -91,10 +108,14 @@ export function makeAuth(env: AuthEnv, origin: string) {
           // The invite is spent once the account exists, so a failed sign-up doesn't burn it.
           after: async (user, ctx) => {
             const token = ctx?.headers?.get(INVITE_HEADER);
-            if (!token) return;
-            await env.DB.prepare("UPDATE invites SET used_by = ?1, used_at = ?2 WHERE token_hash = ?3 AND used_at IS NULL")
-              .bind(user.id, Date.now(), await sha256(token))
-              .run();
+            let invite: string | undefined;
+            if (token) {
+              const row = await env.DB.prepare("UPDATE invites SET used_by = ?1, used_at = ?2 WHERE token_hash = ?3 AND used_at IS NULL RETURNING id")
+                .bind(user.id, Date.now(), await sha256(token))
+                .first<{ id: string }>();
+              invite = row?.id;
+            }
+            await recordEvents(env.DB, user.id, [{ type: "signed_up", data: invite ? { invite } : {}, at: Date.now() }]);
           },
         },
       },
@@ -108,5 +129,12 @@ export async function identify(request: Request, env: AuthEnv): Promise<Identity
   if (!env.BETTER_AUTH_SECRET) return null;
   const session = await makeAuth(env, url.origin).api.getSession({ headers: request.headers });
   if (!session) return null;
-  return { userId: session.user.id, email: session.user.email };
+  const u = session.user as typeof session.user & { role?: unknown; twoFactorEnabled?: unknown };
+  return {
+    userId: u.id,
+    email: u.email,
+    stored: storedRole(u.role),
+    twoFactorEnabled: Boolean(u.twoFactorEnabled),
+    sessionStart: new Date(session.session.createdAt).getTime(),
+  };
 }

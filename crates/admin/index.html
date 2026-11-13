@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>Telosgard Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap">
+  <link data-trunk rel="rust" href="Cargo.toml" data-wasm-opt="z" data-bin="telosgard-admin" />
+  <link data-trunk rel="inline" href="style/out.css" />
+  <script>
+    // First-paint theme: the same per-device choice as the student app (same origin, same key).
+    (function () {
+      var root = document.documentElement;
+      window.__gsHostTheme = root.getAttribute("data-theme");
+      try {
+        var t = localStorage.getItem("gs-theme");
+        if (t === "dark" || t === "light") root.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body></body>
+</html>

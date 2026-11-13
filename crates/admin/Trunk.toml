@@ -1,0 +1,11 @@
+[build]
+target = "index.html"
+dist = "dist"
+# Served by the same Worker under /admin (ADR 0006).
+public_url = "/admin/"
+
+# Tailwind v4 compiles style/tailwind.css (scanning this crate and crates/ui) before Trunk inlines it.
+[[hooks]]
+stage = "pre_build"
+command = "sh"
+command_arguments = ["-c", "cd \"$TRUNK_SOURCE_DIR\" && ../../node_modules/.bin/tailwindcss -i style/tailwind.css -o style/out.css --minify"]

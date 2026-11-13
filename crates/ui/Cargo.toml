@@ -1,0 +1,10 @@
+[package]
+name = "telosgard-ui"
+description = "Shared design tokens (style/base.css) and controls for the student app and the admin dashboard."
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+leptos = { version = "=0.8.23", features = ["csr"] }
+js-sys = "=0.3.107"
+web-sys = { version = "=0.3.107", features = ["Storage", "Element"] }

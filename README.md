@@ -2,7 +2,7 @@
 
 An interactive Gold (XAUUSD) trading course for a complete beginner. It's built in Rust (Leptos → WebAssembly) with Tailwind, and runs on Cloudflare: one Worker serves the app and its API, with D1 for progress and journal, R2 for chart screenshots and Cloudflare Access for sign-in (see [ADR 0003](docs/adr/0003-cloudflare-pages-d1-access.md)).
 
-**Run it locally:** build the app (`cd crates/app && trunk build --release --public-url /`), then `cd cloudflare && npm install && cp .dev.vars.example .dev.vars && npm run db:local && npm run dev` and open http://localhost:8787. The earlier claude.ai Artifact (frozen at version 21) is https://claude.ai/artifact/EoVVZJSbw2fdtmXxiyP8WU.
+**Run it locally:** build the app and the dashboard (`scripts/build.sh`, which assembles `dist/` and `dist/admin/`), then `cd cloudflare && npm install && cp .dev.vars.example .dev.vars && npm run db:local && npm run dev` and open http://localhost:8787 (the dashboard is at http://localhost:8787/admin/). The earlier claude.ai Artifact (frozen at version 21) is https://claude.ai/artifact/EoVVZJSbw2fdtmXxiyP8WU.
 
 ## How to use Telosgard (2 minutes)
 

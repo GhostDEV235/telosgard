@@ -250,6 +250,41 @@ Code built before the 2026-11-10 revision that now disagrees with the docs:
 - [x] Professor Aurel replies in French ([ADR 0005](adr/0005-english-and-french.md))
 - [ ] Grader lab in French: run the French fixtures through Professor Aurel
 
+## The admin dashboard *(decided 2026-11-13; [ADR 0006](adr/0006-dashboard-on-the-existing-stack.md), [0007](adr/0007-staff-roles-and-sign-in.md), [0008](adr/0008-account-deletion.md))*
+Built on the existing Worker, D1 and Leptos, at `/admin` until there is a domain. Order: D0, D1, then course waves and dashboard phases alternate (Wave 4, D2, Wave 5, D3, …). Each phase is live and useful before the next starts.
+
+### Phase D0: Foundations ✅ *(built 2026-11-13; waiting for the Owner's deploy and GitHub secrets)*
+- [x] Auto-deploy on merge to `main` (`.github/workflows/deploy.yml`: test, build, apply D1 migrations, deploy), with a preview link on each pull request. Needs the Owner to add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as GitHub secrets
+- [x] `role` column on the user (`learner` | `instructor` | `support`); Owner stays `OWNER_EMAILS`; permissions checked by name in the Worker (`cloudflare/src/roles.ts`)
+- [x] Two-factor (TOTP + 10 backup codes) required for staff before any `/api/admin/*` route answers; 12-hour dashboard sessions. Staff signing in to the course are sent to the dashboard's code step and back. *Re-asking the code for sensitive actions arrives with those actions in D1.*
+- [x] Audit log: every staff write records actor, action, entity, before and after
+- [x] Server-recorded events from document saves (`cloudflare/src/events.ts`), plus "Rebuild past history" from stored timestamps
+- [x] `crates/ui` (shared tokens, controls, theme) and `crates/admin`: the `/admin` shell with sidebar, phone tab bar, ⌘K, sign-in, two-factor setup with a QR code, Overview (first four numbers) and the audit log. English only for now
+
+*Checks 2026-11-13:* 29 Worker tests (4 new, including a real two-factor sign-in, a refused wrong code, an Instructor kept out of the audit log, and a stored "owner" role granting nothing); 160 Rust tests. Local browser run: sign-in, setup by QR, Overview, rebuild (44 past events), audit log, and a course sign-in sent through the code step and back. axe: 52 scans (4 widths × 2 themes × the dashboard's pages and ⌘K) clean, no overflow. The dashboard bundle is 380 KB of wasm, separate from the app's 1.96 MB.
+
+### Phase D1: Learners & Enrollment
+- [ ] Learners list (search, filters) and profile sheet: joined, last active, progress per lesson, quiz and Explain-Back history
+- [ ] Invite Links and Invite Codes (use limit, expiry), with where each Learner came from
+- [ ] One-time password-reset links; progress reset per lesson (undoable from the audit log); suspend and unsuspend
+- [ ] Full Access switch (retires `FULL_ACCESS_EMAILS`)
+- [ ] Account Deletion with the 7-day grace, from the dashboard and from the Learner's own settings
+
+### Phase D2: Curriculum & Overview
+- [ ] Lesson status (live, hidden, English only), pass rates per lesson and per question, the hardest lessons
+- [ ] Hidden Lessons, with the "this pauses N Learners" warning; the Learner-side "being updated" card
+- [ ] Explain-Back answers without identities; Instructor notes on lessons
+- [ ] Overview: new Learners, Activation, Weekly Active, At-Risk list, Stage funnel, hardest lessons, Readiness Runs, Claude usage and cost
+
+### Phase D3: Settings & staff roles
+- [ ] Claude daily limits as live settings; maintenance mode; the disclaimer in English and French, versioned
+- [ ] API key and integration status (never the keys themselves)
+- [ ] Instructor and Support switched on, assigned by the Owner
+
+### Later, by trigger
+- A domain: `learn.` and `admin.` subdomains, Cloudflare Access, passkeys, email sending → waitlist, Communications (onboarding, announcements, nudges)
+- Support inbox (then decide whether Support may read journals), cohorts, billing (Stripe), the move to Hostinger
+
 ## Later waves
 One stage per wave (Stages 2–8, then the Live and Advanced Tracks). Each wave: review the Learner's attempt history → write the stage (CURRICULUM) → fact-check → verify videos → tune rubrics → publish to the **same** Artifact URL. Drills arrive with their stage:
 - Wave 2 ✅ *(2026-11-12)*: Stage 2 written (L13 The trading week & sessions, L14 The overlap, in your local time, L15 Windows to avoid), every fact sourced (CME, LBMA, BLS, Federal Reserve, GOV.UK, US Naval Observatory, World Gold Council, FOREX.com and FXCM for broker rollover practice), 6 videos verified by oEmbed. New `session_clock` widget; drills "Which session is it?" and "Is this a No-Trade Window?" (`telosgard_core::stage2_drills`, answers computed by the same `sessions_at` / `no_trade_window` the clock and Hard Rules use; 6 tests). Curriculum's "13:00–17:00 UTC" overlap corrected (winter only). axe clean on the new lessons, widget and drills in both themes. Open: grader lab for the 9 new Explain-Back fixtures (real Claude calls), then deploy

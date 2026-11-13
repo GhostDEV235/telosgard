@@ -2,7 +2,8 @@
 // runs only for /api/*. Every route needs an identity (see auth.ts) and only ever touches that user's rows.
 //
 //   *      /api/auth/*             Better Auth (sign-up with an invite, sign-in, sign-out, session)
-//   GET    /api/me                 → { signedIn, userId?, email?, isOwner?, fullAccess? }
+//   GET    /api/me                 → { signedIn, userId?, email?, isOwner?, fullAccess?, staff? }
+//   *      /api/admin/*            the dashboard's API (admin.ts): staff with two-factor only
 //   POST   /api/invites            → { id, url, expiresAt }   (owner only)
 //   GET    /api/invites            → [{ id, createdAt, expiresAt, usedAt }]   (owner only)
 //   DELETE /api/invites/:id        (owner only)
@@ -15,7 +16,10 @@
 //   POST   /api/claude/(json|text) ← { prompt, tier } → { value } | { text, truncated }
 
 import Anthropic from "@anthropic-ai/sdk";
-import { hasFullAccess, identify, INVITE_DAYS, isOwner, makeAuth, sha256, type AuthEnv, type Identity } from "./auth";
+import { adminRoute } from "./admin";
+import { hasFullAccess, identify, INVITE_DAYS, isOwner, makeAuth, roleOf, sha256, type AuthEnv, type Identity } from "./auth";
+import { deriveEvents, recordEvents } from "./events";
+import { isStaff } from "./roles";
 import { askClaude, ClaudeError, parseTier, type MessagesClient, type Mode } from "./claude";
 
 export interface Env extends AuthEnv {
@@ -78,10 +82,11 @@ async function route(request: Request, env: Env, url: URL, makeClient: ClientFac
 
   const who = await identify(request, env);
   if (path[0] === "me" && path.length === 1 && method === "GET") {
-    return json(who ? { signedIn: true, userId: who.userId, email: who.email ?? null, isOwner: isOwner(env, who), fullAccess: hasFullAccess(env, who) } : { signedIn: false });
+    return json(who ? { signedIn: true, userId: who.userId, email: who.email ?? null, isOwner: isOwner(env, who), fullAccess: hasFullAccess(env, who), staff: isStaff(roleOf(env, who)) } : { signedIn: false });
   }
   if (!who) return fail(401, "not_granted", "Sign in to use Telosgard.");
 
+  if (path[0] === "admin") return adminRoute(request, env, who, path.slice(1), url);
   if (path[0] === "invites") return invites(request, env, who, path.slice(1), url);
   if (path[0] === "docs") return docs(request, env, who, path.slice(1), url);
   if (path[0] === "files") return files(request, env, who, path.slice(1));
@@ -122,12 +127,28 @@ async function docs(request: Request, env: Env, who: Identity, rest: string[], u
     if (typeof body !== "object" || body === null || Array.isArray(body) || typeof kind !== "string" || !KIND.test(kind)) {
       return fail(400, "invalid_argument", "A document is a JSON object with a string kind.");
     }
+    // Events (ADR 0006): what this save changed compared with the stored copy.
+    const prev = await env.DB.prepare("SELECT kind, body FROM docs WHERE user_id = ?1 AND doc_id = ?2").bind(who.userId, id).first<{ kind: string; body: string }>();
+    let before: Record<string, unknown> | null = null;
+    if (prev && prev.kind === kind) {
+      try {
+        before = JSON.parse(prev.body);
+      } catch {}
+    }
+    const now = Date.now();
+    const events = deriveEvents(kind, id, before, body as Record<string, unknown>, now);
     await env.DB.prepare(
       "INSERT INTO docs (user_id, doc_id, kind, body, updated_at) VALUES (?1, ?2, ?3, ?4, ?5) " +
         "ON CONFLICT (user_id, doc_id) DO UPDATE SET kind = excluded.kind, body = excluded.body, updated_at = excluded.updated_at",
     )
-      .bind(who.userId, id, kind, JSON.stringify(body), Date.now())
+      .bind(who.userId, id, kind, JSON.stringify(body), now)
       .run();
+    try {
+      await recordEvents(env.DB, who.userId, events);
+    } catch (e) {
+      // Analytics must never cost the Learner a save.
+      console.error("events", e);
+    }
     return json(null);
   }
   if (method === "DELETE") {

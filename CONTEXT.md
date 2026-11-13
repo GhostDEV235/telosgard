@@ -4,16 +4,24 @@ A self-paced course that takes a complete beginner from zero to trading Gold aga
 
 ## Language
 
+**Telosgard**:
+The product: the app that holds every **Course**.
+
 **Course**:
-The whole ordered path of learning, from first principles to trading-ready.
-_Avoid_: program, curriculum (when meaning the product)
+One market's whole ordered path of learning, from first principles to trading-ready (for example the Gold course, the Futures basics course). Made of **Stages**; its **Core**, **Live** and **Advanced Tracks** are ranges of those Stages.
+_Avoid_: track (a Track is a part of a Course), program, curriculum (when meaning the product)
 
 **Stage**:
-An ordered group of **Lessons** that share a theme (for example Stage 1 Foundations). Shown as one card on the home screen.
+An ordered group of **Lessons** inside a **Course** that share a theme (for example Stage 1 Foundations). Shown as one card on the home screen.
+_Avoid_: unit, chapter
 
 **Lesson**:
 One concept, taught in plain language with an analogy, a real-life example and optional video references.
 _Avoid_: module, chapter, unit (unless grouping is introduced later)
+
+**Hidden Lesson**:
+A **Lesson** taken offline for rework. **Learners** who passed it keep it passed; anyone who reaches it waits at a "being updated" card until it returns, then continues where they left off. Its questions leave **Spaced Review** while hidden. Never skipped, since the **Gate** forbids skipping.
+_Avoid_: deleted, unpublished, draft
 
 **Lesson Step**:
 One idea of a **Lesson** on its own screen: a short heading and a few sentences, with optional deeper detail behind a "Why?" toggle. A Lesson is read step by step.
@@ -162,3 +170,41 @@ The **Learner**'s one-time written challenge to an **Adherence Verdict**. Claude
 **Learner**:
 The person taking the **Course**.
 _Avoid_: user, student
+
+**Owner**:
+The person who runs **Telosgard** (Telosgard Ventures). The only role that can change roles, settings and data exports. Never granted from the dashboard.
+
+**Activation**:
+A new **Learner** passing Lesson 1's **Gate** within 48 hours of creating their account.
+
+**Weekly Active Learner**:
+A **Learner** with any lesson, quiz, drill or **Journal Entry** activity in the last 7 days.
+
+**At-Risk Learner**:
+A **Learner** who was active before but has had no activity for 7 or more days. A prompt to reach out, not a judgement.
+_Avoid_: churned, inactive (churn is a billing term)
+
+**Account Deletion**:
+Erasing a **Learner**: they are **Suspended** for a 7-day grace period (undoable), then their identity and personal writing (journals, plans, checklists, Explain-Back text, screenshots) are erased for good. Their activity and quiz results are kept under a random ID, so totals stay correct without pointing to anyone.
+_Avoid_: soft delete (nothing personal is kept)
+
+**Invite Link**:
+A single-use link that lets one person create a **Learner** account. Expires after 7 days.
+
+**Invite Code**:
+A shareable code (for example GOLD-NOV) that lets a group create **Learner** accounts, up to a use limit and until an expiry date.
+_Avoid_: promo code, coupon (no money involved)
+
+**Instructor**:
+A dashboard role for improving the **Course**: sees lesson status, quiz and **Explain-Back** results (answers without identities), hides or unhides a **Lesson**, and leaves notes on it. Writes lessons only through the repo, never in the dashboard. Never sees who a **Learner** is.
+
+**Support**:
+A dashboard role for helping **Learners**: sees their profiles and progress, sends invites, creates one-time password-reset links, resets a Lesson's progress and suspends or unsuspends accounts. Never reads **Journal Entries**.
+
+**Suspended**:
+A **Learner** account that is signed out and cannot sign in, with all its data kept. Reversible.
+_Avoid_: banned, deleted
+
+**Full Access**:
+A per-**Learner** switch the **Owner** turns on (for example for a reviewer): every **Lesson** is open regardless of the **Gate**. It grants no dashboard powers; the person is still a Learner.
+_Avoid_: reviewer role, admin

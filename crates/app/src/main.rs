@@ -9,7 +9,7 @@ mod router;
 mod screens;
 mod state;
 mod store;
-mod theme;
+pub use telosgard_ui::theme;
 mod ui;
 
 use leptos::prelude::*;

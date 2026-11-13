@@ -150,6 +150,16 @@ Later waves add one stage each, written when the Learner is near it and informed
 - FR-16.1 The whole course is available in English and French (interface, lessons, drills, rule messages, Professor Aurel's replies); French uses "tu". English by default, with a Language switch in Appearance and on the sign-in screens, saved to the account. See [ADR 0005](adr/0005-english-and-french.md).
 - FR-16.2 Videos stay in English and are labelled as such in French.
 
+### FR-17 Admin dashboard *(decided 2026-11-13)*
+- FR-17.1 A dashboard at `/admin` (later `admin.<domain>`) for the **Owner**, **Instructors** and **Support**, each limited as `CONTEXT.md` describes; every permission is enforced by the API. See [ADR 0006](adr/0006-dashboard-on-the-existing-stack.md) and [ADR 0007](adr/0007-staff-roles-and-sign-in.md).
+- FR-17.2 Every staff sign-in needs two-factor; dashboard sessions last 12 hours; sensitive actions ask for the code again.
+- FR-17.3 Every staff write is in the audit log with before and after values, and is undoable where the action allows it.
+- FR-17.4 Learners: list, profile, Invite Links and Invite Codes, password-reset links, progress reset, suspend, **Full Access**, **Account Deletion** ([ADR 0008](adr/0008-account-deletion.md)).
+- FR-17.5 Curriculum: lesson status and results per question; **Hidden Lessons** with a warning naming how many Learners it pauses. Lesson text is never edited in the dashboard.
+- FR-17.6 Overview: new Learners, **Activation** (48 h), **Weekly Active Learners**, **At-Risk Learners** (7 days), the Stage funnel, the hardest lessons, Readiness Runs, Claude usage and cost.
+- FR-17.7 Settings: Claude limits, maintenance mode, the disclaimer text (EN and FR), and key status only.
+- FR-17.8 Usable on a phone: the sidebar becomes a bottom tab bar.
+
 ## 6. Non-functional requirements
 - **Honesty:** never fabricate prices, charts or videos. Illustrative data is labelled. Every video link is verified to exist before shipping.
 - **Safety:** a first-launch disclaimer (education, not advice). The Live Track covers scams. No content recommends a specific trade.

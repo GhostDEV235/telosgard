@@ -148,7 +148,13 @@ const authErr = (e) => (e && (e.code === "unavailable" || e.code === "rate_limit
 
 export async function authSignIn(email, password) {
   try {
-    await api("POST", "/api/auth/sign-in/email", JSON.stringify({ email, password }));
+    const r = await api("POST", "/api/auth/sign-in/email", JSON.stringify({ email, password }));
+    // Staff accounts have two-factor (ADR 0007): the code step lives in the dashboard, which sends
+    // them back to the course afterwards.
+    if (r && r.twoFactorRedirect) {
+      location.assign("/admin/#verify");
+      return new Promise(() => {});
+    }
     return ok(null);
   } catch (e) { return authErr(e); }
 }

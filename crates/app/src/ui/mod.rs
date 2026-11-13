@@ -2,7 +2,7 @@
 
 pub mod chart;
 pub mod clock;
-pub mod controls;
+pub use telosgard_ui::controls;
 pub mod course;
 pub mod quiz;
 pub mod sheet;

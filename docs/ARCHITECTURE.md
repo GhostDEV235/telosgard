@@ -88,7 +88,7 @@ trade_school/
 **Absence by design:** if the Worker says the viewer is signed out, the app still renders and teaches; only saving and Claude actions show a "not available" state.
 
 ### The Worker (`cloudflare/`)
-- One Worker with **static assets**: `crates/app/dist` is served as files; the Worker runs only for `/api/*` (`run_worker_first`).
+- One Worker with **static assets**: `dist/` (the student app) and `dist/admin/` (the dashboard, ADR 0006), assembled by `scripts/build.sh`, are served as files; the Worker runs only for `/api/*` (`run_worker_first`).
 - **Identity (ADR 0004):** Better Auth sessions (email + password) at `/api/auth/*`, tables in D1; the session's user id keys every row. Sign-up is invite-only: owner-made single-use links (`/#join-<token>`, 7 days) checked in a Better Auth `before` hook and spent in a database hook; `OWNER_EMAILS` addresses may sign up without one. `GET /api/me` reports `isOwner`; `POST|GET|DELETE /api/invites` are owner-only. `DEV_USER` (from `.dev.vars`) stands in only for requests to localhost.
 - **Routes:** `/api/auth/*` (Better Auth); `GET /api/me`; `/api/invites` (owner); `GET /api/docs?kind=`; `GET|PUT|DELETE /api/docs/:id`; `POST /api/files`, `GET /api/files/:id`; `POST /api/claude/json|text`.
 - **Claude** (`src/claude.ts`, official `@anthropic-ai/sdk`): the app sends `{prompt, tier}`; the Worker calls `claude-opus-5-5` with adaptive thinking, effort by tier (quick → low, default → medium, complex → high), a short system line per mode, an output cap (JSON 16,000, text 4,000 tokens) and server-side refusal fallbacks (`fallbacks: "default"`). JSON replies are parsed (code fences tolerated); a refusal, a cut-short or unreadable reply, or an API error becomes an error code (`refused`, `invalid_json`, `rate_limited`, `not_granted`, `unavailable`), never a made-up answer. Each call is logged in D1 `claude_calls` (user, time, mode, ok, tokens), which also enforces a cap per 24 h: the owner (an address in the `OWNER_EMAILS` secret, or the localhost dev user) gets `CLAUDE_DAILY_LIMIT` (300); everyone else let in by Access, i.e. testers, gets `TESTER_DAILY_LIMIT` (50). The key is the Worker secret `ANTHROPIC_API_KEY`; without it the route answers `not_granted`. Prompts are built per request with the Learner's own words in them, so prompt caching isn't used.
@@ -186,7 +186,7 @@ The app runs inside an iframe at a single URL, so routing is **hash-based**. The
 
 ## 9. Build & deploy (Cloudflare)
 
-1. `cd crates/app && trunk build --release --public-url /` runs the Tailwind CLI, then builds the wasm, the glue JS and a hashed `dist/` (a normal web page; the Artifact conversion step is gone).
+1. `scripts/build.sh` runs `trunk build --release` for `crates/app` and `crates/admin` and assembles `dist/`. Each build runs the Tailwind CLI (both import the shared `crates/ui/style/base.css`), then builds the wasm, the glue JS and a hashed `dist/` (a normal web page; the Artifact conversion step is gone).
 2. `cd cloudflare && npm test` runs the Worker tests; `npm run typecheck` checks types.
 3. Locally: `cp .dev.vars.example .dev.vars`, `npm run db:local`, then `npm run dev` serves the app and the API on `http://localhost:8787` with a local D1 and R2.
 4. Deploy (Phase 20): `wrangler d1 create telosgard` (put its id in `wrangler.toml`), `wrangler r2 bucket create telosgard-files`, `npm run db:remote`, `wrangler secret put ANTHROPIC_API_KEY`, set `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD`, then `npm run deploy`.

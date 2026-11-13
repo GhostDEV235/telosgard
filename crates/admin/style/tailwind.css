@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@source "../src";
+@source "../../ui/src";
+/* The same tokens, base styles and utilities as the student app (ADR 0006). */
+@import "../../ui/style/base.css";
