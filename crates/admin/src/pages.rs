@@ -109,10 +109,15 @@ struct AuditRow {
     before: Value,
     after: Value,
     at: f64,
+    #[serde(default)]
+    undoable: bool,
+    #[serde(default)]
+    undone: bool,
 }
 
 #[component]
-pub fn Audit() -> impl IntoView {
+pub fn Audit(me: Me) -> impl IntoView {
+    let _ = me;
     let rows = RwSignal::new(Vec::<AuditRow>::new());
     let done = RwSignal::new(false);
     let loading = RwSignal::new(false);
@@ -137,9 +142,35 @@ pub fn Audit() -> impl IntoView {
         });
     };
     more();
+    // Undo: reverses one change. Full Access needs the current authenticator code.
+    let undo_msg = RwSignal::new(None::<(bool, String)>);
+    let code = RwSignal::new(String::new());
+    let undo = move |id: u64| {
+        spawn_local(async move {
+            let c = code.get_untracked();
+            let r = api::call_with_code("POST", &format!("/api/admin/audit/{id}/undo"), Some(json!({})), (!c.is_empty()).then_some(c)).await;
+            if r.ok() {
+                code.set(String::new());
+                undo_msg.set(Some((true, "Undone.".into())));
+                rows.set(Vec::new());
+                done.set(false);
+                more();
+            } else {
+                undo_msg.set(Some((false, if r.code() == Some("code_required") { "This change needs your authenticator code: enter it above, then Undo again.".into() } else { r.message() })));
+            }
+        });
+    };
     view! {
         <Title eyebrow="Platform" title="Audit log" lead="Every change made from the dashboard: who, what, to which record, and the values before and after. Newest first." />
         {move || err.get().map(|e| view! { <p role="alert" class="mb-4 rounded-btn bg-bad-bg px-3 py-2 text-callout text-bad-ink">{e}</p> })}
+        <div class="mb-4 flex flex-wrap items-end gap-3">
+            <label class="block text-callout font-semibold">
+                "Authenticator code"
+                <span class="block text-footnote font-normal text-text-muted">"Only for undoing Full Access changes"</span>
+                <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="tabular mt-1.5 block min-h-11 w-40 rounded-field border border-line bg-surface px-3 text-body tracking-widest text-text" prop:value=code on:input=move |ev| code.set(event_target_value(&ev)) />
+            </label>
+            {move || undo_msg.get().map(|(ok, t)| view! { <p role=if ok { "status" } else { "alert" } class=format!("rounded-btn px-3 py-2 text-callout {}", if ok { "bg-ok-bg text-ok-ink" } else { "bg-bad-bg text-bad-ink" })>{t}</p> })}
+        </div>
         <section class="overflow-hidden rounded-card bg-surface shadow-card">
             {move || {
                 let list = rows.get();
@@ -155,7 +186,11 @@ pub fn Audit() -> impl IntoView {
                                     <li class="px-5 py-3">
                                         <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                                             <p class="font-mono text-callout font-semibold">{r.action.clone()}</p>
-                                            <p class="tabular text-footnote text-text-muted">{api::when(r.at)}</p>
+                                            <p class="flex items-center gap-3">
+                                                {r.undone.then(|| view! { <span class="rounded-full bg-raised px-2 py-0.5 text-footnote font-semibold">"Undone"</span> })}
+                                                {r.undoable.then(|| { let id = r.id; view! { <button type="button" class="press min-h-9 rounded-full border border-line px-3 text-footnote font-semibold" on:click=move |_| undo(id)>"Undo"</button> } })}
+                                                <span class="tabular text-footnote text-text-muted">{api::when(r.at)}</span>
+                                            </p>
                                         </div>
                                         <p class="mt-0.5 min-w-0 break-words text-footnote text-text-muted">
                                             {format!("{} ({}) · {target}", r.actor_email.clone().unwrap_or_else(|| "unknown".into()), r.actor_role)}
@@ -189,8 +224,6 @@ pub fn Audit() -> impl IntoView {
 #[component]
 pub fn Coming(section: Section) -> impl IntoView {
     let (phase, what) = match section {
-        Section::Learners => ("D1", "Search every Learner; open a profile with progress, quiz and Explain-Back history; reset a lesson, suspend, turn on Full Access, send a password-reset link, or delete an account."),
-        Section::Enrollment => ("D1", "Single-use Invite Links and shareable Invite Codes with a use limit and expiry, and where each Learner came from."),
         Section::Curriculum => ("D2", "Every lesson's status and pass rates per question, Explain-Back answers without names, notes, and hiding a lesson for rework."),
         Section::Settings => ("D3", "Claude's daily limits, maintenance mode, the disclaimer in English and French, and the status of keys and integrations."),
         _ => ("", ""),

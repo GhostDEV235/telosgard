@@ -263,12 +263,16 @@ Built on the existing Worker, D1 and Leptos, at `/admin` until there is a domain
 
 *Checks 2026-11-13:* 29 Worker tests (4 new, including a real two-factor sign-in, a refused wrong code, an Instructor kept out of the audit log, and a stored "owner" role granting nothing); 160 Rust tests. Local browser run: sign-in, setup by QR, Overview, rebuild (44 past events), audit log, and a course sign-in sent through the code step and back. axe: 52 scans (4 widths × 2 themes × the dashboard's pages and ⌘K) clean, no overflow. The dashboard bundle is 380 KB of wasm, separate from the app's 1.96 MB.
 
-### Phase D1: Learners & Enrollment
-- [ ] Learners list (search, filters) and profile sheet: joined, last active, progress per lesson, quiz and Explain-Back history
-- [ ] Invite Links and Invite Codes (use limit, expiry), with where each Learner came from
-- [ ] One-time password-reset links; progress reset per lesson (undoable from the audit log); suspend and unsuspend
-- [ ] Full Access switch (retires `FULL_ACCESS_EMAILS`)
-- [ ] Account Deletion with the 7-day grace, from the dashboard and from the Learner's own settings
+### Phase D1: Learners & Enrollment ✅ *(built 2026-11-13; waiting for deploy)*
+- [x] Learners list (search; All, Active, Suspended, Deleting) and a profile panel at `#learner-<id>`: joined and how, last active, lessons passed, progress per lesson, Explain-Back history, drills, journal counts (never journal contents). ⌘K finds Learners by name or email
+- [x] Invite Links and Invite Codes (use limit, expiry, revoke and restore); codes work typed on the sign-in screen or as a `#join-CODE` link; each Learner shows where they came from (migration `0005_learners.sql`)
+- [x] Password-Reset Links (24 hours, one use, sign out everywhere) with the Learner's "Choose a new password" screen in both languages; progress reset per lesson; suspend and unsuspend (signed out at once, sign-in refused)
+- [x] Full Access switch (`user.fullAccess`). `FULL_ACCESS_EMAILS` still counts until the Owner switches the reviewer on and removes the secret
+- [x] Account Deletion with the 7-day grace, from the dashboard and from the Learner's Appearance sheet; a daily cron erases due accounts and keeps anonymised events (ADR 0008)
+- [x] Step-up: Full Access and deletion need the current authenticator code (`x-telosgard-code`)
+- [x] Undo from the audit log for suspend, unsuspend, Full Access, lesson resets, scheduled deletions and revoked codes
+
+*Checks 2026-11-13:* 32 Worker tests (3 new: the whole Learner lifecycle including erasure and anonymised events; Support and Instructor kept inside their roles; self-deletion and cancelling it). Local browser run: list, profile, every action with its message, code-protected Full Access and deletion, Undo, Enrollment codes and links, a reset link used once from the Learner's screen, joining with a typed code, self-deletion refused with a wrong password and then suspending the account. The workflow now uses Node 24 actions. axe: 48 signed-out course scans (sign-in with the code field open, join by code, reset; 4 widths × 2 themes × English and French) and 40 dashboard scans (Learners, a profile, Enrollment, audit log; 4 widths × 2 themes) clean, no overflow; one finding fixed on the way (the profile panel's dialog role moved from `<aside>` to a `<div>`).
 
 ### Phase D2: Curriculum & Overview
 - [ ] Lesson status (live, hidden, English only), pass rates per lesson and per question, the hardest lessons

@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen(module = "/admin.js")]
 extern "C" {
     #[wasm_bindgen(js_name = call)]
-    async fn js_call(method: &str, path: &str, body: Option<String>) -> JsValue;
+    async fn js_call(method: &str, path: &str, body: Option<String>, code: Option<String>) -> JsValue;
     #[wasm_bindgen(js_name = copyText)]
     async fn js_copy(text: &str) -> JsValue;
 }
@@ -40,7 +40,12 @@ impl Resp {
 }
 
 pub async fn call(method: &str, path: &str, body: Option<Value>) -> Resp {
-    let raw = js_call(method, path, body.map(|b| b.to_string())).await.as_string().unwrap_or_default();
+    call_with_code(method, path, body, None).await
+}
+
+/// For sensitive actions: sends the staff member's current authenticator code too.
+pub async fn call_with_code(method: &str, path: &str, body: Option<Value>, code: Option<String>) -> Resp {
+    let raw = js_call(method, path, body.map(|b| b.to_string()), code).await.as_string().unwrap_or_default();
     let outer: Value = serde_json::from_str(&raw).unwrap_or(Value::Null);
     let status = outer.get("status").and_then(Value::as_u64).unwrap_or(0) as u16;
     let text = outer.get("body").and_then(Value::as_str).unwrap_or("");
@@ -96,4 +101,39 @@ pub fn when(ms: f64) -> String {
 pub fn time_only(ms: f64) -> String {
     let d = js_sys::Date::new(&JsValue::from_f64(ms));
     format!("{:02}:{:02}", d.get_hours(), d.get_minutes())
+}
+
+pub async fn delete(path: &str) -> Resp {
+    call("DELETE", path, None).await
+}
+
+/// "today", "3 d ago", "5 h ago": how long since a time, for lists.
+pub fn ago(ms: f64) -> String {
+    let now = js_sys::Date::now();
+    let mins = ((now - ms) / 60000.0).max(0.0) as u64;
+    match mins {
+        0..=1 => "just now".into(),
+        2..=59 => format!("{mins} min ago"),
+        60..=1439 => format!("{} h ago", mins / 60),
+        _ => format!("{} d ago", mins / 1440),
+    }
+}
+
+/// A local date such as "13 Nov 2026".
+pub fn date(ms: f64) -> String {
+    let d = js_sys::Date::new(&JsValue::from_f64(ms));
+    const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    format!("{} {} {}", d.get_date(), MONTHS[d.get_month() as usize % 12], d.get_full_year())
+}
+
+/// "lesson-05" → "Lesson 5"; "lesson-a3" → "Advanced 3"; "lesson-ind" → "Indicators".
+pub fn lesson_label(id: &str) -> String {
+    let rest = id.trim_start_matches("lesson-");
+    if rest == "ind" {
+        "Indicators".into()
+    } else if let Some(n) = rest.strip_prefix('a') {
+        format!("Advanced {n}")
+    } else {
+        format!("Lesson {}", rest.trim_start_matches('0'))
+    }
 }

@@ -30,6 +30,7 @@ pub fn frame_label(route: &Route) -> String {
         Route::WidgetLab => "Lab · Widgets".into(),
         Route::QuestionStats => "Lab · Question stats".into(),
         Route::Join(_) => t("Join", "Rejoindre").into(),
+        Route::Reset(_) => t("New password", "Nouveau mot de passe").into(),
     }
 }
 

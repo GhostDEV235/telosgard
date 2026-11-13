@@ -63,6 +63,9 @@ impl Section {
     }
     fn parse(hash: &str) -> Section {
         let h = hash.trim_start_matches('#');
+        if h.starts_with("learner-") {
+            return Section::Learners;
+        }
         Section::NAV.into_iter().chain([Section::More]).find(|s| s.slug() == h).unwrap_or(Section::Overview)
     }
     fn icon(self) -> &'static str {
@@ -93,9 +96,16 @@ fn current() -> Section {
 #[component]
 pub fn Shell(me: Me) -> impl IntoView {
     let section = RwSignal::new(current());
+    // A Learner's profile panel is `#learner-<id>`: it opens over the list without leaving it.
+    let selected = RwSignal::new(crate::learners::selected_from_hash());
     let _ = window_event_listener(leptos::ev::hashchange, move |_| {
-        section.set(current());
-        window().scroll_to_with_x_and_y(0.0, 0.0);
+        let next = current();
+        let sel = crate::learners::selected_from_hash();
+        if next != section.get_untracked() {
+            window().scroll_to_with_x_and_y(0.0, 0.0);
+            section.set(next);
+        }
+        selected.set(sel);
     });
     let palette = RwSignal::new(false);
     let _ = window_event_listener(leptos::ev::keydown, move |ev| {
@@ -119,7 +129,9 @@ pub fn Shell(me: Me) -> impl IntoView {
             <div class="anim-route">
                 {match s {
                     Section::Overview => view! { <pages::Overview me=me /> }.into_any(),
-                    Section::Audit => view! { <pages::Audit /> }.into_any(),
+                    Section::Learners => view! { <crate::learners::Learners me=me selected=selected /> }.into_any(),
+                    Section::Enrollment => view! { <crate::enrollment::Enrollment /> }.into_any(),
+                    Section::Audit => view! { <pages::Audit me=me /> }.into_any(),
                     Section::More => view! { <pages::More sections=allowed_page.clone() /> }.into_any(),
                     other => view! { <pages::Coming section=other /> }.into_any(),
                 }}
@@ -136,7 +148,7 @@ pub fn Shell(me: Me) -> impl IntoView {
             </div>
         </div>
         <TabBar sections=allowed.clone() section=section />
-        <Palette open=palette sections=allowed />
+        <Palette open=palette sections=allowed find_learners=me.can("learners.read") />
     }
 }
 
@@ -261,8 +273,28 @@ fn TabBar(sections: Vec<Section>, section: RwSignal<Section>) -> impl IntoView {
 
 /// ⌘K: type to jump to a section. Learners and lessons join the list in D1 and D2.
 #[component]
-fn Palette(open: RwSignal<bool>, sections: Vec<Section>) -> impl IntoView {
+fn Palette(open: RwSignal<bool>, sections: Vec<Section>, find_learners: bool) -> impl IntoView {
     let query = RwSignal::new(String::new());
+    // Learners are fetched the first time the palette opens (only for roles that may see them).
+    let people = RwSignal::new(Vec::<(String, String, String)>::new());
+    let fetched = StoredValue::new(false);
+    Effect::new(move |_| {
+        if open.get() && find_learners && !fetched.get_value() {
+            fetched.set_value(true);
+            spawn_local(async move {
+                if let Some(rows) = api::get("/api/admin/learners").await.parse::<Vec<crate::learners::Row>>() {
+                    people.set(rows.into_iter().map(|r| (r.id, r.name, r.email)).collect());
+                }
+            });
+        }
+    });
+    let people_matches = move || {
+        let q = query.get().trim().to_lowercase();
+        if q.len() < 2 {
+            return Vec::new();
+        }
+        people.get().into_iter().filter(|(_, n, e)| n.to_lowercase().contains(&q) || e.to_lowercase().contains(&q)).take(8).collect::<Vec<_>>()
+    };
     let input = NodeRef::<leptos::html::Input>::new();
     Effect::new(move |_| {
         if open.get() {
@@ -289,6 +321,9 @@ fn Palette(open: RwSignal<bool>, sections: Vec<Section>) -> impl IntoView {
                     ev.prevent_default();
                     if let Some(first) = matches().first() {
                         go(*first);
+                    } else if let Some((id, _, _)) = people_matches().first() {
+                        open.set(false);
+                        let _ = window().location().set_hash(&format!("learner-{id}"));
                     }
                 }>
                     <label class="sr-only" for="palette-q">"Jump to"</label>
@@ -297,16 +332,24 @@ fn Palette(open: RwSignal<bool>, sections: Vec<Section>) -> impl IntoView {
                         node_ref=input
                         type="text"
                         autocomplete="off"
-                        placeholder="Jump to a section…"
+                        placeholder=if find_learners { "Jump to a section or Learner…" } else { "Jump to a section…" }
                         class="block min-h-14 w-full border-b border-line/40 bg-transparent px-5 text-body text-text outline-none"
                         prop:value=query
                         on:input=move |ev| query.set(event_target_value(&ev))
                     />
                 </form>
                 <ul class="max-h-[50vh] overflow-y-auto p-2">
+                    {move || people_matches().into_iter().map(|(id, name, email)| view! {
+                        <li>
+                            <a href=format!("#learner-{id}") on:click=move |_| open.set(false) class="press flex min-h-11 w-full items-center gap-3 rounded-btn px-3 text-left text-body hover:bg-raised">
+                                {icon(Section::Learners, "size-5 text-text-muted")}
+                                <span class="min-w-0 truncate">{if name.is_empty() { email.clone() } else { name }}<span class="ml-2 text-footnote text-text-muted">{email.clone()}</span></span>
+                            </a>
+                        </li>
+                    }).collect_view()}
                     {move || {
                         let list = matches();
-                        if list.is_empty() {
+                        if list.is_empty() && people_matches().is_empty() {
                             view! { <li class="px-3 py-4 text-callout text-text-muted">"Nothing matches."</li> }.into_any()
                         } else {
                             list.into_iter().map(|s| view! {

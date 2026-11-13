@@ -32,6 +32,10 @@ extern "C" {
     async fn js_auth_sign_up(name: &str, email: &str, password: &str, invite: &str) -> JsValue;
     #[wasm_bindgen(js_name = authSignOut)]
     async fn js_auth_sign_out() -> JsValue;
+    #[wasm_bindgen(js_name = passwordReset)]
+    async fn js_password_reset(token: &str, password: &str) -> JsValue;
+    #[wasm_bindgen(js_name = accountDelete)]
+    async fn js_account_delete(password: &str) -> JsValue;
     #[wasm_bindgen(js_name = inviteCreate)]
     async fn js_invite_create() -> JsValue;
     #[wasm_bindgen(js_name = copyText)]
@@ -135,6 +139,14 @@ pub async fn auth_sign_up(name: &str, email: &str, password: &str, invite: &str)
 
 pub async fn auth_sign_out() -> Result<(), PlatformError> {
     unwrap(js_auth_sign_out().await).map(|_| ())
+}
+
+pub async fn password_reset(token: &str, password: &str) -> Result<(), PlatformError> {
+    unwrap(js_password_reset(token, password).await).map(|_| ())
+}
+
+pub async fn account_delete(password: &str) -> Result<(), PlatformError> {
+    unwrap(js_account_delete(password).await).map(|_| ())
 }
 
 #[derive(Debug, Clone, Deserialize)]

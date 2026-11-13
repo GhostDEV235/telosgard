@@ -195,6 +195,10 @@ A single-use link that lets one person create a **Learner** account. Expires aft
 A shareable code (for example GOLD-NOV) that lets a group create **Learner** accounts, up to a use limit and until an expiry date.
 _Avoid_: promo code, coupon (no money involved)
 
+**Password-Reset Link**:
+A one-time link the **Owner** or **Support** makes for a **Learner** who forgot their password, valid for 24 hours. Using it sets a new password and signs the account out everywhere.
+_Avoid_: reset email (Telosgard sends no email yet)
+
 **Instructor**:
 A dashboard role for improving the **Course**: sees lesson status, quiz and **Explain-Back** results (answers without identities), hides or unhides a **Lesson**, and leaves notes on it. Writes lessons only through the repo, never in the dashboard. Never sees who a **Learner** is.
 

@@ -14,12 +14,18 @@
 //   POST   /api/files              ← an image body (≤ 8 MB)  → { id, url }
 //   GET    /api/files/:id          → the image, to its owner only
 //   POST   /api/claude/(json|text) ← { prompt, tier } → { value } | { text, truncated }
+//   POST   /api/password-reset     ← { token, password }   (signed out: a one-time link from staff)
+//   POST   /api/account/delete     ← { password }  Account Deletion by the Learner (ADR 0008)
+//
+// A daily cron erases accounts whose 7-day deletion grace has ended.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { adminRoute } from "./admin";
 import { hasFullAccess, identify, INVITE_DAYS, isOwner, makeAuth, roleOf, sha256, type AuthEnv, type Identity } from "./auth";
 import { deriveEvents, recordEvents } from "./events";
 import { isStaff } from "./roles";
+import { eraseDue, makeAuthContext, scheduleDeletion, useResetLink } from "./learners";
+import { audit } from "./audit";
 import { askClaude, ClaudeError, parseTier, type MessagesClient, type Mode } from "./claude";
 
 export interface Env extends AuthEnv {
@@ -59,6 +65,10 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     return handle(request, env, realClient);
   },
+  async scheduled(_event: ScheduledController, env: Env): Promise<void> {
+    const n = await eraseDue(env);
+    if (n) console.log(`erased ${n} account(s) after their deletion grace`);
+  },
 } satisfies ExportedHandler<Env>;
 
 export async function handle(request: Request, env: Env, makeClient: ClientFactory): Promise<Response> {
@@ -80,6 +90,14 @@ async function route(request: Request, env: Env, url: URL, makeClient: ClientFac
     return makeAuth(env, url.origin).handler(request);
   }
 
+  if (path[0] === "password-reset" && path.length === 1 && method === "POST") {
+    const b = (await request.json().catch(() => ({}))) as { token?: unknown; password?: unknown };
+    const r = await useResetLink(env, url.origin, String(b.token ?? ""), String(b.password ?? ""));
+    if (r === "weak") return fail(400, "invalid_argument", "Choose a password of at least 10 characters.");
+    if (r === "invalid") return fail(400, "invalid_argument", "This reset link has been used or has expired.");
+    return json({ ok: true });
+  }
+
   const who = await identify(request, env);
   if (path[0] === "me" && path.length === 1 && method === "GET") {
     return json(who ? { signedIn: true, userId: who.userId, email: who.email ?? null, isOwner: isOwner(env, who), fullAccess: hasFullAccess(env, who), staff: isStaff(roleOf(env, who)) } : { signedIn: false });
@@ -87,6 +105,7 @@ async function route(request: Request, env: Env, url: URL, makeClient: ClientFac
   if (!who) return fail(401, "not_granted", "Sign in to use Telosgard.");
 
   if (path[0] === "admin") return adminRoute(request, env, who, path.slice(1), url);
+  if (path[0] === "account" && path[1] === "delete" && path.length === 2 && method === "POST") return deleteOwnAccount(request, env, who, url);
   if (path[0] === "invites") return invites(request, env, who, path.slice(1), url);
   if (path[0] === "docs") return docs(request, env, who, path.slice(1), url);
   if (path[0] === "files") return files(request, env, who, path.slice(1));
@@ -238,4 +257,18 @@ async function invites(request: Request, env: Env, who: Identity, rest: string[]
     return json(null);
   }
   return fail(404, "invalid_argument", "No such route.");
+}
+
+/** A Learner deletes their own account (ADR 0008): password check, then the same 7-day grace. */
+async function deleteOwnAccount(request: Request, env: Env, who: Identity, url: URL): Promise<Response> {
+  if (who.dev || isOwner(env, who)) return fail(403, "not_granted", "The Owner's account can't be deleted here.");
+  const b = (await request.json().catch(() => ({}))) as { password?: unknown };
+  const ctx = await makeAuthContext(env, url.origin);
+  const acct = await env.DB.prepare('SELECT password FROM "account" WHERE "userId" = ?1 AND "providerId" = \'credential\'').bind(who.userId).first<{ password: string | null }>();
+  if (!acct?.password || !(await ctx.password.verify({ hash: acct.password, password: String(b.password ?? "") }))) {
+    return fail(403, "not_granted", "That password isn't right.");
+  }
+  const after = await scheduleDeletion(env, url.origin, who.userId);
+  await audit(env.DB, who, "learner", { action: "learner.delete_scheduled", entity: "learner", entityId: who.userId, before: { deleteAfter: null, suspended: false }, after: { deleteAfter: after, by: "self" } });
+  return json({ deleteAfter: after });
 }

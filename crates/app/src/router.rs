@@ -52,6 +52,8 @@ pub enum Route {
     Trade(String),
     /// `#join-<invite token>`: create an account from an invite link.
     Join(String),
+    /// A one-time password-reset link from the Owner or Support (`#reset-<token>`).
+    Reset(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -82,8 +84,11 @@ impl Route {
             // The owner's own first account: no invite needed for an OWNER_EMAILS address.
             "join" => Route::Join(String::new()),
             _ => {
-                if let Some(t) = h.strip_prefix("join-").filter(|t| (20..=100).contains(&t.len()) && t.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')) {
+                // An Invite Link token (long) or an Invite Code such as GOLD-NOV (short).
+                if let Some(t) = h.strip_prefix("join-").filter(|t| (3..=100).contains(&t.len()) && t.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')) {
                     Route::Join(t.to_string())
+                } else if let Some(t) = h.strip_prefix("reset-").filter(|t| (20..=100).contains(&t.len()) && t.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')) {
+                    Route::Reset(t.to_string())
                 } else if let Some(d) = h.strip_prefix("drill-").and_then(|s| DrillKind::ALL.into_iter().find(|k| k.slug() == s)) {
                     Route::Drill(d)
                 } else if let Some(id) = h.strip_prefix("trade-").filter(|s| s.len() >= 8 && s.chars().all(|c| c.is_ascii_alphanumeric())) {
@@ -97,7 +102,7 @@ impl Route {
 
     pub fn tab(&self) -> Tab {
         match self {
-            Route::Today | Route::Lesson(_) | Route::GraderLab | Route::WidgetLab | Route::QuestionStats | Route::Join(_) => Tab::Today,
+            Route::Today | Route::Lesson(_) | Route::GraderLab | Route::WidgetLab | Route::QuestionStats | Route::Join(_) | Route::Reset(_) => Tab::Today,
             Route::Practice | Route::Drill(_) => Tab::Practice,
             Route::Tools | Route::Plan => Tab::Tools,
             Route::Journal | Route::Readiness | Route::Checklist | Route::Review | Route::TradeNew | Route::TradeSkip | Route::Trade(_) => Tab::Journal,

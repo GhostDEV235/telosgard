@@ -23,3 +23,7 @@ bucket_name = "telosgard-files"
 # Claude calls per 24 hours: the owner (OWNER_EMAILS, a secret) and everyone else (testers).
 CLAUDE_DAILY_LIMIT = "300"
 TESTER_DAILY_LIMIT = "50"
+
+# Account Deletion (ADR 0008): erase accounts whose 7-day grace has ended, daily at 03:17 UTC.
+[triggers]
+crons = ["17 3 * * *"]

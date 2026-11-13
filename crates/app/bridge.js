@@ -173,6 +173,21 @@ export async function authSignOut() {
   } catch (e) { return authErr(e); }
 }
 
+/// A one-time reset link from the Owner or Support (D1): choose a new password while signed out.
+export async function passwordReset(token, password) {
+  try {
+    await api("POST", "/api/password-reset", JSON.stringify({ token, password }));
+    return ok(null);
+  } catch (e) { return authErr(e); }
+}
+
+/// Account Deletion by the Learner (ADR 0008): suspended at once, erased after 7 days.
+export async function accountDelete(password) {
+  try {
+    return ok(await api("POST", "/api/account/delete", JSON.stringify({ password })));
+  } catch (e) { return authErr(e); }
+}
+
 /// Owner only: a single-use invite link, valid for 7 days. {id, url, expiresAt}
 export async function inviteCreate() {
   try {

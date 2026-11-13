@@ -34,9 +34,11 @@ pub fn Shell() -> impl IntoView {
         App,
         SignIn,
         Join(String),
+        Reset(String),
     }
     let gate = Memo::new(move |_| match route.get() {
         Route::Join(t) => Gate::Join(t),
+        Route::Reset(t) => Gate::Reset(t),
         _ if store.state.get() == crate::store::SaveState::Local(crate::store::LocalReason::SignedOut) => Gate::SignIn,
         _ => Gate::App,
     });
@@ -66,7 +68,7 @@ pub fn Shell() -> impl IntoView {
                 Route::TradeNew => view! { <crate::screens::trade::TradeNew /> }.into_any(),
                 Route::TradeSkip => view! { <crate::screens::trade::TradeSkip /> }.into_any(),
                 Route::Trade(id) => view! { <crate::screens::trade::TradeDetail id=id /> }.into_any(),
-                Route::Join(_) => view! { <Home /> }.into_any(),
+                Route::Join(_) | Route::Reset(_) => view! { <Home /> }.into_any(),
             }}</div> }}
             <RiskFooter />
             </div>
@@ -80,6 +82,7 @@ pub fn Shell() -> impl IntoView {
             Gate::App => app().into_any(),
             Gate::SignIn => view! { <crate::screens::account::SignIn /> }.into_any(),
             Gate::Join(t) => view! { <crate::screens::account::Join token=t /> }.into_any(),
+            Gate::Reset(t) => view! { <crate::screens::account::ResetPassword token=t /> }.into_any(),
         }}
         <Toast />
         <crate::ui::moments::BigMomentOverlay />
