@@ -2,7 +2,7 @@
 // runs only for /api/*. Every route needs an identity (see auth.ts) and only ever touches that user's rows.
 //
 //   *      /api/auth/*             Better Auth (sign-up with an invite, sign-in, sign-out, session)
-//   GET    /api/me                 → { signedIn, userId?, email?, isOwner?, fullAccess?, staff? }
+//   GET    /api/me                 → { signedIn, userId?, email?, isOwner?, fullAccess?, staff?, hidden? }
 //   *      /api/admin/*            the dashboard's API (admin.ts): staff with two-factor only
 //   POST   /api/invites            → { id, url, expiresAt }   (owner only)
 //   GET    /api/invites            → [{ id, createdAt, expiresAt, usedAt }]   (owner only)
@@ -26,6 +26,7 @@ import { deriveEvents, recordEvents } from "./events";
 import { isStaff } from "./roles";
 import { eraseDue, makeAuthContext, scheduleDeletion, useResetLink } from "./learners";
 import { audit } from "./audit";
+import { hiddenLessons } from "./curriculum";
 import { askClaude, ClaudeError, parseTier, type MessagesClient, type Mode } from "./claude";
 
 export interface Env extends AuthEnv {
@@ -100,7 +101,8 @@ async function route(request: Request, env: Env, url: URL, makeClient: ClientFac
 
   const who = await identify(request, env);
   if (path[0] === "me" && path.length === 1 && method === "GET") {
-    return json(who ? { signedIn: true, userId: who.userId, email: who.email ?? null, isOwner: isOwner(env, who), fullAccess: hasFullAccess(env, who), staff: isStaff(roleOf(env, who)) } : { signedIn: false });
+    // `hidden`: Hidden Lessons (D2), so the app can show the "being updated" card without another call.
+    return json(who ? { signedIn: true, userId: who.userId, email: who.email ?? null, isOwner: isOwner(env, who), fullAccess: hasFullAccess(env, who), staff: isStaff(roleOf(env, who)), hidden: await hiddenLessons(env.DB) } : { signedIn: false });
   }
   if (!who) return fail(401, "not_granted", "Sign in to use Telosgard.");
 

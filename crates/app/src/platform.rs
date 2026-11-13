@@ -127,6 +127,12 @@ pub struct Caps {
     /// Every lesson is open for this account (a reviewer), whatever its progress.
     #[serde(default)]
     pub full_access: bool,
+    /// Owner, Instructor or Support: may preview a Hidden Lesson.
+    #[serde(default)]
+    pub staff: bool,
+    /// Hidden Lessons (lesson document ids such as "lesson-07"), offline for rework.
+    #[serde(default)]
+    pub hidden: Vec<String>,
 }
 
 pub async fn auth_sign_in(email: &str, password: &str) -> Result<(), PlatformError> {

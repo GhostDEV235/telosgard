@@ -1426,6 +1426,7 @@ dependencies = [
  "qrcodegen",
  "serde",
  "serde_json",
+ "telosgard-content",
  "telosgard-ui",
  "wasm-bindgen",
  "wasm-bindgen-futures",

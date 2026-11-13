@@ -66,6 +66,9 @@ impl Section {
         if h.starts_with("learner-") {
             return Section::Learners;
         }
+        if h.starts_with("lesson-") {
+            return Section::Curriculum;
+        }
         Section::NAV.into_iter().chain([Section::More]).find(|s| s.slug() == h).unwrap_or(Section::Overview)
     }
     fn icon(self) -> &'static str {
@@ -98,6 +101,7 @@ pub fn Shell(me: Me) -> impl IntoView {
     let section = RwSignal::new(current());
     // A Learner's profile panel is `#learner-<id>`: it opens over the list without leaving it.
     let selected = RwSignal::new(crate::learners::selected_from_hash());
+    let lesson = RwSignal::new(crate::curriculum::selected_from_hash());
     let _ = window_event_listener(leptos::ev::hashchange, move |_| {
         let next = current();
         let sel = crate::learners::selected_from_hash();
@@ -106,6 +110,7 @@ pub fn Shell(me: Me) -> impl IntoView {
             section.set(next);
         }
         selected.set(sel);
+        lesson.set(crate::curriculum::selected_from_hash());
     });
     let palette = RwSignal::new(false);
     let _ = window_event_listener(leptos::ev::keydown, move |ev| {
@@ -131,6 +136,7 @@ pub fn Shell(me: Me) -> impl IntoView {
                     Section::Overview => view! { <pages::Overview me=me /> }.into_any(),
                     Section::Learners => view! { <crate::learners::Learners me=me selected=selected /> }.into_any(),
                     Section::Enrollment => view! { <crate::enrollment::Enrollment /> }.into_any(),
+                    Section::Curriculum => view! { <crate::curriculum::Curriculum me=me selected=lesson /> }.into_any(),
                     Section::Audit => view! { <pages::Audit me=me /> }.into_any(),
                     Section::More => view! { <pages::More sections=allowed_page.clone() /> }.into_any(),
                     other => view! { <pages::Coming section=other /> }.into_any(),

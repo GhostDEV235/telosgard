@@ -16,11 +16,15 @@ pub struct Progress {
     pub readiness: RwSignal<bool>,
     /// A reviewer account: every lesson is open. Progress is still recorded as usual.
     pub full_access: RwSignal<bool>,
+    /// Hidden Lessons (CONTEXT.md): anyone who reaches one waits at a "being updated" card.
+    pub hidden: RwSignal<std::collections::HashSet<LessonId>>,
+    /// Staff preview Hidden Lessons instead of waiting.
+    pub staff: RwSignal<bool>,
 }
 
 impl Progress {
     pub fn new() -> Progress {
-        Progress { lessons: RwSignal::new(HashMap::new()), readiness: RwSignal::new(false), full_access: RwSignal::new(false) }
+        Progress { lessons: RwSignal::new(HashMap::new()), readiness: RwSignal::new(false), full_access: RwSignal::new(false), hidden: RwSignal::new(Default::default()), staff: RwSignal::new(false) }
     }
     pub fn get(&self, id: LessonId) -> LessonProgress {
         self.lessons.with(|m| m.get(&id).cloned().unwrap_or_default())
@@ -30,6 +34,9 @@ impl Progress {
     }
     pub fn entries_untracked(&self) -> Vec<(LessonId, LessonProgress)> {
         self.lessons.with_untracked(|m| m.iter().map(|(k, v)| (*k, v.clone())).collect())
+    }
+    pub fn is_hidden(&self, id: LessonId) -> bool {
+        self.hidden.with(|h| h.contains(&id))
     }
     pub fn passed(&self, id: LessonId) -> bool {
         self.lessons.with(|m| m.get(&id).is_some_and(|p| p.is_passed()))

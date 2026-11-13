@@ -13,6 +13,8 @@
 //   POST /api/admin/enrollment/links · DELETE /api/admin/enrollment/links/:id
 //   POST /api/admin/enrollment/codes · POST /api/admin/enrollment/codes/:id/(revoke|restore)
 //   POST /api/admin/audit/:id/undo
+//   GET  /api/admin/curriculum      → LessonStats[]         GET /api/admin/curriculum/:lesson → detail
+//   POST /api/admin/curriculum/:lesson/(hide|unhide|notes)
 //
 // Sensitive actions (Full Access, deletion) also need the staff member's current authenticator code
 // in the x-telosgard-code header; without it they answer 403 code_required (ADR 0007).
@@ -21,6 +23,7 @@ import { audit, auditPage } from "./audit";
 import { ownerEmails, roleOf, type AuthEnv, type Identity } from "./auth";
 import { backfill } from "./events";
 import { createInviteCode, createInviteLink, listEnrollment } from "./enroll";
+import { curriculumSummary, LESSON_ID, lessonDetail, waitingCount } from "./curriculum";
 import {
   cancelDeletion,
   createResetLink,
@@ -83,7 +86,7 @@ export async function adminRoute(request: Request, env: AuthEnv, who: Identity, 
   const need = (p: Permission) => (can(role, p) ? null : fail(403, "not_granted", "Your role can't do that."));
 
   if (rest[0] === "overview" && rest.length === 1 && method === "GET") {
-    return need("overview.read") ?? json(await overview(env.DB, env));
+    return need("overview.read") ?? json(await overview(env, role));
   }
   if (rest[0] === "audit" && rest.length === 1 && method === "GET") {
     const denied = need("audit.read");
@@ -102,6 +105,7 @@ export async function adminRoute(request: Request, env: AuthEnv, who: Identity, 
     await audit(env.DB, staff.who, staff.role, { action: "events.backfill", entity: "events", after: result });
     return json(result);
   }
+  if (rest[0] === "curriculum") return curriculumRoute(request, env, staff, rest.slice(1), need);
   if (rest[0] === "learners") return learnersRoute(request, env, staff, rest.slice(1), url, need);
   if (rest[0] === "enrollment") return enrollmentRoute(request, env, staff, rest.slice(1), url, need);
   if (rest[0] === "audit" && rest.length === 3 && rest[2] === "undo" && method === "POST") return undo(request, env, staff, Number(rest[1]), url, need);
@@ -250,6 +254,8 @@ const UNDOABLE: Record<string, Permission> = {
   "learner.reset_lesson": "progress.reset",
   "learner.delete_scheduled": "learners.delete",
   "invite_code.revoke": "invites.manage",
+  "lesson.hide": "lessons.hide",
+  "lesson.unhide": "lessons.hide",
 };
 
 export function undoable(action: string): boolean {
@@ -286,6 +292,10 @@ async function undo(request: Request, env: AuthEnv, staff: Staff, id: number, ur
       await cancelDeletion(env, entityId);
       if (before?.suspended) await setSuspended(env, url.origin, entityId, true);
     }
+  } else if (action === "lesson.hide") {
+    await env.DB.prepare("DELETE FROM hidden_lessons WHERE lesson = ?1").bind(entityId).run();
+  } else if (action === "lesson.unhide") {
+    await env.DB.prepare("INSERT OR IGNORE INTO hidden_lessons (lesson, hidden_at, hidden_by, reason) VALUES (?1, ?2, ?3, ?4)").bind(entityId, Date.now(), staff.who.userId, before?.reason ?? null).run();
   } else if (action === "invite_code.revoke") {
     await env.DB.prepare("UPDATE invite_codes SET revoked_at = NULL WHERE id = ?1").bind(entityId).run();
   }
@@ -300,7 +310,53 @@ async function learnerIds(db: D1Database, env: AuthEnv): Promise<Set<string>> {
   return new Set(results.filter((u) => !owners.includes(u.email.toLowerCase())).map((u) => u.id));
 }
 
-async function overview(db: D1Database, env: AuthEnv, now = Date.now()) {
+async function curriculumRoute(request: Request, env: AuthEnv, staff: Staff, rest: string[], need: Need): Promise<Response> {
+  const denied = need("lessons.read");
+  if (denied) return denied;
+  const method = request.method;
+  if (rest.length === 0 && method === "GET") return json(await curriculumSummary(env));
+  const lesson = rest[0];
+  if (!LESSON_ID.test(lesson)) return fail(400, "invalid_argument", "Bad lesson id.");
+  if (rest.length === 1 && method === "GET") {
+    const d = await lessonDetail(env, lesson);
+    // Explain-Back answers carry no identity; still, only roles that may read them get them.
+    return json(can(staff.role, "answers.read") ? d : { ...d, answers: [] });
+  }
+  if (rest.length !== 2 || method !== "POST") return fail(404, "invalid_argument", "No such route.");
+  const b = await body(request);
+  if (rest[1] === "hide" || rest[1] === "unhide") {
+    const d2 = need("lessons.hide");
+    if (d2) return d2;
+    const hide = rest[1] === "hide";
+    const prev = await env.DB.prepare("SELECT reason FROM hidden_lessons WHERE lesson = ?1").bind(lesson).first<{ reason: string | null }>();
+    if (hide === (prev !== null)) return json({ ok: true, unchanged: true });
+    const reason = typeof b.reason === "string" ? b.reason.trim().slice(0, 300) : "";
+    const paused = await waitingCount(env, lesson);
+    if (hide) {
+      await env.DB.prepare("INSERT INTO hidden_lessons (lesson, hidden_at, hidden_by, reason) VALUES (?1, ?2, ?3, ?4)").bind(lesson, Date.now(), staff.who.userId, reason || null).run();
+    } else {
+      await env.DB.prepare("DELETE FROM hidden_lessons WHERE lesson = ?1").bind(lesson).run();
+    }
+    await audit(env.DB, staff.who, staff.role, { action: hide ? "lesson.hide" : "lesson.unhide", entity: "lesson", entityId: lesson, before: { hidden: !hide, reason: prev?.reason ?? null }, after: { hidden: hide, reason: hide ? reason || null : null, paused } });
+    return json({ ok: true, paused });
+  }
+  if (rest[1] === "notes") {
+    const d2 = need("lessons.notes");
+    if (d2) return d2;
+    const text = typeof b.body === "string" ? b.body.trim() : "";
+    if (!text || text.length > 2000) return fail(400, "invalid_argument", "A note is 1 to 2,000 characters.");
+    const r = await env.DB.prepare("INSERT INTO lesson_notes (lesson, author_id, author_email, body, at) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id").bind(lesson, staff.who.userId, staff.who.email ?? null, text, Date.now()).first<{ id: number }>();
+    await audit(env.DB, staff.who, staff.role, { action: "lesson.note", entity: "lesson", entityId: lesson, after: { note: r?.id } });
+    return json({ ok: true });
+  }
+  return fail(404, "invalid_argument", "No such route.");
+}
+
+/** Opus 5.5 list prices, dollars per million tokens (input, output). */
+const PRICE_PER_MTOK = { input: 4, output: 20 };
+
+async function overview(env: AuthEnv, role: Role, now = Date.now()) {
+  const db = env.DB;
   const learners = await learnerIds(db, env);
   const weekAgo = now - 7 * DAY;
   const { results } = await db
@@ -309,10 +365,94 @@ async function overview(db: D1Database, env: AuthEnv, now = Date.now()) {
     .all<{ user_id: string; joined: number; active: number }>();
   const mine = results.filter((r) => learners.has(r.user_id));
   const today = await db.prepare("SELECT COUNT(*) AS n FROM events WHERE at >= ?1").bind(now - DAY).first<{ n: number }>();
+
+  // Accounts, with what the rest needs.
+  const { results: users } = await db.prepare(`SELECT id, name, email, "createdAt" AS created, "suspendedAt" AS suspended, "deleteAfter" AS deleting FROM "user"`).all<Record<string, unknown>>();
+  const info = new Map(users.filter((u) => learners.has(String(u.id))).map((u) => [String(u.id), u]));
+  const created = (u: Record<string, unknown>) => (typeof u.created === "number" ? u.created : Date.parse(String(u.created)));
+
+  // Progress documents: who passed what, and when.
+  const { results: docs } = await db.prepare("SELECT user_id, doc_id, kind, body FROM docs WHERE kind IN ('progress', 'run', 'trade')").all<{ user_id: string; doc_id: string; kind: string; body: string }>();
+  const parse = (b: string) => {
+    try {
+      return JSON.parse(b) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  };
+  const passedCounts: Record<string, number> = {};
+  const lesson1At = new Map<string, number>();
+  const runs = new Map<string, { number: number; ended: boolean }>();
+  const trades: { user: string; run: number; body: Record<string, unknown> }[] = [];
+  for (const d of docs) {
+    if (!learners.has(d.user_id)) continue;
+    const b = parse(d.body);
+    if (d.kind === "progress" && b.passedAt != null) {
+      passedCounts[d.doc_id] = (passedCounts[d.doc_id] ?? 0) + 1;
+      if (d.doc_id === "lesson-01") lesson1At.set(d.user_id, Number(b.passedAt));
+    } else if (d.kind === "run") {
+      const n = Number(b.number ?? 0);
+      const cur = runs.get(d.user_id);
+      if (!cur || n > cur.number) runs.set(d.user_id, { number: n, ended: b.endedAt != null });
+    } else if (d.kind === "trade") {
+      trades.push({ user: d.user_id, run: Number(b.run ?? 0), body: b });
+    }
+  }
+
+  // Activation: Learners who joined 2 to 30 days ago; activated if Lesson 1 passed within 48 hours.
+  const cohort = [...info.values()].filter((u) => {
+    const c = created(u);
+    return c <= now - 2 * DAY && c >= now - 30 * DAY;
+  });
+  const activated = cohort.filter((u) => {
+    const at = lesson1At.get(String(u.id));
+    return at !== undefined && at - created(u) <= 2 * DAY;
+  }).length;
+
+  // At-Risk: active before, nothing for 7+ days, not suspended or being deleted.
+  const { results: last } = await db.prepare("SELECT user_id, MAX(at) AS last FROM events WHERE type != 'signed_up' GROUP BY user_id").all<{ user_id: string; last: number }>();
+  const atRisk = last
+    .filter((r) => learners.has(r.user_id) && now - Number(r.last) >= 7 * DAY)
+    .map((r) => ({ u: info.get(r.user_id), last: Number(r.last) }))
+    .filter((r) => r.u && r.u.suspended == null && r.u.deleting == null)
+    .sort((a, b) => a.last - b.last);
+
+  // Readiness Runs in progress: taken Journal Entries in the current run, and how many followed the plan.
+  const readiness = [...runs.entries()]
+    .filter(([, r]) => !r.ended)
+    .map(([user, r]) => {
+      const mine = trades.filter((t) => t.user === user && t.run === r.number && t.body.status !== "skipped");
+      const verdicts = mine
+        .map((t) => t.body.adherence as Record<string, unknown> | undefined)
+        .map((a) => (a?.state === "judged" ? a.adherent : a?.state === "disputed" ? a.second : null))
+        .filter((v) => v !== null && v !== undefined);
+      return { user, run: r.number, entries: mine.length, judged: verdicts.length, adherent: verdicts.filter(Boolean).length };
+    });
+
+  // Claude usage: calls, errors, tokens and the estimated cost, today and this month (UTC).
+  const d = new Date(now);
+  const monthStart = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+  const usage = async (since: number) => {
+    const r = await db
+      .prepare("SELECT COUNT(*) AS calls, SUM(CASE WHEN ok = 0 THEN 1 ELSE 0 END) AS errors, COALESCE(SUM(input_tokens), 0) AS input, COALESCE(SUM(output_tokens), 0) AS output FROM claude_calls WHERE at >= ?1")
+      .bind(since)
+      .first<{ calls: number; errors: number | null; input: number; output: number }>();
+    const input = r?.input ?? 0;
+    const output = r?.output ?? 0;
+    return { calls: r?.calls ?? 0, errors: r?.errors ?? 0, input, output, cost: (input * PRICE_PER_MTOK.input + output * PRICE_PER_MTOK.output) / 1_000_000 };
+  };
+
+  const people = can(role, "learners.read");
+  const who = (u: Record<string, unknown> | undefined) => (u ? { id: String(u.id), name: String(u.name ?? ""), email: String(u.email ?? "") } : null);
   return {
     learners: learners.size,
     newThisWeek: mine.filter((r) => r.joined === 1).length,
     weeklyActive: mine.filter((r) => r.active === 1).length,
     eventsToday: today?.n ?? 0,
+    activation: { cohort: cohort.length, activated },
+    atRisk: { count: atRisk.length, list: people ? atRisk.slice(0, 50).map((r) => ({ ...who(r.u), lastActive: r.last })) : [] },
+    passedCounts,
+    readiness: { count: readiness.length, list: people ? readiness.map((r) => ({ ...who(info.get(r.user)), run: r.run, entries: r.entries, judged: r.judged, adherent: r.adherent })) : [] },
+    claude: { today: await usage(now - DAY), month: await usage(monthStart) },
   };
 }

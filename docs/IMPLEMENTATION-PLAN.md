@@ -274,11 +274,13 @@ Built on the existing Worker, D1 and Leptos, at `/admin` until there is a domain
 
 *Checks 2026-11-13:* 32 Worker tests (3 new: the whole Learner lifecycle including erasure and anonymised events; Support and Instructor kept inside their roles; self-deletion and cancelling it). Local browser run: list, profile, every action with its message, code-protected Full Access and deletion, Undo, Enrollment codes and links, a reset link used once from the Learner's screen, joining with a typed code, self-deletion refused with a wrong password and then suspending the account. The workflow now uses Node 24 actions. axe: 48 signed-out course scans (sign-in with the code field open, join by code, reset; 4 widths × 2 themes × English and French) and 40 dashboard scans (Learners, a profile, Enrollment, audit log; 4 widths × 2 themes) clean, no overflow; one finding fixed on the way (the profile panel's dialog role moved from `<aside>` to a `<div>`).
 
-### Phase D2: Curriculum & Overview
-- [ ] Lesson status (live, hidden, English only), pass rates per lesson and per question, the hardest lessons
-- [ ] Hidden Lessons, with the "this pauses N Learners" warning; the Learner-side "being updated" card
-- [ ] Explain-Back answers without identities; Instructor notes on lessons
-- [ ] Overview: new Learners, Activation, Weekly Active, At-Risk list, Stage funnel, hardest lessons, Readiness Runs, Claude usage and cost
+### Phase D2: Curriculum & Overview ✅ *(built 2026-11-13; waiting for deploy)*
+- [x] Curriculum page: every written lesson by Stage with Live, Hidden or English-only, passed of started, share of right quiz answers, Explain-Back grades and how many accounts are waiting at it; a panel per lesson (`#lesson-NN`) with each question's text and right rate (migration `0006_curriculum.sql`)
+- [x] Hidden Lessons: hide with an optional reason and a confirmation naming how many Learner accounts it pauses; Undo from the audit log. In the app, `/api/me` lists them: Learners see a "being updated" card (passed stays passed; the side panel is empty), staff see the lesson with a banner, and their questions leave Spaced Review
+- [x] Explain-Back answers without identities (Owner and Instructors only); notes per lesson (Owner and Instructors)
+- [x] Overview: Learners, new this week, weekly active, Activation (joined 2–30 days ago, passed Lesson 1 within 48 hours), the At-Risk list (names only for roles that may see Learners), the Stage funnel, the five hardest lessons, Readiness Runs (entries and share that followed the plan) and Claude usage with its estimated cost at Opus 5.5 list prices ($4 / $20 per million tokens)
+
+*Checks 2026-11-13:* 33 Worker tests (1 new covering the stats, a hide with its paused count, the app's hidden list, Undo, anonymous answers, each role's limits and the Overview numbers). Local browser run: the lesson panel's note, hide with confirmation and unhide; a Learner signed in to a hidden Lesson 1 sees the card. axe: 32 scans (Overview, Curriculum, a lesson panel and the course's staff banner; 4 widths × 2 themes) clean, no overflow. Bugs found and fixed on the way: in the waiting count, accounts that never saved anything weren't counted, a lesson nobody had opened yet always showed 0, and suspended accounts were counted; on wide screens, a Hidden Lesson's side panel still listed its steps.
 
 ### Phase D3: Settings & staff roles
 - [ ] Claude daily limits as live settings; maintenance mode; the disclaimer in English and French, versioned

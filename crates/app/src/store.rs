@@ -313,6 +313,8 @@ impl Store {
             if caps.signed_in {
                 self.account.set(Some((caps.email.clone(), caps.owner)));
                 progress.full_access.set(caps.full_access);
+                progress.staff.set(caps.staff);
+                progress.hidden.set(caps.hidden.iter().filter_map(|d| LessonId::from_doc_id(d)).collect());
             }
             if !caps.db {
                 self.state.set(SaveState::Local(if caps.user && !caps.signed_in { LocalReason::SignedOut } else { LocalReason::NoStorage }));

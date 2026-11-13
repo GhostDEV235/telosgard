@@ -4,6 +4,7 @@
 
 mod api;
 mod auth;
+mod curriculum;
 mod enrollment;
 mod learners;
 mod pages;

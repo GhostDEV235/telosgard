@@ -23,6 +23,9 @@ pub fn LessonScreen(id: LessonId) -> impl IntoView {
     // Only the lock state decides which view shows. Reading progress directly here re-rendered the
     // whole reader on every save, which reset the quiz to question 1 and lost Explain-Back results.
     let unlocked = Memo::new(move |_| progress.unlocked(id));
+    // A Hidden Lesson: Learners wait at a card; staff preview it with a banner.
+    let hidden = Memo::new(move |_| progress.is_hidden(id));
+    let staff = Memo::new(move |_| progress.staff.get());
     view! {
         <crate::screens::shell::SubBar back="#today" back_label=t("Today", "Aujourd’hui") title=title />
         <main class="gutter mx-auto max-w-[640px] pt-6 pb-10">
@@ -31,13 +34,42 @@ pub fn LessonScreen(id: LessonId) -> impl IntoView {
             {move || {
                 if !unlocked.get() {
                     locked(id).into_any()
+                } else if hidden.get() && !staff.get() {
+                    being_updated(id).into_any()
                 } else if let Some(l) = content_for(id) {
-                    reader(id, l).into_any()
+                    view! {
+                        {hidden.get().then(|| view! {
+                            <p role="status" class="mt-4 rounded-btn bg-warn-bg px-3 py-2 text-callout text-warn-ink">{t("Hidden from Learners while it's reworked. You see it because you're staff.", "Masquée pour les personnes qui suivent le cours pendant sa refonte. Tu la vois parce que tu fais partie de l’équipe.")}</p>
+                        })}
+                        {reader(id, l)}
+                    }.into_any()
                 } else {
                     not_written().into_any()
                 }
             }}
         </main>
+    }
+}
+
+/// A Hidden Lesson (CONTEXT.md): offline for rework. Progress pauses here; nothing is lost.
+fn being_updated(id: LessonId) -> impl IntoView {
+    let progress = expect_context::<Progress>();
+    let passed = progress.passed(id);
+    view! {
+        <section class="mt-6 rounded-card bg-surface p-6 shadow-card" role="status">
+            <p class="text-title2" aria-hidden="true">"🛠"</p>
+            <h2 class="mt-2 text-headline">{t("This lesson is being updated", "Cette leçon est en cours de mise à jour")}</h2>
+            <p class="mt-2 text-callout text-text-muted">
+                {if passed {
+                    t("You've already passed it, and that stays. It will be back soon, improved.", "Tu l’as déjà réussie, et ça reste acquis. Elle revient bientôt, améliorée.")
+                } else {
+                    t("It will be back soon. Your progress is saved: you'll continue right here. Meanwhile, earlier lessons and the practice drills are all open.", "Elle revient bientôt. Ta progression est enregistrée : tu reprendras ici même. En attendant, les leçons précédentes et les exercices d’entraînement restent ouverts.")
+                }}
+            </p>
+            <div class="mt-4 flex flex-wrap gap-3">
+                <a href="#practice" class=crate::ui::controls::PILL>{t("Practice drills ›", "Exercices d’entraînement ›")}</a>
+            </div>
+        </section>
     }
 }
 
@@ -301,8 +333,9 @@ fn SpacedReview(current: u8) -> impl IntoView {
         }
         // Picked once: answering (or passing this lesson) must not reshuffle a review in progress.
         untrack(|| {
+        // Hidden Lessons' questions leave Spaced Review while they're reworked.
         let passed: Vec<u8> = (1..=telosgard_core::course::LAST_CORE)
-            .filter(|n| progress.passed(LessonId::Numbered(*n)))
+            .filter(|n| progress.passed(LessonId::Numbered(*n)) && !progress.is_hidden(LessonId::Numbered(*n)))
             .collect();
         let recs = store.qrecs.get_untracked();
         let questions: Vec<(QuestionKey, &'static telosgard_content::QuizQ)> = passed
@@ -471,7 +504,8 @@ pub fn screen_title(l: &Lesson, s: Screen) -> &'static str {
 pub fn LessonPanel(id: LessonId) -> impl IntoView {
     let progress = expect_context::<Progress>();
     let ui = expect_context::<LessonUi>();
-    let unlocked = Memo::new(move |_| progress.unlocked(id));
+    // A Hidden Lesson shows nothing here for Learners: its steps can't be opened.
+    let unlocked = Memo::new(move |_| progress.unlocked(id) && (!progress.is_hidden(id) || progress.staff.get()));
     let body = move || {
         let l = content_for(id).filter(|_| unlocked.get())?;
         let all = screens(l);

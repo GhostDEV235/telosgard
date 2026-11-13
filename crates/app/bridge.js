@@ -65,7 +65,7 @@ export function init() {
       try {
         const me = await call(() => api("GET", "/api/me"));
         const signedIn = !!(me && me.signedIn);
-        return ok({ db: signedIn, user: true, sample: signedIn, signedIn, email: (me && me.email) || null, owner: !!(me && me.isOwner), fullAccess: !!(me && me.fullAccess) });
+        return ok({ db: signedIn, user: true, sample: signedIn, signedIn, email: (me && me.email) || null, owner: !!(me && me.isOwner), fullAccess: !!(me && me.fullAccess), staff: !!(me && me.staff), hidden: (me && Array.isArray(me.hidden) && me.hidden) || [] });
       } catch (e) {
         return errOf(e);
       }
