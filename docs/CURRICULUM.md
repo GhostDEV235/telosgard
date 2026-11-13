@@ -51,12 +51,14 @@ Additions from the second review (Phase 9): Lesson 5 gains a step on shorts (pri
 14. **The overlap, in your local time:** why the London–New York overlap (roughly 8 am–noon New York time: 13:00–17:00 UTC in winter, 12:00–16:00 UTC in summer, shifting for a few weeks when US and UK clocks change on different dates) is usually gold's best window for a beginner; the app's session clock shows it in the Learner's own timezone; the Asian high and low as levels London tests
 15. **Windows to avoid:** the daily rollover, the Sunday open, the minutes around tier-1 releases (these become the **No-Trade Windows** Hard Rule)
 
-### Stage 3: What Moves Gold *(Wave 3)*
-16. **The US dollar:** the seesaw relationship (DXY) and why it isn't perfect
-17. **Real yields & the Fed:** gold pays no interest, so rising real yields usually weigh on it
-18. **Tier-1 news:** CPI, NFP, FOMC statement and press conference; tiers 2–3; reading the economic calendar
-19. **Surprise vs forecast:** hot data → hawkish expectations → gold usually falls, and vice versa; why beginners don't trade the release candle
-20. **Fear, war & central banks:** safe-haven spikes you can't schedule, and central bank buying
+### Stage 3: What Moves Gold *(Wave 3, written 2026-11-12)*
+16. **The US dollar:** the seesaw relationship (DXY: six currencies, fixed weights, about 58% European) and why it isn't perfect; context for the checklist, never a signal
+17. **Real yields & the Fed:** gold pays no interest (opportunity cost); real yield ≈ yield − expected inflation, measured by the 10-year TIPS yield; rising real yields usually weigh on gold; eight FOMC meetings a year move yields
+18. **Tier-1 news:** CPI and NFP at 8:30 am New York, the FOMC statement at 2:00 pm and press conference about 2:30 pm; tier 2 (GDP, PCE, retail sales at 8:30); reading the economic calendar first thing in the Pre-Session Checklist
+19. **Surprise vs forecast:** previous / forecast / actual; the surprise is actual vs forecast, not vs last month; hot data → higher rates expected → gold usually falls, soft data the reverse; higher unemployment than forecast is *soft*; the reaction can flip; never trade the release candle. Widget `surprise_meter`, drill "Hot or soft?"
+20. **Fear, war & central banks:** safe-haven spikes you can't schedule (the stop is the only protection), and central-bank buying above 1,000 tonnes a year in 2022–2024 (World Gold Council) as background, not a signal
+
+Written from the Learner's attempt history: their first answers named only the winning side, so every Stage 3 rubric asks for the counter-case ("usually, not always"), and each "almost" fixture is the one-sided answer.
 
 ### Stage 4: Reading the Chart *(Wave 4)*
 21. **Candlesticks:** open, high, low, close, wicks and bodies

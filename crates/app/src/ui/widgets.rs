@@ -71,6 +71,7 @@ pub fn Widget(kind: &'static str) -> impl IntoView {
         "win_rate" => win_rate().into_any(),
         "pip_convert" => pip_convert().into_any(),
         "session_clock" => session_clock().into_any(),
+        "surprise_meter" => surprise_meter().into_any(),
         _ => ().into_any(),
     };
     view! {
@@ -295,5 +296,35 @@ fn session_clock() -> impl IntoView {
                 <p class=format!("mt-3 inline-block rounded-full px-3 py-1 text-footnote font-semibold {tone}")>{status}</p>
             }
         }}
+    }
+}
+
+/// A CPI release with a fixed forecast: move the actual number and see hot, soft or in line, and
+/// gold's usual reaction. Same rule as the "Hot or soft?" drill.
+fn surprise_meter() -> impl IntoView {
+    use telosgard_core::stage3_drills::{Release, Surprise, judge};
+    const FORECAST: i64 = 30; // 0.3%, in hundredths
+    let actual = RwSignal::new(50i64);
+    let r = Release::CpiMonthly;
+    let text = Signal::derive(move || ts(format!("Actual {}", r.show(actual.get())), format!("Réel {}", r.show(actual.get()))));
+    view! {
+        <p class="mt-2 text-callout">{ts(format!("{}. Forecast: {}. Move the actual number:", r.name(), r.show(FORECAST)), format!("{}. Prévision : {}. Fais varier le chiffre réel :", r.name(), r.show(FORECAST)))}</p>
+        <Slider label=t("Actual", "Réel") value=actual min=0 max=60 step=10 valuetext=text />
+        {move || {
+            let a = actual.get();
+            let (verdict, tone, reaction) = match judge(r, FORECAST, a) {
+                Surprise::Hot => (t("Hot", "Chaude"), "bg-bad-bg text-bad-ink", t("Traders expect higher rates for longer: gold usually falls.", "Les traders anticipent des taux plus élevés plus longtemps : l’or baisse en général.")),
+                Surprise::Soft => (t("Soft", "Molle"), "bg-ok-bg text-ok-ink", t("Traders expect lower rates: gold usually rises.", "Les traders anticipent des taux plus bas : l’or monte en général.")),
+                Surprise::InLine => (t("In line", "Conforme"), "bg-raised text-text-muted", t("Already expected: no clear push either way.", "Déjà attendu : pas de poussée nette dans un sens ou dans l’autre.")),
+            };
+            view! {
+                <p class="tabular mt-2 text-headline" aria-live="polite">
+                    {ts(format!("Actual {} vs forecast {}: ", r.show(a), r.show(FORECAST)), format!("Réel {} contre prévision {} : ", r.show(a), r.show(FORECAST)))}
+                    <span class=format!("rounded-full px-2.5 py-0.5 text-callout font-semibold {tone}")>{verdict}</span>
+                </p>
+                <p class="mt-1 text-callout">{reaction}</p>
+            }
+        }}
+        <p class="mt-1 text-footnote text-text-muted">{t("Usually, not always: the details and revisions can flip the reaction. And never trade the release candle.", "En général, pas toujours : les détails et les révisions peuvent inverser la réaction. Et ne trade jamais la bougie de la publication.")}</p>
     }
 }

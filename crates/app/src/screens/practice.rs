@@ -19,7 +19,7 @@ struct DrillInfo {
     lesson: Tx,
 }
 
-const DRILLS: [DrillInfo; 8] = [
+const DRILLS: [DrillInfo; 9] = [
     DrillInfo { kind: DrillKind::Calibration, title: Tx("Can you call the next candle?", "Peux-tu deviner la prochaine bougie ?"), blurb: Tx("Ten charts: predict up or down, then see your hit rate.", "Dix graphiques : prédis hausse ou baisse, puis découvre ton taux de réussite."), lesson: Tx("Lesson 2", "Leçon 2") },
     DrillInfo { kind: DrillKind::Distance, title: Tx("Measure the move", "Mesure le mouvement"), blurb: Tx("Turn two prices into a Dollar Move.", "Transforme deux prix en Mouvement en dollars."), lesson: Tx("Lesson 4", "Leçon 4") },
     DrillInfo { kind: DrillKind::Direction, title: Tx("Bullish or bearish?", "Haussière ou baissière ?"), blurb: Tx("Read a candle's direction from its open and close.", "Lis le sens d’une bougie à partir de son ouverture et de sa clôture."), lesson: Tx("Lesson 5", "Leçon 5") },
@@ -28,6 +28,7 @@ const DRILLS: [DrillInfo; 8] = [
     DrillInfo { kind: DrillKind::Orders, title: Tx("Pick the order", "Choisis l’ordre"), blurb: Tx("Market, limit or stop: match the order to the intent.", "Au marché, limite ou stop : associe l’ordre à l’intention."), lesson: Tx("Lesson 10", "Leçon 10") },
     DrillInfo { kind: DrillKind::Session, title: Tx("Which session is it?", "Quelle séance est-ce ?"), blurb: Tx("Turn a time in New York or London into the session that's open.", "Transforme une heure de New York ou de Londres en séance ouverte."), lesson: Tx("Lesson 13", "Leçon 13") },
     DrillInfo { kind: DrillKind::NoTrade, title: Tx("Is this a No-Trade Window?", "Est-ce une Fenêtre sans trade ?"), blurb: Tx("Spot the rollover, the Sunday open and the minutes around big releases.", "Repère le rollover, l’ouverture du dimanche et les minutes autour des grandes annonces."), lesson: Tx("Lesson 15", "Leçon 15") },
+    DrillInfo { kind: DrillKind::Surprise, title: Tx("Hot or soft?", "Chaude ou molle ?"), blurb: Tx("Compare a release with its forecast and say which way gold usually goes.", "Compare une statistique à sa prévision et dis dans quel sens l’or va en général."), lesson: Tx("Lesson 19", "Leçon 19") },
 ];
 
 #[component]
@@ -180,6 +181,14 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                 WindowAnswer::Clear => t("None of the three windows applies: not the rollover, not the Sunday open, and more than 5 minutes from any tier-1 release.", "Aucune des trois fenêtres ne s’applique : ni le rollover, ni l’ouverture du dimanche, et plus de 5 minutes avant ou après toute grande statistique.").to_string(),
             };
             Choice { prompt: q.prompt(), detail: None, options, answer, why }
+        }
+        DrillKind::Surprise => {
+            use telosgard_core::stage3_drills::{Surprise, SurpriseQ};
+            let q = SurpriseQ::new(seed);
+            // Fixed order (hot, soft, in line) reads better than a shuffle for a three-way scale.
+            let options = Surprise::ALL.iter().map(|s| s.label().to_string()).collect();
+            let answer = Surprise::ALL.iter().position(|s| *s == q.answer).unwrap_or(0);
+            Choice { prompt: q.prompt(), detail: None, options, answer, why: q.why() }
         }
         _ => {
             let q = OrderQ::new(seed);

@@ -21,6 +21,7 @@ pub mod review;
 pub mod sizing;
 pub mod stage1_drills;
 pub mod stage2_drills;
+pub mod stage3_drills;
 pub mod time;
 pub mod tutor;
 
