@@ -207,6 +207,7 @@ fn Profile(id: String, me: Me, on_change: Callback<()>) -> impl IntoView {
     view! {
         <div class="anim-fade fixed inset-0 z-40 bg-scrim" on:click=move |_| close() aria-hidden="true"></div>
         <div
+            id="learner-panel"
             role="dialog"
             aria-modal="true"
             aria-label="Learner"
@@ -331,16 +332,35 @@ fn Fact(label: &'static str, value: String, note: String) -> impl IntoView {
 fn Actions(id: String, me: Me, note: RwSignal<Option<(bool, String)>>, deleting: bool, suspended: bool, full_access: bool, lessons: Vec<String>, refresh: Callback<()>) -> impl IntoView {
     let id = StoredValue::new(id);
     let busy = RwSignal::new(false);
-    let post = move |path: &'static str, body: Value, code: Option<String>, ok_text: String| {
+    // Errors from the code-protected actions show next to their buttons, where the click happened.
+    let code_err = RwSignal::new(None::<String>);
+    let code = RwSignal::new(String::new());
+    let post = move |path: &'static str, body: Value, needs_code: bool, ok_text: String| {
+        let c = code.get_untracked().chars().filter(|c| c.is_ascii_digit()).collect::<String>();
+        if needs_code && c.len() != 6 {
+            code_err.set(Some("Enter the 6-digit code from your authenticator app first.".into()));
+            return;
+        }
         busy.set(true);
+        code_err.set(None);
         spawn_local(async move {
-            let r = api::call_with_code("POST", &format!("/api/admin/learners/{}/{path}", id.get_value()), Some(body), code).await;
+            let r = api::call_with_code("POST", &format!("/api/admin/learners/{}/{path}", id.get_value()), Some(body), needs_code.then_some(c)).await;
             busy.set(false);
             if r.ok() {
+                code.set(String::new());
                 note.set(Some((true, ok_text)));
+                // The result shows at the top of the panel: bring it into view.
+                if let Some(panel) = document().get_element_by_id("learner-panel") {
+                    panel.set_scroll_top(0);
+                }
                 refresh.run(());
+            } else if needs_code {
+                code_err.set(Some(if r.code() == Some("code_required") { "That code didn't work. Codes change every 30 seconds: enter the one showing now.".into() } else { r.message() }));
             } else {
                 note.set(Some((false, r.message())));
+                if let Some(panel) = document().get_element_by_id("learner-panel") {
+                    panel.set_scroll_top(0);
+                }
             }
         });
     };
@@ -365,8 +385,7 @@ fn Actions(id: String, me: Me, note: RwSignal<Option<(bool, String)>>, deleting:
             }
         });
     };
-    // Sensitive actions need the current authenticator code.
-    let code = RwSignal::new(String::new());
+    // Sensitive actions need the current authenticator code (see `post`).
     let confirm_delete = RwSignal::new(false);
     let has_lessons = !lessons.is_empty();
     let lessons = StoredValue::new(lessons);
@@ -406,7 +425,7 @@ fn Actions(id: String, me: Me, note: RwSignal<Option<(bool, String)>>, deleting:
                                     <button type="button" class=PILL disabled=move || busy.get() on:click=move |_| {
                                         confirm_reset.set(false);
                                         let l = lesson.get_untracked();
-                                        post("reset-lesson", json!({ "lesson": l }), None, format!("{} reset. Undo it from the audit log.", api::lesson_label(&l)));
+                                        post("reset-lesson", json!({ "lesson": l }), false, format!("{} reset. Undo it from the audit log.", api::lesson_label(&l)));
                                     }>{move || format!("Reset {}", api::lesson_label(&lesson.get()))}</button>
                                     <button type="button" class=PILL_GHOST on:click=move |_| confirm_reset.set(false)>"Cancel"</button>
                                 }.into_any()
@@ -421,7 +440,7 @@ fn Actions(id: String, me: Me, note: RwSignal<Option<(bool, String)>>, deleting:
                         <p class="text-callout font-semibold">{if suspended { "Suspended" } else { "Suspend" }}</p>
                         <p class="text-footnote text-text-muted">{if suspended { "Signed out and unable to sign in. All their data is kept." } else { "Signs them out at once and stops them signing in. Nothing is deleted." }}</p>
                         <button type="button" class=format!("{PILL_GHOST} mt-2") disabled=move || busy.get() on:click=move |_| {
-                            post("suspend", json!({ "on": !suspended }), None, if suspended { "Unsuspended. They can sign in again.".into() } else { "Suspended and signed out.".into() });
+                            post("suspend", json!({ "on": !suspended }), false, if suspended { "Unsuspended. They can sign in again.".into() } else { "Suspended and signed out.".into() });
                         }>{if suspended { "Unsuspend" } else { "Suspend" }}</button>
                     </div>
                 })}
@@ -429,15 +448,14 @@ fn Actions(id: String, me: Me, note: RwSignal<Option<(bool, String)>>, deleting:
                     <div class="rounded-btn border border-line/60 p-3">
                         <label class="block text-callout font-semibold" for="step-code">"Your authenticator code"</label>
                         <p class="text-footnote text-text-muted">"Needed for Full Access and deletion."</p>
-                        <input id="step-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class=format!("{FIELD} tabular mt-2 max-w-[10rem] tracking-widest") prop:value=code on:input=move |ev| code.set(event_target_value(&ev)) />
+                        <input id="step-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class=format!("{FIELD} tabular mt-2 max-w-[10rem] tracking-widest") prop:value=code on:input=move |ev| { code.set(event_target_value(&ev)); code_err.set(None); } />
+                        {move || code_err.get().map(|e| view! { <p role="alert" class="mt-2 rounded-btn bg-bad-bg px-3 py-2 text-callout text-bad-ink">{e}</p> })}
                         {(me.can("fullaccess.set") && !deleting).then(|| view! {
                             <div class="mt-4">
                                 <p class="text-callout font-semibold">"Full Access"</p>
                                 <p class="text-footnote text-text-muted">{if full_access { "On: every lesson is open to them, whatever they've passed." } else { "Off: lessons open as they pass the ones before." }}</p>
                                 <button type="button" class=format!("{PILL_GHOST} mt-2") disabled=move || busy.get() on:click=move |_| {
-                                    let c = code.get_untracked();
-                                    code.set(String::new());
-                                    post("full-access", json!({ "on": !full_access }), Some(c), if full_access { "Full Access turned off.".into() } else { "Full Access turned on.".into() });
+                                    post("full-access", json!({ "on": !full_access }), true, if full_access { "Full Access turned off.".into() } else { "Full Access turned on.".into() });
                                 }>{if full_access { "Turn off Full Access" } else { "Turn on Full Access" }}</button>
                             </div>
                         })}
@@ -446,7 +464,7 @@ fn Actions(id: String, me: Me, note: RwSignal<Option<(bool, String)>>, deleting:
                                 <div class="mt-4">
                                     <p class="text-callout font-semibold">"Deletion scheduled"</p>
                                     <button type="button" class=format!("{PILL_GHOST} mt-2") disabled=move || busy.get() on:click=move |_| {
-                                        post("cancel-delete", json!({}), None, "Deletion cancelled. The account is active again.".into());
+                                        post("cancel-delete", json!({}), false, "Deletion cancelled. The account is active again.".into());
                                     }>"Cancel deletion"</button>
                                 </div>
                             }.into_any()
@@ -460,9 +478,7 @@ fn Actions(id: String, me: Me, note: RwSignal<Option<(bool, String)>>, deleting:
                                             <div class="mt-2 flex flex-wrap gap-2">
                                                 <button type="button" class="press inline-flex min-h-11 items-center rounded-full bg-down px-5 text-callout font-semibold text-surface" disabled=move || busy.get() on:click=move |_| {
                                                     confirm_delete.set(false);
-                                                    let c = code.get_untracked();
-                                                    code.set(String::new());
-                                                    post("delete", json!({}), Some(c), "Deletion scheduled. Erased for good in 7 days unless you cancel.".into());
+                                                    post("delete", json!({}), true, "Deletion scheduled. Erased for good in 7 days unless you cancel.".into());
                                                 }>"Delete in 7 days"</button>
                                                 <button type="button" class=PILL_GHOST on:click=move |_| confirm_delete.set(false)>"Keep"</button>
                                             </div>
