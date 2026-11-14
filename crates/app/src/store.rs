@@ -59,6 +59,9 @@ pub fn qrec_doc_id(lesson: u8) -> String {
 pub struct Profile {
     pub created_at: Millis,
     pub disclaimer_accepted_at: Option<Millis>,
+    /// The Disclaimer version accepted (D3). Missing on older profiles: an acceptance then was version 1.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disclaimer_version: Option<u32>,
     /// "system" | "dark" | "light"
     pub theme: String,
     /// "en" | "fr". Missing on profiles saved before the French edition (English).
@@ -301,7 +304,7 @@ impl Store {
     }
 
     /// Connects, then loads profile, progress and drills. Called once, after first render.
-    pub fn start(self, progress: Progress, theme: RwSignal<ThemeChoice>, disclaimer: crate::state::DisclaimerOpen, lang: crate::i18n::LangSignal) {
+    pub fn start(self, progress: Progress, theme: RwSignal<ThemeChoice>, disclaimer: crate::state::DisclaimerOpen, lang: crate::i18n::LangSignal, notices: crate::state::SiteNotices) {
         spawn_local(async move {
             let caps = match platform::init().await {
                 Ok(c) => c,
@@ -310,6 +313,13 @@ impl Store {
                     return;
                 }
             };
+            notices.maintenance.set(caps.maintenance.clone());
+            notices.disclaimer.set(caps.disclaimer.clone());
+            let current = notices.disclaimer_version();
+            // A newer Disclaimer than the one accepted on this device opens the sheet again.
+            if crate::screens::shell::disclaimer_accepted_locally().unwrap_or(0) < current {
+                disclaimer.0.set(true);
+            }
             if caps.signed_in {
                 self.account.set(Some((caps.email.clone(), caps.owner)));
                 progress.full_access.set(caps.full_access);
@@ -360,7 +370,7 @@ impl Store {
                         }
                     });
                     let fresh = profile.is_none();
-                    let mut profile = profile.unwrap_or(Profile { created_at: now(), disclaimer_accepted_at: None, theme: "system".into(), lang: None });
+                    let mut profile = profile.unwrap_or(Profile { created_at: now(), disclaimer_accepted_at: None, disclaimer_version: None, theme: "system".into(), lang: None });
                     match profile.theme.as_str() {
                         "dark" => theme.set(ThemeChoice::Dark),
                         "light" => theme.set(ThemeChoice::Light),
@@ -373,11 +383,18 @@ impl Store {
                             lang.set(saved);
                         }
                     }
-                    let accepted_here = !disclaimer.0.get_untracked();
-                    if profile.disclaimer_accepted_at.is_some() {
+                    // Accepted versions: on the account (older profiles: version 1) and on this device.
+                    let on_account = profile.disclaimer_version.or(profile.disclaimer_accepted_at.map(|_| 1)).unwrap_or(0);
+                    let here = crate::screens::shell::disclaimer_accepted_locally().unwrap_or(0);
+                    let accepted_here = here > on_account && here >= current;
+                    if on_account.max(here) >= current {
                         disclaimer.0.set(false);
-                    } else if accepted_here {
+                    } else {
+                        disclaimer.0.set(true);
+                    }
+                    if accepted_here {
                         profile.disclaimer_accepted_at = Some(now());
+                        profile.disclaimer_version = Some(here);
                     }
                     self.profile.set(Some(profile.clone()));
                     self.state.set(SaveState::Saved);

@@ -212,3 +212,11 @@ _Avoid_: banned, deleted
 **Full Access**:
 A per-**Learner** switch the **Owner** turns on (for example for a reviewer): every **Lesson** is open regardless of the **Gate**. It grants no dashboard powers; the person is still a Learner.
 _Avoid_: reviewer role, admin
+
+**Maintenance Mode**:
+A switch the **Owner** turns on while the course is being changed: **Learners** see a "being updated" screen instead of the course and Professor Aurel answers only staff, while saving keeps working so nothing a Learner did is lost. Staff use the course as usual.
+_Avoid_: downtime, offline mode
+
+**Disclaimer**:
+The "education, not financial advice" text every **Learner** accepts before starting, in English and French. It is versioned: publishing a new version asks every Learner to read and accept it again.
+_Avoid_: terms, consent

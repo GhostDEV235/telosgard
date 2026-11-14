@@ -79,6 +79,23 @@ impl Toasts {
     }
 }
 
+/// What the server says about the whole site (D3): Maintenance Mode and the current Disclaimer.
+#[derive(Clone, Copy)]
+pub struct SiteNotices {
+    pub maintenance: RwSignal<Option<crate::platform::MaintenanceNotice>>,
+    pub disclaimer: RwSignal<Option<crate::platform::ServerDisclaimer>>,
+}
+
+impl SiteNotices {
+    pub fn new() -> Self {
+        SiteNotices { maintenance: RwSignal::new(None), disclaimer: RwSignal::new(None) }
+    }
+    /// The Disclaimer version on screen: the server's, or 1 (the built-in text) before it answers.
+    pub fn disclaimer_version(&self) -> u32 {
+        self.disclaimer.with_untracked(|d| d.as_ref().map_or(1, |d| d.version))
+    }
+}
+
 /// Whether the first-launch disclaimer sheet is showing.
 #[derive(Clone, Copy)]
 pub struct DisclaimerOpen(pub RwSignal<bool>);

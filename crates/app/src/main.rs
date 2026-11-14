@@ -31,7 +31,9 @@ fn App() -> impl IntoView {
     let progress = state::Progress::new();
     let toasts = state::Toasts::new();
     let store = store::Store::new(toasts);
-    let disclaimer = state::DisclaimerOpen(RwSignal::new(!screens::shell::disclaimer_accepted_locally()));
+    let disclaimer = state::DisclaimerOpen(RwSignal::new(screens::shell::disclaimer_accepted_locally().is_none()));
+    let notices = state::SiteNotices::new();
+    provide_context(notices);
     provide_context(progress);
     provide_context(toasts);
     provide_context(store);
@@ -70,7 +72,7 @@ fn App() -> impl IntoView {
     provide_context(screens::shell::AppearanceOpen(RwSignal::new(false)));
 
     // Content renders immediately; saved progress arrives when the platform answers.
-    store.start(progress, theme, disclaimer, lang);
+    store.start(progress, theme, disclaimer, lang, notices);
 
     // A language change re-renders the whole shell in the new language.
     view! {

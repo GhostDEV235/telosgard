@@ -19,7 +19,7 @@ const doc = (kind: string, extra: Record<string, unknown> = {}) => JSON.stringif
 
 describe("identity", () => {
   it("refuses everything except /api/me when signed out", async () => {
-    expect((await call(null, "GET", "/api/me")).data).toEqual({ signedIn: false });
+    expect((await call(null, "GET", "/api/me")).data).toMatchObject({ signedIn: false });
     const r = await call(null, "GET", "/api/docs/profile");
     expect(r.status).toBe(401);
     expect(r.data).toMatchObject({ code: "not_granted" });

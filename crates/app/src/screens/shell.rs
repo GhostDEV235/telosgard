@@ -29,9 +29,12 @@ pub fn Shell() -> impl IntoView {
     // Invite-only (ADR 0004): signed-out visitors see the sign-in screen; an invite link opens Join.
     // A Memo, so routine save-state changes never re-render the app.
     let store = expect_context::<crate::store::Store>();
+    let notices = expect_context::<crate::state::SiteNotices>();
+    let progress = expect_context::<crate::state::Progress>();
     #[derive(Clone, PartialEq)]
     enum Gate {
         App,
+        Maintenance,
         SignIn,
         Join(String),
         Reset(String),
@@ -40,6 +43,8 @@ pub fn Shell() -> impl IntoView {
         Route::Join(t) => Gate::Join(t),
         Route::Reset(t) => Gate::Reset(t),
         _ if store.state.get() == crate::store::SaveState::Local(crate::store::LocalReason::SignedOut) => Gate::SignIn,
+        // Maintenance Mode (D3): Learners wait at a notice; staff keep using the app, with a banner.
+        _ if notices.maintenance.with(Option::is_some) && store.account.with(Option::is_some) && !progress.staff.get() => Gate::Maintenance,
         _ => Gate::App,
     });
     let app = move || view! {
@@ -80,8 +85,9 @@ pub fn Shell() -> impl IntoView {
     };
     view! {
         {move || match gate.get() {
-            Gate::App => app().into_any(),
-            Gate::SignIn => view! { <crate::screens::account::SignIn /> }.into_any(),
+            Gate::App => view! { <MaintenanceBanner staff=true /> {app()} }.into_any(),
+            Gate::Maintenance => view! { <MaintenanceScreen /> }.into_any(),
+            Gate::SignIn => view! { <MaintenanceBanner staff=false /> <crate::screens::account::SignIn /> }.into_any(),
             Gate::Join(t) => view! { <crate::screens::account::Join token=t /> }.into_any(),
             Gate::Reset(t) => view! { <crate::screens::account::ResetPassword token=t /> }.into_any(),
         }}
@@ -89,6 +95,47 @@ pub fn Shell() -> impl IntoView {
         <crate::ui::moments::BigMomentOverlay />
         <AppearanceSheet open=appearance />
         <Disclaimer open=disclaimer.0 />
+    }
+}
+
+/// Maintenance Mode (D3) for Learners: the Owner's message, and a way to check again.
+#[component]
+fn MaintenanceScreen() -> impl IntoView {
+    let notices = expect_context::<crate::state::SiteNotices>();
+    let message = move || {
+        notices.maintenance.get().map(|m| if crate::i18n::is_fr() { m.message_fr } else { m.message_en }).filter(|m| !m.trim().is_empty())
+    };
+    view! {
+        <main class="gutter mx-auto flex min-h-dvh max-w-[520px] flex-col justify-center py-10">
+            <p class="text-eyebrow text-eyebrow-ink">"Telosgard"</p>
+            <h1 class="text-large">{t("Being updated", "Mise à jour en cours")}</h1>
+            <div class="mt-4 grid gap-3 text-body">
+                <p>{t("Telosgard is being updated for a short while. Your progress is saved.", "Telosgard est en cours de mise à jour pour un petit moment. Ta progression est enregistrée.")}</p>
+                {move || message().map(|m| view! { <p class="rounded-card bg-surface p-4 shadow-card">{m}</p> })}
+            </div>
+            <button type="button" class=format!("{PILL} mt-6 self-start") on:click=move |_| { let _ = window().location().reload(); }>
+                {t("Check again", "Vérifier à nouveau")}
+            </button>
+            <RiskFooter />
+        </main>
+    }
+}
+
+/// A thin notice while Maintenance Mode is on: staff see that Learners are waiting; signed-out visitors see it before signing in.
+#[component]
+fn MaintenanceBanner(staff: bool) -> impl IntoView {
+    let notices = expect_context::<crate::state::SiteNotices>();
+    let progress = expect_context::<crate::state::Progress>();
+    move || {
+        (notices.maintenance.with(Option::is_some) && (!staff || progress.staff.get())).then(|| view! {
+            <p role="status" class="gutter bg-warn-bg py-2 text-center text-footnote text-warn-ink">
+                {if staff {
+                    t("Maintenance Mode is on: Learners see the “being updated” screen. Turn it off in the dashboard’s Settings.", "Le mode maintenance est activé : les personnes qui suivent le cours voient l’écran « mise à jour en cours ». Désactive-le dans les réglages du tableau de bord.")
+                } else {
+                    t("Telosgard is being updated for a short while.", "Telosgard est en cours de mise à jour pour un petit moment.")
+                }}
+            </p>
+        })
     }
 }
 
@@ -102,9 +149,15 @@ fn RiskFooter() -> impl IntoView {
     }
 }
 
-/// Fast first-paint hint; the profile document is the source of truth once loaded.
-pub fn disclaimer_accepted_locally() -> bool {
-    window().local_storage().ok().flatten().and_then(|s| s.get_item(DISCLAIMER_KEY).ok().flatten()).is_some()
+/// The Disclaimer version accepted on this device, as a fast first-paint hint; the profile is the
+/// source of truth once loaded. Stored as `v<version>:<time>`; older values (a bare time) were version 1.
+pub fn disclaimer_accepted_locally() -> Option<u32> {
+    let raw = window().local_storage().ok().flatten().and_then(|s| s.get_item(DISCLAIMER_KEY).ok().flatten())?;
+    Some(local_version(&raw))
+}
+
+fn local_version(raw: &str) -> u32 {
+    raw.strip_prefix('v').and_then(|r| r.split(':').next()).and_then(|v| v.parse().ok()).unwrap_or(1)
 }
 
 #[derive(Clone, Copy)]
@@ -243,17 +296,30 @@ fn AppearanceSheet(open: RwSignal<bool>) -> impl IntoView {
 #[component]
 fn Disclaimer(open: RwSignal<bool>) -> impl IntoView {
     let store = expect_context::<crate::store::Store>();
+    let notices = expect_context::<crate::state::SiteNotices>();
     let accept = move |_| {
         let at = crate::state::now();
+        let version = notices.disclaimer_version();
         if let Some(s) = window().local_storage().ok().flatten() {
-            let _ = s.set_item(DISCLAIMER_KEY, &at.to_string());
+            let _ = s.set_item(DISCLAIMER_KEY, &format!("v{version}:{at}"));
         }
         open.set(false);
-        store.update_profile(move |p| p.disclaimer_accepted_at = Some(at));
+        store.update_profile(move |p| {
+            p.disclaimer_accepted_at = Some(at);
+            p.disclaimer_version = Some(version);
+        });
     };
+    // The text published in the dashboard (D3); the built-in version 1 until the server answers.
+    let server = move || notices.disclaimer.get().map(|d| if crate::i18n::is_fr() { d.fr } else { d.en });
+    let updated = move || notices.disclaimer.with(|d| d.as_ref().is_some_and(|d| d.version > 1));
     view! {
         <Sheet open=open title=t("Before you start", "Avant de commencer") dismissible=false>
-            {if crate::i18n::is_fr() {
+            {move || updated().then(|| view! {
+                <p class="mb-3 text-footnote text-text-muted">{t("This text was updated. Read it and accept it again to continue.", "Ce texte a été mis à jour. Lis-le et accepte-le de nouveau pour continuer.")}</p>
+            })}
+            {move || if let Some(text) = server() {
+                view! { <telosgard_ui::rich::Rich text=text /> }.into_any()
+            } else if crate::i18n::is_fr() {
                 view! {
                     <div class="grid gap-3 text-body">
                         <p>"Telosgard t’apprend comment fonctionne le trading de l’or, pas à pas. C’est de la " <strong>"formation, pas du conseil financier"</strong> "."</p>
@@ -274,5 +340,16 @@ fn Disclaimer(open: RwSignal<bool>) -> impl IntoView {
             }}
             <button type="button" class=format!("{PILL} mt-6 w-full") on:click=accept>{t("I understand", "J’ai compris")}</button>
         </Sheet>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn reads_the_locally_accepted_disclaimer_version() {
+        assert_eq!(super::local_version("v3:1763000000000"), 3);
+        // Saved before versions existed: a bare time was version 1.
+        assert_eq!(super::local_version("1763000000000"), 1);
+        assert_eq!(super::local_version("v:x"), 1);
     }
 }

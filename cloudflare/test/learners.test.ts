@@ -56,7 +56,7 @@ describe("Learners and Enrollment (D1)", () => {
 
     // Suspended: signed out at once, and sign-in is refused; unsuspending lets them back in.
     expect((await call("POST", `/api/admin/learners/${ada.id}/suspend`, { on: true }, { cookie: o })).status).toBe(200);
-    expect((await call("GET", "/api/me", undefined, { cookie: a.cookie })).data).toEqual({ signedIn: false });
+    expect((await call("GET", "/api/me", undefined, { cookie: a.cookie })).data).toMatchObject({ signedIn: false });
     expect((await signIn("ada@example.com")).data).toMatchObject({ code: "ACCOUNT_SUSPENDED" });
     await call("POST", `/api/admin/learners/${ada.id}/suspend`, { on: false }, { cookie: o });
     const back = await signIn("ada@example.com");
@@ -69,7 +69,7 @@ describe("Learners and Enrollment (D1)", () => {
     expect((await call("POST", "/api/password-reset", { token, password: "short" })).status).toBe(400);
     expect((await call("POST", "/api/password-reset", { token, password: "a brand new password" })).status).toBe(200);
     expect((await call("POST", "/api/password-reset", { token, password: "a brand new password" })).status).toBe(400);
-    expect((await call("GET", "/api/me", undefined, { cookie: back.cookie })).data).toEqual({ signedIn: false });
+    expect((await call("GET", "/api/me", undefined, { cookie: back.cookie })).data).toMatchObject({ signedIn: false });
     expect((await call("POST", "/api/auth/sign-in/email", { email: "ada@example.com", password: "a brand new password" })).status).toBe(200);
 
     // Account Deletion: suspended for 7 days (undoable), then erased with numbers kept anonymously.

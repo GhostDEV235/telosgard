@@ -137,9 +137,9 @@ pub fn Shell(me: Me) -> impl IntoView {
                     Section::Learners => view! { <crate::learners::Learners me=me selected=selected /> }.into_any(),
                     Section::Enrollment => view! { <crate::enrollment::Enrollment /> }.into_any(),
                     Section::Curriculum => view! { <crate::curriculum::Curriculum me=me selected=lesson /> }.into_any(),
+                    Section::Settings => view! { <crate::settings::Settings me=me /> }.into_any(),
                     Section::Audit => view! { <pages::Audit me=me /> }.into_any(),
                     Section::More => view! { <pages::More sections=allowed_page.clone() /> }.into_any(),
-                    other => view! { <pages::Coming section=other /> }.into_any(),
                 }}
             </div>
         }

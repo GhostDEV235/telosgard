@@ -17,6 +17,10 @@
 //   POST   /api/password-reset     ← { token, password }   (signed out: a one-time link from staff)
 //   POST   /api/account/delete     ← { password }  Account Deletion by the Learner (ADR 0008)
 //
+// Settings (D3): the Claude limits are read live from the settings table; in Maintenance Mode,
+// /api/me says so and Claude calls are refused for everyone but staff (saves still work, so nothing
+// a Learner did is lost). /api/me also carries the current Disclaimer version and text.
+//
 // A daily cron erases accounts whose 7-day deletion grace has ended.
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -28,23 +32,19 @@ import { eraseDue, makeAuthContext, scheduleDeletion, useResetLink } from "./lea
 import { audit } from "./audit";
 import { hiddenLessons } from "./curriculum";
 import { askClaude, ClaudeError, parseTier, type MessagesClient, type Mode } from "./claude";
+import { claudeLimits, currentDisclaimer, maintenance, writeSetting, type SettingsEnv } from "./settings";
 
-export interface Env extends AuthEnv {
+export interface Env extends SettingsEnv {
   FILES: R2Bucket;
   ASSETS: Fetcher;
   /** Worker secret (`wrangler secret put ANTHROPIC_API_KEY`); `.dev.vars` locally. */
   ANTHROPIC_API_KEY?: string;
-  /** Claude calls per 24 hours for the owner (default 300). */
-  CLAUDE_DAILY_LIMIT?: string;
-  /** Claude calls per 24 hours for everyone else, i.e. invited testers (default 50). */
-  TESTER_DAILY_LIMIT?: string;
 }
 
-/** The owner (an OWNER_EMAILS address, or the localhost dev user) gets the full cap; testers get less. */
-export function dailyLimit(env: Env, who: Identity): number {
-  const owner = isOwner(env, who);
-  const n = Number(owner ? env.CLAUDE_DAILY_LIMIT : env.TESTER_DAILY_LIMIT);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : owner ? 300 : 50;
+/** The Owner (an OWNER_EMAILS address, or the localhost dev user) gets the Owner's limit; everyone else the Learner limit. */
+export async function dailyLimit(env: Env, who: Identity): Promise<number> {
+  const limits = await claudeLimits(env);
+  return isOwner(env, who) ? limits.owner : limits.learner;
 }
 
 /** Builds the Anthropic client; tests swap it for a fake. */
@@ -69,6 +69,8 @@ export default {
   async scheduled(_event: ScheduledController, env: Env): Promise<void> {
     const n = await eraseDue(env);
     if (n) console.log(`erased ${n} account(s) after their deletion grace`);
+    // Shown in Settings → Keys & integrations, so a stalled cron is visible.
+    await writeSetting(env.DB, "cron_last_run", { at: Date.now(), erased: n }, null);
   },
 } satisfies ExportedHandler<Env>;
 
@@ -102,7 +104,11 @@ async function route(request: Request, env: Env, url: URL, makeClient: ClientFac
   const who = await identify(request, env);
   if (path[0] === "me" && path.length === 1 && method === "GET") {
     // `hidden`: Hidden Lessons (D2), so the app can show the "being updated" card without another call.
-    return json(who ? { signedIn: true, userId: who.userId, email: who.email ?? null, isOwner: isOwner(env, who), fullAccess: hasFullAccess(env, who), staff: isStaff(roleOf(env, who)), hidden: await hiddenLessons(env.DB) } : { signedIn: false });
+    // `maintenance` (D3): null, or the messages to show; `disclaimer`: the current version and its text.
+    const m = await maintenance(env.DB);
+    const disclaimer = await currentDisclaimer(env.DB);
+    const shared = { maintenance: m.on ? { messageEn: m.messageEn, messageFr: m.messageFr, since: m.since } : null, disclaimer };
+    return json(who ? { signedIn: true, userId: who.userId, email: who.email ?? null, isOwner: isOwner(env, who), fullAccess: hasFullAccess(env, who), staff: isStaff(roleOf(env, who)), hidden: await hiddenLessons(env.DB), ...shared } : { signedIn: false, ...shared });
   }
   if (!who) return fail(401, "not_granted", "Sign in to use Telosgard.");
 
@@ -206,6 +212,9 @@ async function files(request: Request, env: Env, who: Identity, rest: string[]):
 }
 
 async function claude(request: Request, env: Env, who: Identity, mode: Mode, makeClient: ClientFactory): Promise<Response> {
+  if (!isStaff(roleOf(env, who)) && (await maintenance(env.DB)).on) {
+    return fail(503, "maintenance", "Telosgard is being updated. Professor Aurel will be back shortly.");
+  }
   if (!env.ANTHROPIC_API_KEY) return fail(503, "not_granted", "Professor Aurel isn't set up on the server yet.");
   let body: { prompt?: unknown; tier?: unknown };
   try {
@@ -215,10 +224,17 @@ async function claude(request: Request, env: Env, who: Identity, mode: Mode, mak
   }
   if (typeof body.prompt !== "string") return fail(400, "invalid_argument", "A prompt is required.");
 
-  const limit = dailyLimit(env, who);
+  const limits = await claudeLimits(env);
+  const limit = isOwner(env, who) ? limits.owner : limits.learner;
   const since = Date.now() - 24 * 3600 * 1000;
   const used = await env.DB.prepare("SELECT COUNT(*) AS n FROM claude_calls WHERE user_id = ?1 AND at > ?2").bind(who.userId, since).first<{ n: number }>();
-  if ((used?.n ?? 0) >= limit) return fail(429, "rate_limited", `You've reached today's limit of ${limit} Claude requests. It resets over the next 24 hours.`);
+  if ((used?.n ?? 0) >= limit) {
+    return fail(429, "rate_limited", limit === 0 ? "Professor Aurel is paused for now." : `You've reached today's limit of ${limit} Claude requests. It resets over the next 24 hours.`);
+  }
+  if (limits.total !== null && !isOwner(env, who)) {
+    const all = await env.DB.prepare("SELECT COUNT(*) AS n FROM claude_calls WHERE at > ?1").bind(since).first<{ n: number }>();
+    if ((all?.n ?? 0) >= limits.total) return fail(429, "rate_limited", "Professor Aurel has answered as many requests as Telosgard allows today. Try again later.");
+  }
 
   const log = (ok: boolean, input = 0, output = 0) =>
     env.DB.prepare("INSERT INTO claude_calls (user_id, at, mode, ok, input_tokens, output_tokens) VALUES (?1, ?2, ?3, ?4, ?5, ?6)")

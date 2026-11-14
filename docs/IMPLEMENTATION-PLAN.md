@@ -282,10 +282,14 @@ Built on the existing Worker, D1 and Leptos, at `/admin` until there is a domain
 
 *Checks 2026-11-13:* 33 Worker tests (1 new covering the stats, a hide with its paused count, the app's hidden list, Undo, anonymous answers, each role's limits and the Overview numbers). Local browser run: the lesson panel's note, hide with confirmation and unhide; a Learner signed in to a hidden Lesson 1 sees the card. axe: 32 scans (Overview, Curriculum, a lesson panel and the course's staff banner; 4 widths × 2 themes) clean, no overflow. Bugs found and fixed on the way: in the waiting count, accounts that never saved anything weren't counted, a lesson nobody had opened yet always showed 0, and suspended accounts were counted; on wide screens, a Hidden Lesson's side panel still listed its steps.
 
-### Phase D3: Settings & staff roles
-- [ ] Claude daily limits as live settings; maintenance mode; the disclaimer in English and French, versioned
-- [ ] API key and integration status (never the keys themselves)
-- [ ] Instructor and Support switched on, assigned by the Owner
+### Phase D3: Settings & staff roles ✅ *(built 2026-11-13; waiting for deploy)*
+- [x] Settings page (Owner only; migration `0007_settings.sql`): Professor Aurel's daily limits as live settings (the Owner, each other account where 0 pauses him, and an optional cap on all accounts together; the `CLAUDE_DAILY_LIMIT` / `TESTER_DAILY_LIMIT` vars are only the defaults now)
+- [x] **Maintenance Mode** with optional messages in English and French: Learners see a "being updated" screen, Claude answers only staff, saves keep working; staff see a banner in the course, and signed-out visitors see a notice
+- [x] The **Disclaimer** in English and French, versioned (paragraphs and `**bold**`, with a preview). Version 1 is the shipped text, so nobody is asked again until a new version is published; then every Learner accepts it again (stored on the profile as `disclaimerVersion`)
+- [x] Keys & integrations by status only: Anthropic key (with the last 24 hours' answered and failed calls), sign-in secret, Owner address, a reminder while `FULL_ACCESS_EMAILS` is still set, D1, R2 and the daily clean-up's last run
+- [x] Instructor and Support switched on: the Owner picks a role on a profile and confirms with the authenticator code; the account is signed out, staff set up two-factor at their next sign-in; Undo from the audit log (with the code)
+
+*Checks 2026-11-13:* 36 Worker tests (2 new: limits, Maintenance Mode, Disclaimer versions and key status with no secret in the answer, Support kept out; a role assigned with the code, the sign-out, the two-factor step for the new Instructor, and its Undo); 173 Rust tests (new: the Disclaimer text format and the stored Disclaimer version). Local browser run: limits saved, Maintenance Mode on with a message (the staff banner, a Learner's "being updated" screen), Disclaimer version 2 published and accepted again, a role changed and undone. axe: Settings at 390, 768 and 1512 px and the maintenance screen, both themes, clean, no overflow. Fixed on the way: a save's message vanished when the page reloaded its data.
 
 ### Later, by trigger
 - A domain: `learn.` and `admin.` subdomains, Cloudflare Access, passkeys, email sending → waitlist, Communications (onboarding, announcements, nudges)

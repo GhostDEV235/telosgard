@@ -6,9 +6,10 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 
-export const MODEL = "claude-opus-5-5";
+/** Claude Haiku 5.5: the lowest-cost current model ($0.10 / $0.50 per million tokens). */
+export const MODEL = "claude-haiku-5-5";
 
-/** The app's tiers map onto effort. Opus 5.5 defaults to medium, so it is always set explicitly. */
+/** The app's tiers map onto effort. Haiku 5.5 defaults to medium, so it is always set explicitly. */
 const EFFORT = { quick: "low", default: "medium", complex: "high" } as const;
 export type Tier = keyof typeof EFFORT;
 export type Mode = "json" | "text";
@@ -75,9 +76,8 @@ export async function askClaude(client: MessagesClient, mode: Mode, prompt: stri
       system: SYSTEM[mode],
       thinking: { type: "adaptive" },
       output_config: { effort: EFFORT[tier] },
-      // A safety-classifier decline is re-run server-side on the model Anthropic recommends for it.
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
+      // Haiku 5.5 has no server-side fallback (a `fallbacks` list is a 400): a decline comes back as
+      // stop_reason "refusal", handled below.
       messages: [{ role: "user", content: prompt }],
     });
   } catch (e) {

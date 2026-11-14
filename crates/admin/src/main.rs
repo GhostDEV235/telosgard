@@ -8,6 +8,7 @@ mod curriculum;
 mod enrollment;
 mod learners;
 mod pages;
+mod settings;
 mod shell;
 
 use api::Me;

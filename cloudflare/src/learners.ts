@@ -239,6 +239,15 @@ export async function erase(env: AuthEnv & { FILES?: R2Bucket }, id: string, now
 }
 
 /** Runs daily (cron): erases every account whose grace period has ended. */
+/** Staff roles (D3): the Owner assigns Instructor or Support. The account is signed out everywhere, so
+ * the new role (and, for staff, the two-factor setup) applies from its next sign-in. */
+export async function setRole(env: AuthEnv, id: string, role: "learner" | "instructor" | "support"): Promise<void> {
+  await env.DB.batch([
+    env.DB.prepare('UPDATE "user" SET role = ?1 WHERE id = ?2').bind(role, id),
+    env.DB.prepare('DELETE FROM "session" WHERE "userId" = ?1').bind(id),
+  ]);
+}
+
 export async function eraseDue(env: AuthEnv & { FILES?: R2Bucket }, now = Date.now()): Promise<number> {
   const owners = ownerEmails(env);
   const { results } = await env.DB.prepare('SELECT id, email FROM "user" WHERE "deleteAfter" IS NOT NULL AND "deleteAfter" <= ?1').bind(now).all<{ id: string; email: string }>();

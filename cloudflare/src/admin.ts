@@ -15,8 +15,11 @@
 //   POST /api/admin/audit/:id/undo
 //   GET  /api/admin/curriculum      → LessonStats[]         GET /api/admin/curriculum/:lesson → detail
 //   POST /api/admin/curriculum/:lesson/(hide|unhide|notes)
+//   POST /api/admin/learners/:id/role   ← { role: learner | instructor | support }   (Owner, with the code)
+//   GET  /api/admin/settings        → { limits, maintenance, disclaimer, history, status }
+//   PUT  /api/admin/settings/limits · PUT /api/admin/settings/maintenance · POST /api/admin/settings/disclaimer
 //
-// Sensitive actions (Full Access, deletion) also need the staff member's current authenticator code
+// Sensitive actions (Full Access, roles, deletion) also need the staff member's current authenticator code
 // in the x-telosgard-code header; without it they answer 403 code_required (ADR 0007).
 
 import { audit, auditPage } from "./audit";
@@ -34,11 +37,24 @@ import {
   restoreDocs,
   scheduleDeletion,
   setFullAccess,
+  setRole,
   setSuspended,
   verifyCode,
   type Account,
 } from "./learners";
-import { can, isStaff, permissionsOf, STAFF_SESSION_MS, type Permission, type Role } from "./roles";
+import { ASSIGNABLE, can, isStaff, permissionsOf, STAFF_SESSION_MS, storedRole, type Permission, type Role } from "./roles";
+import {
+  claudeLimits,
+  currentDisclaimer,
+  disclaimerHistory,
+  keyStatus,
+  maintenance,
+  parseLimits,
+  parseMaintenance,
+  publishDisclaimer,
+  writeSetting,
+  type SettingsEnv,
+} from "./settings";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
@@ -62,7 +78,7 @@ export function staffBlock(who: Identity, role: Role, now = Date.now()): { code:
   return null;
 }
 
-export async function adminRoute(request: Request, env: AuthEnv, who: Identity, rest: string[], url: URL): Promise<Response> {
+export async function adminRoute(request: Request, env: SettingsEnv, who: Identity, rest: string[], url: URL): Promise<Response> {
   const role = roleOf(env, who);
   const method = request.method;
 
@@ -107,6 +123,7 @@ export async function adminRoute(request: Request, env: AuthEnv, who: Identity, 
   }
   if (rest[0] === "curriculum") return curriculumRoute(request, env, staff, rest.slice(1), need);
   if (rest[0] === "learners") return learnersRoute(request, env, staff, rest.slice(1), url, need);
+  if (rest[0] === "settings") return settingsRoute(request, env, staff, rest.slice(1), need);
   if (rest[0] === "enrollment") return enrollmentRoute(request, env, staff, rest.slice(1), url, need);
   if (rest[0] === "audit" && rest.length === 3 && rest[2] === "undo" && method === "POST") return undo(request, env, staff, Number(rest[1]), url, need);
   return fail(404, "invalid_argument", "No such route.");
@@ -142,6 +159,52 @@ function targetBlock(staff: Staff, target: Account | null): Response | null {
 
 type Need = (p: Permission) => Response | null;
 
+/** Settings (D3): Owner only. Every change is in the audit log with its before and after. */
+async function settingsRoute(request: Request, env: SettingsEnv, staff: Staff, rest: string[], need: Need): Promise<Response> {
+  const method = request.method;
+  if (rest.length === 0 && method === "GET") {
+    const denied = need("settings.read");
+    if (denied) return denied;
+    return json({
+      limits: await claudeLimits(env),
+      maintenance: await maintenance(env.DB),
+      disclaimer: await currentDisclaimer(env.DB),
+      history: await disclaimerHistory(env.DB),
+      status: await keyStatus(env),
+    });
+  }
+  const denied = need("settings.write");
+  if (denied) return denied;
+  const b = await body(request);
+  const log = (action: string, before: unknown, after: unknown, entityId: string | null = null) =>
+    audit(env.DB, staff.who, staff.role, { action, entity: "settings", entityId, before, after });
+
+  if (rest[0] === "limits" && rest.length === 1 && method === "PUT") {
+    const next = parseLimits(b);
+    if (typeof next === "string") return fail(400, "invalid_argument", next);
+    const before = await claudeLimits(env);
+    await writeSetting(env.DB, "claude_limits", next, staff.who.userId);
+    await log("settings.limits", before, next, "claude_limits");
+    return json(next);
+  }
+  if (rest[0] === "maintenance" && rest.length === 1 && method === "PUT") {
+    const before = await maintenance(env.DB);
+    const next = parseMaintenance(b, before);
+    if (typeof next === "string") return fail(400, "invalid_argument", next);
+    await writeSetting(env.DB, "maintenance", next, staff.who.userId);
+    await log(next.on ? "settings.maintenance_on" : "settings.maintenance_off", before, next, "maintenance");
+    return json(next);
+  }
+  if (rest[0] === "disclaimer" && rest.length === 1 && method === "POST") {
+    const prev = await currentDisclaimer(env.DB);
+    const made = await publishDisclaimer(env.DB, String(b.en ?? ""), String(b.fr ?? ""), staff.who.userId);
+    if (typeof made === "string") return fail(400, "invalid_argument", made);
+    await log("settings.disclaimer", prev ? { version: prev.version } : null, { version: made.version }, `v${made.version}`);
+    return json(made);
+  }
+  return fail(404, "invalid_argument", "No such route.");
+}
+
 async function learnersRoute(request: Request, env: AuthEnv, staff: Staff, rest: string[], url: URL, need: Need): Promise<Response> {
   const method = request.method;
   if (rest.length === 0 && method === "GET") return need("learners.read") ?? json(await listLearners(env));
@@ -173,6 +236,18 @@ async function learnersRoute(request: Request, env: AuthEnv, staff: Staff, rest:
       const on = b.on === true;
       await setFullAccess(env, id, on);
       await log("learner.full_access", { fullAccess: target!.fullAccess }, { fullAccess: on });
+      return json({ ok: true });
+    }
+    case "role": {
+      const denied = need("roles.set") ?? targetBlock(staff, target) ?? (await stepUp(request, env, staff, url));
+      if (denied) return denied;
+      const role = String(b.role ?? "");
+      if (!(ASSIGNABLE as readonly string[]).includes(role)) return fail(400, "invalid_argument", "Choose Learner, Instructor or Support.");
+      if (target!.deleteAfter != null) return fail(409, "invalid_argument", "This account is scheduled for deletion.");
+      const before = storedRole(target!.role);
+      if (before === role) return json({ ok: true });
+      await setRole(env, id, role as "learner" | "instructor" | "support");
+      await log("learner.role", { role: before }, { role });
       return json({ ok: true });
     }
     case "reset-lesson": {
@@ -251,6 +326,7 @@ const UNDOABLE: Record<string, Permission> = {
   "learner.suspend": "learners.suspend",
   "learner.unsuspend": "learners.suspend",
   "learner.full_access": "fullaccess.set",
+  "learner.role": "roles.set",
   "learner.reset_lesson": "progress.reset",
   "learner.delete_scheduled": "learners.delete",
   "invite_code.revoke": "invites.manage",
@@ -283,6 +359,11 @@ async function undo(request: Request, env: AuthEnv, staff: Staff, id: number, ur
       const code = await stepUp(request, env, staff, url);
       if (code) return code;
       await setFullAccess(env, entityId, Boolean(before?.fullAccess));
+    } else if (action === "learner.role") {
+      const code = await stepUp(request, env, staff, url);
+      if (code) return code;
+      if (target!.deleteAfter != null) return fail(409, "invalid_argument", "This account is scheduled for deletion.");
+      await setRole(env, entityId, storedRole(before?.role) as "learner" | "instructor" | "support");
     } else if (action === "learner.suspend" || action === "learner.unsuspend") {
       if (target!.deleteAfter != null) return fail(409, "invalid_argument", "This account is scheduled for deletion. Cancel the deletion instead.");
       await setSuspended(env, url.origin, entityId, Boolean(before?.suspended));
@@ -352,8 +433,9 @@ async function curriculumRoute(request: Request, env: AuthEnv, staff: Staff, res
   return fail(404, "invalid_argument", "No such route.");
 }
 
-/** Opus 5.5 list prices, dollars per million tokens (input, output). */
-const PRICE_PER_MTOK = { input: 4, output: 20 };
+/** Claude Haiku 5.5 list prices, dollars per million tokens (input, output), for prompts of 100K tokens
+ * or fewer (every prompt here: the Worker caps them at 60,000 characters). */
+const PRICE_PER_MTOK = { input: 0.1, output: 0.5 };
 
 async function overview(env: AuthEnv, role: Role, now = Date.now()) {
   const db = env.DB;

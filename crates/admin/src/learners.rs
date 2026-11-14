@@ -252,7 +252,7 @@ fn ProfileBody(p: Profile, me: Me, note: RwSignal<Option<(bool, String)>>, refre
             <Fact label="Journal" value=format!("{} entries", p.journal_entries) note=format!("{} checklists", p.checklists) />
         </dl>
 
-        <Actions id=id.clone() me=me note=note deleting=deleting suspended=p.suspended_at.is_some() full_access=p.full_access lessons=lessons refresh=refresh />
+        <Actions id=id.clone() me=me note=note deleting=deleting suspended=p.suspended_at.is_some() full_access=p.full_access role=p.role.clone() lessons=lessons refresh=refresh />
 
         <section class="mt-6">
             <h3 class="text-headline">"Progress"</h3>
@@ -329,7 +329,10 @@ fn Fact(label: &'static str, value: String, note: String) -> impl IntoView {
 
 /// What the signed-in staff member may do to this Learner. Each answer reloads the profile.
 #[component]
-fn Actions(id: String, me: Me, note: RwSignal<Option<(bool, String)>>, deleting: bool, suspended: bool, full_access: bool, lessons: Vec<String>, refresh: Callback<()>) -> impl IntoView {
+fn Actions(id: String, me: Me, note: RwSignal<Option<(bool, String)>>, deleting: bool, suspended: bool, full_access: bool, role: String, lessons: Vec<String>, refresh: Callback<()>) -> impl IntoView {
+    // Staff roles (D3): the Owner picks one, then confirms with the code.
+    let new_role = RwSignal::new(role.clone());
+    let current_role = StoredValue::new(role);
     let id = StoredValue::new(id);
     let busy = RwSignal::new(false);
     // Errors from the code-protected actions show next to their buttons, where the click happened.
@@ -447,7 +450,7 @@ fn Actions(id: String, me: Me, note: RwSignal<Option<(bool, String)>>, deleting:
                 {(me.can("fullaccess.set") || me.can("learners.delete")).then(|| view! {
                     <div class="rounded-btn border border-line/60 p-3">
                         <label class="block text-callout font-semibold" for="step-code">"Your authenticator code"</label>
-                        <p class="text-footnote text-text-muted">"Needed for Full Access and deletion."</p>
+                        <p class="text-footnote text-text-muted">{if me.can("roles.set") { "Needed for Full Access, roles and deletion." } else { "Needed for Full Access and deletion." }}</p>
                         <input id="step-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class=format!("{FIELD} tabular mt-2 max-w-[10rem] tracking-widest") prop:value=code on:input=move |ev| { code.set(event_target_value(&ev)); code_err.set(None); } />
                         {move || code_err.get().map(|e| view! { <p role="alert" class="mt-2 rounded-btn bg-bad-bg px-3 py-2 text-callout text-bad-ink">{e}</p> })}
                         {(me.can("fullaccess.set") && !deleting).then(|| view! {
@@ -457,6 +460,24 @@ fn Actions(id: String, me: Me, note: RwSignal<Option<(bool, String)>>, deleting:
                                 <button type="button" class=format!("{PILL_GHOST} mt-2") disabled=move || busy.get() on:click=move |_| {
                                     post("full-access", json!({ "on": !full_access }), true, if full_access { "Full Access turned off.".into() } else { "Full Access turned on.".into() });
                                 }>{if full_access { "Turn off Full Access" } else { "Turn on Full Access" }}</button>
+                            </div>
+                        })}
+                        {(me.can("roles.set") && !deleting).then(|| view! {
+                            <div class="mt-4">
+                                <label class="block text-callout font-semibold" for="role-pick">"Role"</label>
+                                <p class="text-footnote text-text-muted">"Instructors see lessons and anonymous answers, never who Learners are. Support helps Learners, never reads journals. Changing a role signs them out; staff set up two-factor at their next sign-in."</p>
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    <select id="role-pick" class="min-h-11 rounded-field border border-line bg-surface px-3 text-body text-text" on:change=move |ev| new_role.set(event_target_value(&ev))>
+                                        {[("learner", "Learner"), ("instructor", "Instructor"), ("support", "Support")].into_iter().map(|(v, l)| view! {
+                                            <option value=v selected=current_role.get_value() == v>{l}</option>
+                                        }).collect_view()}
+                                    </select>
+                                    <button type="button" class=PILL_GHOST disabled=move || busy.get() || new_role.get() == current_role.get_value() on:click=move |_| {
+                                        let r = new_role.get_untracked();
+                                        let label = match r.as_str() { "instructor" => "Instructor", "support" => "Support", _ => "Learner" };
+                                        post("role", json!({ "role": r }), true, format!("Role changed to {label}. They've been signed out; undo it from the audit log."));
+                                    }>"Change role"</button>
+                                </div>
                             </div>
                         })}
                         {me.can("learners.delete").then(|| if deleting {

@@ -266,12 +266,12 @@ pub fn Overview(me: Me) -> impl IntoView {
 
         <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
             {card_title("Platform", "Professor Aurel (Claude)")}
-            <p class="mt-1 text-footnote text-text-muted">"Calls through the Worker and the estimated cost at Claude Opus 5.5 list prices ($4 per million input tokens, $20 per million output)."</p>
+            <p class="mt-1 text-footnote text-text-muted">"Calls through the Worker and the estimated cost at Claude Haiku 5.5 list prices ($0.10 per million input tokens, $0.50 per million output)."</p>
             {move || numbers.get().map(|n| {
                 let row = |label: &'static str, u: &Usage| view! {
                     <div class="rounded-btn bg-bg p-3">
                         <p class="text-footnote font-semibold text-text-muted">{label}</p>
-                        <p class="tabular mt-1 font-display text-title2">{format!("${:.2}", u.cost)}</p>
+                        <p class="tabular mt-1 font-display text-title2">{if u.cost > 0.0 && u.cost < 1.0 { format!("${:.3}", u.cost) } else { format!("${:.2}", u.cost) }}</p>
                         <p class="tabular text-footnote text-text-muted">{format!("{} calls · {} errors · {}k in / {}k out", u.calls, u.errors, u.input / 1000, u.output / 1000)}</p>
                     </div>
                 };
@@ -415,24 +415,6 @@ pub fn Audit(me: Me) -> impl IntoView {
                 <button type="button" class=PILL_GHOST disabled=move || loading.get() on:click=move |_| more()>"Load older entries"</button>
             })}
         </div>
-    }
-}
-
-/// A section whose phase hasn't shipped yet.
-#[component]
-pub fn Coming(section: Section) -> impl IntoView {
-    let (phase, what) = match section {
-        Section::Settings => ("D3", "Claude's daily limits, maintenance mode, the disclaimer in English and French, and the status of keys and integrations."),
-        _ => ("", ""),
-    };
-    view! {
-        <header class="pt-4 pb-6">
-            <p class="text-eyebrow text-eyebrow-ink">{format!("Arrives in phase {phase}")}</p>
-            <h1 class="text-large">{section.title()}</h1>
-        </header>
-        <section class="rounded-card border border-dashed border-line bg-surface/60 p-6">
-            <p class="max-w-[62ch] text-body">{what}</p>
-        </section>
     }
 }
 

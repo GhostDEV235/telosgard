@@ -41,7 +41,7 @@ export function isLocalhost(url: URL): boolean {
   return url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]";
 }
 
-function emailList(raw: string | undefined): string[] {
+export function emailList(raw: string | undefined): string[] {
   return (raw ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
 }
 

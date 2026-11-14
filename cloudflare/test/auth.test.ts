@@ -88,7 +88,7 @@ describe("accounts (Better Auth, invite-only)", () => {
     const ok = await call("POST", "/api/auth/sign-in/email", { email: "owner@example.com", password: "correct horse battery" });
     expect(ok.status).toBe(200);
     await call("POST", "/api/auth/sign-out", {}, { cookie: ok.cookie });
-    expect((await call("GET", "/api/me", undefined, { cookie: ok.cookie })).data).toEqual({ signedIn: false });
+    expect((await call("GET", "/api/me", undefined, { cookie: ok.cookie })).data).toMatchObject({ signedIn: false });
   });
 
   it("rejects short passwords without spending the invite", async () => {

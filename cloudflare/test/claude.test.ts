@@ -51,15 +51,16 @@ describe("Claude through the Worker", () => {
     expect(r.calls).toHaveLength(0);
   });
 
-  it("sends a fixed model, the tier's effort and server-side fallbacks", async () => {
+  it("sends a fixed model and the tier's effort, with no fallbacks (Haiku 5.5 rejects them)", async () => {
     const r = await ask("json", { text: '{"grade":"got_it"}' }, { tier: "quick" });
     expect(r.status).toBe(200);
     const p = r.calls[0];
     expect(p.model).toBe(MODEL);
     expect(p.output_config).toEqual({ effort: "low" });
     expect(p.thinking).toEqual({ type: "adaptive" });
-    expect(p.fallbacks).toBe("default");
-    expect(p.betas).toEqual(["server-side-fallback-2026-07-01"]);
+    expect(p.model).toBe("claude-haiku-5-5");
+    expect(p.fallbacks).toBeUndefined();
+    expect(p.betas).toBeUndefined();
     expect(p.max_tokens).toBe(16000);
     expect((await ask("json", { text: "{}" }, { tier: "anything" })).calls[0].output_config).toEqual({ effort: "medium" });
   });
@@ -100,23 +101,31 @@ describe("Claude through the Worker", () => {
 });
 
 describe("daily caps: owner and testers", () => {
-  const e = (vars: Record<string, string> = {}) => ({ ...vars }) as unknown as Env;
-  it("gives owners 300 and testers 50 by default", () => {
+  const DB = () => (env as unknown as Env).DB;
+  const e = (vars: Record<string, string> = {}) => ({ DB: DB(), ...vars }) as unknown as Env;
+  it("gives owners 300 and testers 50 by default", async () => {
     const env1 = e({ OWNER_EMAILS: "Owner@Example.com, second@example.com" });
-    expect(dailyLimit(env1, { userId: "a", email: "owner@example.com" })).toBe(300);
-    expect(dailyLimit(env1, { userId: "b", email: "SECOND@example.com" })).toBe(300);
-    expect(dailyLimit(env1, { userId: "c", email: "tester@gmail.com" })).toBe(50);
-    expect(dailyLimit(env1, { userId: "d" })).toBe(50);
+    expect(await dailyLimit(env1, { userId: "a", email: "owner@example.com" })).toBe(300);
+    expect(await dailyLimit(env1, { userId: "b", email: "SECOND@example.com" })).toBe(300);
+    expect(await dailyLimit(env1, { userId: "c", email: "tester@gmail.com" })).toBe(50);
+    expect(await dailyLimit(env1, { userId: "d" })).toBe(50);
   });
-  it("treats everyone as a tester when no owner is set, except the localhost dev user", () => {
-    expect(dailyLimit(e(), { userId: "a", email: "owner@example.com" })).toBe(50);
-    expect(dailyLimit(e(), { userId: "dev", dev: true })).toBe(300);
+  it("treats everyone as a tester when no owner is set, except the localhost dev user", async () => {
+    expect(await dailyLimit(e(), { userId: "a", email: "owner@example.com" })).toBe(50);
+    expect(await dailyLimit(e(), { userId: "dev", dev: true })).toBe(300);
   });
-  it("uses the configured numbers", () => {
+  it("uses the configured numbers", async () => {
     const env2 = e({ OWNER_EMAILS: "o@x.com", CLAUDE_DAILY_LIMIT: "500", TESTER_DAILY_LIMIT: "20" });
-    expect(dailyLimit(env2, { userId: "a", email: "o@x.com" })).toBe(500);
-    expect(dailyLimit(env2, { userId: "b", email: "t@x.com" })).toBe(20);
-    expect(dailyLimit(e({ TESTER_DAILY_LIMIT: "nonsense" }), { userId: "b", email: "t@x.com" })).toBe(50);
+    expect(await dailyLimit(env2, { userId: "a", email: "o@x.com" })).toBe(500);
+    expect(await dailyLimit(env2, { userId: "b", email: "t@x.com" })).toBe(20);
+    expect(await dailyLimit(e({ TESTER_DAILY_LIMIT: "nonsense" }), { userId: "b", email: "t@x.com" })).toBe(50);
+  });
+  it("prefers the limits saved in the dashboard (D3)", async () => {
+    await DB().prepare("INSERT INTO settings (key, value, updated_at) VALUES ('claude_limits', ?1, 0)").bind(JSON.stringify({ owner: 40, learner: 0, total: null })).run();
+    const env3 = e({ OWNER_EMAILS: "o@x.com", CLAUDE_DAILY_LIMIT: "500" });
+    expect(await dailyLimit(env3, { userId: "a", email: "o@x.com" })).toBe(40);
+    expect(await dailyLimit(env3, { userId: "b", email: "t@x.com" })).toBe(0);
+    await DB().prepare("DELETE FROM settings WHERE key = 'claude_limits'").run();
   });
 });
 

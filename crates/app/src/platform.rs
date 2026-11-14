@@ -71,6 +71,7 @@ impl PlatformError {
             "resource_exhausted" | "rate_limited" => PlatformError::RateLimited,
             "invalid_argument" | "transform_error" | "invalid_request" | "prompt_too_large" => PlatformError::Invalid(message),
             "refused" => PlatformError::Claude(message),
+            "maintenance" => PlatformError::Claude(t("Telosgard is being updated", "Telosgard est en cours de mise à jour").into()),
             "auth" => PlatformError::Auth(message),
             "invalid_json" => PlatformError::Claude(t("its reply couldn't be read", "sa réponse était illisible").into()),
             _ => PlatformError::Unavailable,
@@ -133,6 +134,28 @@ pub struct Caps {
     /// Hidden Lessons (lesson document ids such as "lesson-07"), offline for rework.
     #[serde(default)]
     pub hidden: Vec<String>,
+    /// Maintenance Mode (D3): set while the Owner has it on.
+    #[serde(default)]
+    pub maintenance: Option<MaintenanceNotice>,
+    /// The current Disclaimer version and text (D3). None offline: the built-in text is version 1.
+    #[serde(default)]
+    pub disclaimer: Option<ServerDisclaimer>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MaintenanceNotice {
+    #[serde(default)]
+    pub message_en: String,
+    #[serde(default)]
+    pub message_fr: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct ServerDisclaimer {
+    pub version: u32,
+    pub en: String,
+    pub fr: String,
 }
 
 pub async fn auth_sign_in(email: &str, password: &str) -> Result<(), PlatformError> {
