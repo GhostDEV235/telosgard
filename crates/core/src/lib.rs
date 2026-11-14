@@ -24,6 +24,7 @@ pub mod stage2_drills;
 pub mod stage3_drills;
 pub mod stage4_drills;
 pub mod stage5_drills;
+pub mod stage6_drills;
 pub mod time;
 pub mod tutor;
 

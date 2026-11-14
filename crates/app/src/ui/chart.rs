@@ -170,8 +170,9 @@ pub fn candle_strip(cs: &[Candle], lo: Price, hi: Price, label: String) -> impl 
 
 /// Swing points joined by a line, with optional labelled zones (A–D) and an optional final break
 /// (dashed, above the last swing high when `broke_up`, below the last swing low otherwise).
-/// For the Stage 5 drills; prices are illustrative.
-pub fn swing_chart(swings: &[telosgard_core::stage5_drills::Swing], zones: &[(Price, Price)], broke_up: Option<bool>, label: String) -> impl IntoView + use<> {
+/// For the Stage 5 and 6 drills; prices are illustrative. `extra` adds letters on swing points and
+/// labelled Fibonacci lines (Stage 6).
+pub fn swing_chart(swings: &[telosgard_core::stage5_drills::Swing], zones: &[(Price, Price)], broke_up: Option<bool>, extra: &SwingExtra, label: String) -> impl IntoView + use<> {
     const W: f64 = 520.0;
     const H: f64 = 220.0;
     const PLOT_L: f64 = 34.0;
@@ -222,13 +223,45 @@ pub fn swing_chart(swings: &[telosgard_core::stage5_drills::Swing], zones: &[(Pr
         })
         .collect_view();
     let dots = points.iter().map(|(a, b)| view! { <circle cx=*a cy=*b r="4" class="fill-text" /> }).collect_view();
+    // Letters sit above a swing high and below a swing low.
+    let letters_on = extra
+        .points
+        .iter()
+        .filter_map(|(i, l)| {
+            let (px, py) = *points.get(*i)?;
+            let high = swings[*i].high;
+            Some(view! { <text x=px y=if high { py - 10.0 } else { py + 22.0 } text-anchor="middle" class="fill-text" font-size="15" font-weight="700">{*l}</text> })
+        })
+        .collect_view();
+    let fib_lines = extra
+        .fibs
+        .iter()
+        .map(|(p, l)| {
+            let yy = y(p.0);
+            view! {
+                <line x1=PLOT_L x2=PLOT_R y1=yy y2=yy class="stroke-gold" stroke-width="1.5" stroke-dasharray="5 4" />
+                <text x=PLOT_R + 8.0 y=yy + 5.0 class="fill-gold tabular" font-size="14" font-weight="600">{l.clone()}</text>
+            }
+        })
+        .collect_view();
+    // With Fibonacci lines, their labels take the right-hand margin instead of the price grid.
+    let grid = if extra.fibs.is_empty() { Some(grid) } else { None };
     view! {
         <svg viewBox=format!("0 0 {W} {H}") class="h-auto w-full max-w-[560px]" role="img" aria-label=label>
             {grid}
             {bands}
+            {fib_lines}
             <polyline points=path fill="none" class="stroke-text" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
             {dots}
+            {letters_on}
             {breakout}
         </svg>
     }
+}
+
+/// Stage 6 additions to [`swing_chart`]: letters on swing points (by index) and Fibonacci lines.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct SwingExtra {
+    pub points: Vec<(usize, &'static str)>,
+    pub fibs: Vec<(Price, String)>,
 }

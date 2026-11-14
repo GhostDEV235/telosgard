@@ -19,7 +19,7 @@ struct DrillInfo {
     lesson: Tx,
 }
 
-const DRILLS: [DrillInfo; 13] = [
+const DRILLS: [DrillInfo; 16] = [
     DrillInfo { kind: DrillKind::Calibration, title: Tx("Can you call the next candle?", "Peux-tu deviner la prochaine bougie ?"), blurb: Tx("Ten charts: predict up or down, then see your hit rate.", "Dix graphiques : prédis hausse ou baisse, puis découvre ton taux de réussite."), lesson: Tx("Lesson 2", "Leçon 2") },
     DrillInfo { kind: DrillKind::Distance, title: Tx("Measure the move", "Mesure le mouvement"), blurb: Tx("Turn two prices into a Dollar Move.", "Transforme deux prix en Mouvement en dollars."), lesson: Tx("Lesson 4", "Leçon 4") },
     DrillInfo { kind: DrillKind::Direction, title: Tx("Bullish or bearish?", "Haussière ou baissière ?"), blurb: Tx("Read a candle's direction from its open and close.", "Lis le sens d’une bougie à partir de son ouverture et de sa clôture."), lesson: Tx("Lesson 5", "Leçon 5") },
@@ -33,6 +33,9 @@ const DRILLS: [DrillInfo; 13] = [
     DrillInfo { kind: DrillKind::FindLevel, title: Tx("Find the level", "Trouve le niveau"), blurb: Tx("Spot the zone price has reacted to at least twice.", "Repère la zone sur laquelle le prix a réagi au moins deux fois."), lesson: Tx("Lesson 24", "Leçon 24") },
     DrillInfo { kind: DrillKind::NameStructure, title: Tx("Name the structure", "Nomme la structure"), blurb: Tx("Uptrend, downtrend or range, then BOS or CHoCH.", "Hausse, baisse ou range, puis BOS ou CHoCH."), lesson: Tx("Lesson 25", "Leçon 25") },
     DrillInfo { kind: DrillKind::NameCandle, title: Tx("Name the candle", "Nomme la bougie"), blurb: Tx("Pin bar, engulfing, inside bar, or nothing at all.", "Pin bar, avalement, inside bar, ou rien du tout."), lesson: Tx("Lesson 26", "Leçon 26") },
+    DrillInfo { kind: DrillKind::PickLeg, title: Tx("Pick the leg", "Choisis la jambe"), blurb: Tx("Which two swings do you draw Fibonacci from, and in which order?", "Entre quels deux swings tracer Fibonacci, et dans quel ordre ?"), lesson: Tx("Lesson 29", "Leçon 29") },
+    DrillInfo { kind: DrillKind::FibLevel, title: Tx("Place the level", "Place le niveau"), blurb: Tx("Turn a leg into the price of a Fibonacci level or extension.", "Transforme une jambe en prix d’un niveau ou d’une extension de Fibonacci."), lesson: Tx("Lesson 30", "Leçon 30") },
+    DrillInfo { kind: DrillKind::Confluence, title: Tx("Find the confluence", "Trouve la confluence"), blurb: Tx("Spot the zone where a Fibonacci level meets the swing the leg broke.", "Repère la zone où un niveau de Fibonacci rencontre le swing cassé par la jambe."), lesson: Tx("Lesson 31", "Leçon 31") },
 ];
 
 #[component]
@@ -80,7 +83,7 @@ fn money(p: Price) -> String {
 #[derive(Debug, Clone, PartialEq)]
 enum Visual {
     Candles(Vec<Candle>, Price, Price),
-    Swings { swings: Vec<telosgard_core::stage5_drills::Swing>, zones: Vec<(Price, Price)>, broke_up: Option<bool> },
+    Swings { swings: Vec<telosgard_core::stage5_drills::Swing>, zones: Vec<(Price, Price)>, broke_up: Option<bool>, extra: crate::ui::chart::SwingExtra },
 }
 
 struct Choice {
@@ -207,7 +210,7 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                 format!("Zone {} ({}) : le prix y a tourné deux fois. Les autres zones n’ont eu qu’un retournement ou aucun : ce sont juste des endroits où le prix est passé.", letters[q.answer], zone(q.zones[q.answer])),
             );
             Choice {
-                visual: Some(Visual::Swings { swings: q.swings.clone(), zones: q.zones.to_vec(), broke_up: None }),
+                visual: Some(Visual::Swings { swings: q.swings.clone(), zones: q.zones.to_vec(), broke_up: None, extra: Default::default() }),
                 prompt: t("The dots are the turning points. Which zone has price reacted to at least twice?", "Les points sont les retournements. Sur quelle zone le prix a-t-il réagi au moins deux fois ?").into(),
                 detail: None,
                 options,
@@ -225,7 +228,7 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
             };
             match q.ask {
                 StructureAsk::Name => Choice {
-                    visual: Some(Visual::Swings { swings: q.swings.clone(), zones: Vec::new(), broke_up: None }),
+                    visual: Some(Visual::Swings { swings: q.swings.clone(), zones: Vec::new(), broke_up: None, extra: Default::default() }),
                     prompt: t("Read the swings from left to right. What's the structure?", "Lis les swings de gauche à droite. Quelle est la structure ?").into(),
                     detail: None,
                     options: Structure::ALL.iter().map(|s| s.label().to_string()).collect(),
@@ -239,7 +242,7 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                         Break::Choch => ts(format!("{read} Breaking the last swing against the trend is a CHoCH: a warning, not yet a new trend."), format!("{read} Casser le dernier swing contre la tendance, c’est un CHoCH : un avertissement, pas encore une nouvelle tendance.")),
                     };
                     Choice {
-                        visual: Some(Visual::Swings { swings: q.swings.clone(), zones: Vec::new(), broke_up: Some(up) }),
+                        visual: Some(Visual::Swings { swings: q.swings.clone(), zones: Vec::new(), broke_up: Some(up), extra: Default::default() }),
                         prompt: if up {
                             t("Price now closes above the last swing high (dashed). Is that a BOS or a CHoCH?", "Le prix clôture maintenant au-dessus du dernier sommet de swing (pointillés). BOS ou CHoCH ?").into()
                         } else {
@@ -251,6 +254,106 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                         why,
                     }
                 }
+            }
+        }
+        DrillKind::PickLeg => {
+            use telosgard_core::stage6_drills::LegQ;
+            let q = LegQ::new(seed);
+            let letters = ["A", "B", "C", "D"];
+            let leg = |(a, b): (usize, usize)| ts(format!("From {} to {}", letters[a], letters[b]), format!("De {} à {}", letters[a], letters[b]));
+            let options = q.options.iter().map(|o| leg(*o)).collect();
+            let why = if q.up {
+                t("C to D: the last strong move up, and it broke above B (a BOS). In an uptrend you drag from the low to the high. D to C is the same leg backwards, which flips every level; A to B is an older leg; B to C was a pullback, not an impulse.", "De C à D : le dernier mouvement fort à la hausse, et il a cassé au-dessus de B (un BOS). En tendance haussière, on tire du creux vers le sommet. De D à C, c’est la même jambe à l’envers, ce qui inverse tous les niveaux ; de A à B, c’est une jambe plus ancienne ; de B à C, c’était un repli, pas une impulsion.")
+            } else {
+                t("C to D: the last strong move down, and it broke below B (a BOS). In a downtrend you drag from the high to the low. D to C is the same leg backwards, which flips every level; A to B is an older leg; B to C was a pullback, not an impulse.", "De C à D : le dernier mouvement fort à la baisse, et il a cassé sous B (un BOS). En tendance baissière, on tire du sommet vers le creux. De D à C, c’est la même jambe à l’envers, ce qui inverse tous les niveaux ; de A à B, c’est une jambe plus ancienne ; de B à C, c’était un repli, pas une impulsion.")
+            };
+            let points = q.labelled.iter().zip(letters).map(|(i, l)| (*i, l)).collect();
+            Choice {
+                visual: Some(Visual::Swings { swings: q.swings.clone(), zones: Vec::new(), broke_up: None, extra: crate::ui::chart::SwingExtra { points, fibs: Vec::new() } }),
+                prompt: if q.up {
+                    t("H4 uptrend, and price is pulling back now (the last point). Which leg do you draw Fibonacci on, and in which order?", "Tendance haussière en H4, et le prix se replie maintenant (le dernier point). Sur quelle jambe traces-tu Fibonacci, et dans quel ordre ?").into()
+                } else {
+                    t("H4 downtrend, and price is pulling back now (the last point). Which leg do you draw Fibonacci on, and in which order?", "Tendance baissière en H4, et le prix se replie maintenant (le dernier point). Sur quelle jambe traces-tu Fibonacci, et dans quel ordre ?").into()
+                },
+                detail: None,
+                options,
+                answer: q.answer,
+                why: why.into(),
+            }
+        }
+        DrillKind::FibLevel => {
+            use telosgard_core::stage6_drills::LevelPriceQ;
+            let q = LevelPriceQ::new(seed);
+            let up = q.leg.up();
+            let size = DollarMove(q.leg.size());
+            let lvl = q.level.label();
+            let lvl_fr = lvl.replace('.', ",").replace('%', "\u{a0}%");
+            let detail = if up {
+                ts(format!("Uptrend leg: swing low {} → swing high {} ({size})", money(q.leg.start), money(q.leg.end)), format!("Jambe haussière : creux {} → sommet {} ({size})", money(q.leg.start), money(q.leg.end)))
+            } else {
+                ts(format!("Downtrend leg: swing high {} → swing low {} ({size})", money(q.leg.start), money(q.leg.end)), format!("Jambe baissière : sommet {} → creux {} ({size})", money(q.leg.start), money(q.leg.end)))
+            };
+            let right = q.leg.at(q.level);
+            let (prompt, why) = if q.level.is_extension() {
+                let part = q.level.0 - 10000;
+                let away = DollarMove((q.leg.size() * part + 5000) / 10000);
+                let pl = telosgard_core::stage6_drills::Level(part).label();
+                let pl_fr = pl.replace('.', ",").replace('%', "\u{a0}%");
+                (
+                    ts(format!("Where is the {lvl} extension?"), format!("Où se trouve l’extension à {lvl_fr} ?")),
+                    if up {
+                        ts(format!("{pl} of the leg is {away}, added above the high: {}. Extensions continue past the end of the leg.", money(right)), format!("{pl_fr} de la jambe font {away}, ajoutés au-dessus du sommet : {}. Les extensions prolongent la jambe au-delà de sa fin.", money(right)))
+                    } else {
+                        ts(format!("{pl} of the leg is {away}, taken below the low: {}. Extensions continue past the end of the leg.", money(right)), format!("{pl_fr} de la jambe font {away}, retirés sous le creux : {}. Les extensions prolongent la jambe au-delà de sa fin.", money(right)))
+                    },
+                )
+            } else {
+                let away = DollarMove((q.leg.end.0 - right.0).abs());
+                let wrong = q.leg.reversed().at(q.level);
+                let mid = q.level == telosgard_core::stage6_drills::Level::R50;
+                (
+                    ts(format!("Where is the {lvl} retracement?"), format!("Où se trouve le retracement à {lvl_fr} ?")),
+                    if mid {
+                        ts(format!("50% of the leg is {away}: {}, the midpoint. It's the one level that comes out the same whichever way the grid is drawn.", money(right)), format!("50\u{a0}% de la jambe font {away} : {}, le milieu. C’est le seul niveau qui reste le même dans quelque sens que la grille soit tracée.", money(right)))
+                    } else if up {
+                        ts(format!("{lvl} of the leg is {away}, measured back down from the high: {}. Measured up from the low instead ({}), you'd have drawn the grid backwards.", money(right), money(wrong)), format!("{lvl_fr} de la jambe font {away}, mesurés en redescendant depuis le sommet : {}. Mesuré depuis le creux ({}), tu aurais tracé la grille à l’envers.", money(right), money(wrong)))
+                    } else {
+                        ts(format!("{lvl} of the leg is {away}, measured back up from the low: {}. Measured down from the high instead ({}), you'd have drawn the grid backwards.", money(right), money(wrong)), format!("{lvl_fr} de la jambe font {away}, mesurés en remontant depuis le creux : {}. Mesuré depuis le sommet ({}), tu aurais tracé la grille à l’envers.", money(right), money(wrong)))
+                    },
+                )
+            };
+            Choice { visual: None, prompt, detail: Some(detail), options: q.options.iter().map(|p| money(*p)).collect(), answer: q.answer, why }
+        }
+        DrillKind::Confluence => {
+            use telosgard_core::stage6_drills::{ConfluenceQ, Level};
+            let q = ConfluenceQ::new(seed);
+            let letters = ["A", "B", "C", "D"];
+            let zone = |z: (Price, Price)| format!("{}–{}", money(z.0), money(z.1));
+            let fibs = [Level::R382, Level::R50, Level::R618, Level::R786]
+                .into_iter()
+                .map(|l| (q.leg.at(l), if crate::i18n::is_fr() { l.label().replace('.', ",") } else { l.label() }))
+                .collect();
+            let lvl = q.level.label();
+            let lvl = if crate::i18n::is_fr() { lvl.replace('.', ",").replace('%', "\u{a0}%") } else { lvl };
+            let old = money(q.old_swing());
+            let why = match (q.leg.up(), q.round) {
+                (true, true) => ts(format!("Zone {}: the {lvl} level, the old high at {old} that the leg broke (now possible support) and a round number. The other zones have one reason at most, or sit where the play is already over.", letters[q.answer]), format!("Zone {} : le niveau {lvl}, l’ancien sommet à {old} cassé par la jambe (support possible maintenant) et un chiffre rond. Les autres zones ont une raison au plus, ou sont là où le jeu est déjà terminé.", letters[q.answer])),
+                (true, false) => ts(format!("Zone {}: the {lvl} level and the old high at {old} that the leg broke (now possible support). The other zones have one reason at most, or sit where the play is already over.", letters[q.answer]), format!("Zone {} : le niveau {lvl} et l’ancien sommet à {old} cassé par la jambe (support possible maintenant). Les autres zones ont une raison au plus, ou sont là où le jeu est déjà terminé.", letters[q.answer])),
+                (false, true) => ts(format!("Zone {}: the {lvl} level, the old low at {old} that the leg broke (now possible resistance) and a round number. The other zones have one reason at most, or sit where the play is already over.", letters[q.answer]), format!("Zone {} : le niveau {lvl}, l’ancien creux à {old} cassé par la jambe (résistance possible maintenant) et un chiffre rond. Les autres zones ont une raison au plus, ou sont là où le jeu est déjà terminé.", letters[q.answer])),
+                (false, false) => ts(format!("Zone {}: the {lvl} level and the old low at {old} that the leg broke (now possible resistance). The other zones have one reason at most, or sit where the play is already over.", letters[q.answer]), format!("Zone {} : le niveau {lvl} et l’ancien creux à {old} cassé par la jambe (résistance possible maintenant). Les autres zones ont une raison au plus, ou sont là où le jeu est déjà terminé.", letters[q.answer])),
+            };
+            let options = q.zones.iter().enumerate().map(|(i, z)| format!("{}: {}", letters[i], zone(z.0))).collect();
+            Choice {
+                visual: Some(Visual::Swings { swings: q.swings.clone(), zones: q.zones.iter().map(|z| z.0).collect(), broke_up: None, extra: crate::ui::chart::SwingExtra { points: Vec::new(), fibs } }),
+                prompt: if q.leg.up() {
+                    t("Uptrend. The dashed lines are the Fibonacci levels of the last leg. Which zone has the most confluence for a pullback buy?", "Tendance haussière. Les pointillés sont les niveaux de Fibonacci de la dernière jambe. Quelle zone a le plus de confluence pour un achat sur repli ?").into()
+                } else {
+                    t("Downtrend. The dashed lines are the Fibonacci levels of the last leg. Which zone has the most confluence for a pullback sell?", "Tendance baissière. Les pointillés sont les niveaux de Fibonacci de la dernière jambe. Quelle zone a le plus de confluence pour une vente sur repli ?").into()
+                },
+                detail: None,
+                options,
+                answer: q.answer,
+                why,
             }
         }
         DrillKind::NameCandle => {
@@ -349,7 +452,7 @@ pub fn ChoiceDrill(kind: DrillKind) -> impl IntoView {
                     let (prompt, detail, options, answer, why, visual) = choice.get();
                     let picture = visual.map(|v| match v {
                         Visual::Candles(cs, lo, hi) => crate::ui::chart::candle_strip(&cs, lo, hi, t("The two latest candles; the question is about the one on the right", "Les deux dernières bougies ; la question porte sur celle de droite").into()).into_any(),
-                        Visual::Swings { swings, zones, broke_up } => crate::ui::chart::swing_chart(&swings, &zones, broke_up, t("Swing highs and lows joined by a line", "Sommets et creux de swing reliés par une ligne").into()).into_any(),
+                        Visual::Swings { swings, zones, broke_up, extra } => crate::ui::chart::swing_chart(&swings, &zones, broke_up, &extra, t("Swing highs and lows joined by a line", "Sommets et creux de swing reliés par une ligne").into()).into_any(),
                     });
                     view! {
                         {picture.map(|p| view! { <div class="mb-3">{p}</div> })}

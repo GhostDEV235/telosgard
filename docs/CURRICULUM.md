@@ -78,10 +78,12 @@ Written from the attempt history: the reviewer's first drafts in Stages 1–2 le
 
 Written from the attempt history (still no attempts past Stage 2): each rubric asks for the limit (levels can break; a CHoCH is only a warning; a pattern only counts at a location; skip below 2:1; a level can break on the third test), and each "almost" fixture leaves it out. Facts checked against CME Group Education (Support and Resistance; Technical Patterns: Reversals; Chart Types), read in the browser on 2026-11-13.
 
-### Stage 6: Fibonacci & Confluence *(Wave 6)*
-29. **Drawing Fibonacci correctly:** a clean impulse leg that broke structure; swing low → high in an uptrend
-30. **What the levels mean:** 38.2 / 50 / 61.8, the 78.6 invalidation, 127.2 / 161.8 extensions as targets
-31. **Confluence:** Fib + zone + round number; the combined Classic + Fib setup; never against the higher-timeframe trend
+### Stage 6: Fibonacci & Confluence *(Wave 6, written 2026-11-13)*
+29. **Drawing Fibonacci correctly:** the last clean impulse leg that broke structure, on the trend timeframe; swing low → high in an uptrend (high → low in a downtrend), wick to wick; redraw on a new extreme, delete when the leg's start breaks. Drill "Pick the leg"
+30. **What the levels mean:** 38.2 / 50 / 61.8 as shallow, medium and deep (CME Group's wording), 50–61.8 watched as a zone; a close beyond 78.6 ends the pullback play (a course rule); 127.2 / 161.8 extensions, measured from the leg's start, as targets; levels work only because many traders watch them. Drill "Place the level"
+31. **Confluence:** two or more independent reasons at one zone (Fib + old support/resistance + round number); the Classic + Fib setup end to end; never against the higher-timeframe trend; more lines isn't more truth. Drill "Find the confluence"
+
+Written from the attempt history (still no attempts past Stage 2): each rubric asks for the limit (a backwards grid gives wrong levels; a level is not a signal and 78.6 ends the play; confluence never overrides the trend), and each "almost" fixture leaves it out. Facts checked against CME Group Education (Fibonacci Retracements and Extensions; Support and Resistance) and Fidelity's Learning Center (Fibonacci Retracement), read in the browser on 2026-11-13. CME lists extension ratios of 1.38, 1.5 and 1.61; 127.2% is kept as this course's first target and labelled as such.
 
 ### Stage 7: Risk & Psychology *(Wave 7)*
 32. **Stops beyond structure, sized by ATR:** at least 1–1.5× ATR beyond structure, never at an obvious round number; the chart decides the stop
