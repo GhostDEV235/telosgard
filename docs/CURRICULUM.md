@@ -67,14 +67,16 @@ Written from the Learner's attempt history: their first answers named only the w
 
 Written from the attempt history: the reviewer's first drafts in Stages 1–2 left out the limit or the downside (the stop, the loss if price rises, "may never fill") and added it on the second try, as the first Learner did in Lesson 1. So each Stage 4 rubric asks for the limit ("a record, not a forecast"; "the higher timeframe wins"; "context, not a signal"), and each "almost" fixture is the answer without it. Facts checked against CME Group Education (candle anatomy and chart timeframes, read in the browser on 2026-11-13).
 
-### Stage 5: Price Action *(Wave 5)*
-24. **Support & resistance zones:** zones not lines; a level is real after two reactions; round numbers ($50/$100) as magnets; trade the reaction, not the level
-25. **Market structure:** higher highs/lows, lower highs/lows, ranges; break of structure (BOS) vs change of character (CHoCH)
-26. **Confirmation candles:** pin bar, engulfing, inside bar, *only at a location*; wait for the candle to close
-27. **The pullback play:** Classic Price Action in a trend: pullback to a zone → confirmation → stop beyond the wick → target the next zone
-28. **The bounce play:** Classic Price Action at a zone tested twice or more
+### Stage 5: Price Action *(Wave 5, written 2026-11-13)*
+24. **Support & resistance zones:** zones a few dollars wide, not lines; worth trusting after two reactions; round numbers ($50/$100) as levels; broken levels flip; trade the reaction, not the level. Drill "Find the level"
+25. **Market structure:** HH/HL and LH/LL, ranges; BOS (a break with the trend, judged on closes) vs CHoCH (a break against it: a warning, not yet a new trend). Drill "Name the structure"
+26. **Confirmation candles:** pin bar (long wick about two thirds of the range or more, small other wick), engulfing (body covers the previous body), inside bar; *only at a location*; wait for the close. Drill "Name the candle"
+27. **The pullback play:** trend on H4 → pullback to a zone → confirmation closes → stop beyond the wick and zone → target the next zone, at least 2:1 → size for about 1%; and when to skip
+28. **The bounce play:** a zone tested twice (double bottom/top), best in a range or with the H4 trend; same discipline; a close beyond the zone ends it
 
-*Optional side lesson (after 28):* **Indicators, lightly:** EMAs as a direction filter (21/50 on H1, 50/200 on H4/D1), RSI; why price action comes first.
+*Optional side lesson (after 28):* **Indicators, lightly:** EMAs as a direction filter (21/50 on H1, 50/200 on H4/D1), RSI; why price action comes first. *Not written yet: it has no lesson number, so it needs a small change to how lessons are stored first.*
+
+Written from the attempt history (still no attempts past Stage 2): each rubric asks for the limit (levels can break; a CHoCH is only a warning; a pattern only counts at a location; skip below 2:1; a level can break on the third test), and each "almost" fixture leaves it out. Facts checked against CME Group Education (Support and Resistance; Technical Patterns: Reversals; Chart Types), read in the browser on 2026-11-13.
 
 ### Stage 6: Fibonacci & Confluence *(Wave 6)*
 29. **Drawing Fibonacci correctly:** a clean impulse leg that broke structure; swing low → high in an uptrend

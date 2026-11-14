@@ -19,7 +19,7 @@ struct DrillInfo {
     lesson: Tx,
 }
 
-const DRILLS: [DrillInfo; 10] = [
+const DRILLS: [DrillInfo; 13] = [
     DrillInfo { kind: DrillKind::Calibration, title: Tx("Can you call the next candle?", "Peux-tu deviner la prochaine bougie ?"), blurb: Tx("Ten charts: predict up or down, then see your hit rate.", "Dix graphiques : prédis hausse ou baisse, puis découvre ton taux de réussite."), lesson: Tx("Lesson 2", "Leçon 2") },
     DrillInfo { kind: DrillKind::Distance, title: Tx("Measure the move", "Mesure le mouvement"), blurb: Tx("Turn two prices into a Dollar Move.", "Transforme deux prix en Mouvement en dollars."), lesson: Tx("Lesson 4", "Leçon 4") },
     DrillInfo { kind: DrillKind::Direction, title: Tx("Bullish or bearish?", "Haussière ou baissière ?"), blurb: Tx("Read a candle's direction from its open and close.", "Lis le sens d’une bougie à partir de son ouverture et de sa clôture."), lesson: Tx("Lesson 5", "Leçon 5") },
@@ -30,6 +30,9 @@ const DRILLS: [DrillInfo; 10] = [
     DrillInfo { kind: DrillKind::NoTrade, title: Tx("Is this a No-Trade Window?", "Est-ce une Fenêtre sans trade ?"), blurb: Tx("Spot the rollover, the Sunday open and the minutes around big releases.", "Repère le rollover, l’ouverture du dimanche et les minutes autour des grandes annonces."), lesson: Tx("Lesson 15", "Leçon 15") },
     DrillInfo { kind: DrillKind::Surprise, title: Tx("Hot or soft?", "Chaude ou molle ?"), blurb: Tx("Compare a release with its forecast and say which way gold usually goes.", "Compare une statistique à sa prévision et dis dans quel sens l’or va en général."), lesson: Tx("Lesson 19", "Leçon 19") },
     DrillInfo { kind: DrillKind::BuildCandle, title: Tx("Build the candle", "Construis la bougie"), blurb: Tx("Turn an open, high, low and close into the right candle, then say who won it.", "Transforme une ouverture, un plus haut, un plus bas et une clôture en la bonne bougie, puis dis qui l’a gagnée."), lesson: Tx("Lesson 21", "Leçon 21") },
+    DrillInfo { kind: DrillKind::FindLevel, title: Tx("Find the level", "Trouve le niveau"), blurb: Tx("Spot the zone price has reacted to at least twice.", "Repère la zone sur laquelle le prix a réagi au moins deux fois."), lesson: Tx("Lesson 24", "Leçon 24") },
+    DrillInfo { kind: DrillKind::NameStructure, title: Tx("Name the structure", "Nomme la structure"), blurb: Tx("Uptrend, downtrend or range, then BOS or CHoCH.", "Hausse, baisse ou range, puis BOS ou CHoCH."), lesson: Tx("Lesson 25", "Leçon 25") },
+    DrillInfo { kind: DrillKind::NameCandle, title: Tx("Name the candle", "Nomme la bougie"), blurb: Tx("Pin bar, engulfing, inside bar, or nothing at all.", "Pin bar, avalement, inside bar, ou rien du tout."), lesson: Tx("Lesson 26", "Leçon 26") },
 ];
 
 #[component]
@@ -73,9 +76,17 @@ fn money(p: Price) -> String {
     p.to_string().trim_start_matches('$').trim_end_matches('$').trim_end_matches('\u{a0}').to_string()
 }
 
+/// A picture above a drill question (Stage 5): two candles, or swing points with zones or a break.
+#[derive(Debug, Clone, PartialEq)]
+enum Visual {
+    Candles(Vec<Candle>, Price, Price),
+    Swings { swings: Vec<telosgard_core::stage5_drills::Swing>, zones: Vec<(Price, Price)>, broke_up: Option<bool> },
+}
+
 struct Choice {
     prompt: String,
     detail: Option<String>,
+    visual: Option<Visual>,
     options: Vec<String>,
     answer: usize,
     why: String,
@@ -114,7 +125,7 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                 ),
             };
             let (options, answer) = shuffle_choice(opts, seed);
-            Choice { prompt, detail: Some(ts(format!("Bid (sell) {}  ·  Ask (buy) {}", money(q.bid), money(q.ask)), format!("Bid (vente) {}  ·  Ask (achat) {}", money(q.bid), money(q.ask)))), options, answer, why }
+            Choice { visual: None, prompt, detail: Some(ts(format!("Bid (sell) {}  ·  Ask (buy) {}", money(q.bid), money(q.ask)), format!("Bid (vente) {}  ·  Ask (achat) {}", money(q.bid), money(q.ask)))), options, answer, why }
         }
         DrillKind::Distance => {
             let q = DistanceQ::new(seed);
@@ -125,6 +136,7 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                 seed,
             );
             Choice {
+                visual: None,
                 prompt: ts(format!("Gold moves from {} to {}. How big was the move?", money(q.from), money(q.to)), format!("L’or passe de {} à {}. De combien a-t-il bougé ?", money(q.from), money(q.to))),
                 detail: None,
                 options,
@@ -140,6 +152,7 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                 seed,
             );
             Choice {
+                visual: None,
                 prompt: ts(format!("A trader says “a {}-pip stop on gold” and, when you ask, they mean {size} per pip. What Dollar Move is that?", q.pips), format!("Un trader parle d’un « stop de {} pips sur l’or » et, quand tu demandes, il compte {size} par pip. Quel Mouvement en dollars est-ce ?", q.pips)),
                 detail: None,
                 options,
@@ -165,7 +178,7 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                     hm(ny), hm(ldn), hm(tokyo)
                 ),
             );
-            Choice { prompt: q.prompt(), detail: None, options, answer, why }
+            Choice { visual: None, prompt: q.prompt(), detail: None, options, answer, why }
         }
         DrillKind::NoTrade => {
             use telosgard_core::stage2_drills::{NoTradeQ, WindowAnswer};
@@ -181,7 +194,87 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                 WindowAnswer::Closed => t("Gold doesn't trade from Friday 5 pm to Sunday 6 pm New York time.", "L’or ne se trade pas du vendredi 17 h au dimanche 18 h, heure de New York.").to_string(),
                 WindowAnswer::Clear => t("None of the three windows applies: not the rollover, not the Sunday open, and more than 5 minutes from any tier-1 release.", "Aucune des trois fenêtres ne s’applique : ni le rollover, ni l’ouverture du dimanche, et plus de 5 minutes avant ou après toute grande statistique.").to_string(),
             };
-            Choice { prompt: q.prompt(), detail: None, options, answer, why }
+            Choice { visual: None, prompt: q.prompt(), detail: None, options, answer, why }
+        }
+        DrillKind::FindLevel => {
+            use telosgard_core::stage5_drills::LevelQ;
+            let q = LevelQ::new(seed);
+            let letters = ["A", "B", "C", "D"];
+            let zone = |z: (Price, Price)| format!("{}–{}", money(z.0), money(z.1));
+            let options = q.zones.iter().enumerate().map(|(i, z)| format!("{}: {}", letters[i], zone(*z))).collect();
+            let why = ts(
+                format!("Zone {} ({}): price turned there twice. The other zones had one turn or none, so they're just places price passed.", letters[q.answer], zone(q.zones[q.answer])),
+                format!("Zone {} ({}) : le prix y a tourné deux fois. Les autres zones n’ont eu qu’un retournement ou aucun : ce sont juste des endroits où le prix est passé.", letters[q.answer], zone(q.zones[q.answer])),
+            );
+            Choice {
+                visual: Some(Visual::Swings { swings: q.swings.clone(), zones: q.zones.to_vec(), broke_up: None }),
+                prompt: t("The dots are the turning points. Which zone has price reacted to at least twice?", "Les points sont les retournements. Sur quelle zone le prix a-t-il réagi au moins deux fois ?").into(),
+                detail: None,
+                options,
+                answer: q.answer,
+                why,
+            }
+        }
+        DrillKind::NameStructure => {
+            use telosgard_core::stage5_drills::{Break, Structure, StructureAsk, StructureQ};
+            let q = StructureQ::new(seed);
+            let read = match q.structure {
+                Structure::Up => t("The highs and the lows are both rising: an uptrend.", "Les sommets et les creux montent tous les deux : une tendance haussière."),
+                Structure::Down => t("The highs and the lows are both falling: a downtrend.", "Les sommets et les creux baissent tous les deux : une tendance baissière."),
+                Structure::Range => t("The highs and lows aren't moving clearly either way: a range.", "Les sommets et les creux ne bougent nettement dans aucun sens : un range."),
+            };
+            match q.ask {
+                StructureAsk::Name => Choice {
+                    visual: Some(Visual::Swings { swings: q.swings.clone(), zones: Vec::new(), broke_up: None }),
+                    prompt: t("Read the swings from left to right. What's the structure?", "Lis les swings de gauche à droite. Quelle est la structure ?").into(),
+                    detail: None,
+                    options: Structure::ALL.iter().map(|s| s.label().to_string()).collect(),
+                    answer: Structure::ALL.iter().position(|s| *s == q.structure).unwrap_or(0),
+                    why: read.into(),
+                },
+                StructureAsk::Break { up } => {
+                    let ans = q.answer_break().unwrap_or(Break::Bos);
+                    let why = match ans {
+                        Break::Bos => ts(format!("{read} Breaking the last swing in the trend's own direction is a BOS: the trend continues."), format!("{read} Casser le dernier swing dans le sens de la tendance, c’est un BOS : la tendance continue.")),
+                        Break::Choch => ts(format!("{read} Breaking the last swing against the trend is a CHoCH: a warning, not yet a new trend."), format!("{read} Casser le dernier swing contre la tendance, c’est un CHoCH : un avertissement, pas encore une nouvelle tendance.")),
+                    };
+                    Choice {
+                        visual: Some(Visual::Swings { swings: q.swings.clone(), zones: Vec::new(), broke_up: Some(up) }),
+                        prompt: if up {
+                            t("Price now closes above the last swing high (dashed). Is that a BOS or a CHoCH?", "Le prix clôture maintenant au-dessus du dernier sommet de swing (pointillés). BOS ou CHoCH ?").into()
+                        } else {
+                            t("Price now closes below the last swing low (dashed). Is that a BOS or a CHoCH?", "Le prix clôture maintenant sous le dernier creux de swing (pointillés). BOS ou CHoCH ?").into()
+                        },
+                        detail: None,
+                        options: Break::ALL.iter().map(|b| b.label().to_string()).collect(),
+                        answer: Break::ALL.iter().position(|b| *b == ans).unwrap_or(0),
+                        why,
+                    }
+                }
+            }
+        }
+        DrillKind::NameCandle => {
+            use telosgard_core::stage5_drills::{Pattern, PatternQ};
+            let q = PatternQ::new(seed);
+            let lo = Price(q.prev.low.0.min(q.last.low.0) - 200);
+            let hi = Price(q.prev.high.0.max(q.last.high.0) + 200);
+            let why = match q.answer {
+                Pattern::BullishPin => t("A long lower wick, about two thirds of the candle or more, and a small body near the top: lower prices were rejected.", "Une longue mèche basse, environ deux tiers de la bougie ou plus, et un petit corps près du haut : les prix plus bas ont été refusés."),
+                Pattern::BearishPin => t("A long upper wick and a small body near the bottom: higher prices were rejected.", "Une longue mèche haute et un petit corps près du bas : les prix plus hauts ont été refusés."),
+                Pattern::BullishEngulfing => t("A bullish body that covers the whole bearish body before it.", "Un corps haussier qui recouvre tout le corps baissier précédent."),
+                Pattern::BearishEngulfing => t("A bearish body that covers the whole bullish body before it.", "Un corps baissier qui recouvre tout le corps haussier précédent."),
+                Pattern::InsideBar => t("Its high and low sit inside the previous candle's range: a pause.", "Son plus haut et son plus bas restent dans l’amplitude de la bougie précédente : une pause."),
+                Pattern::None => t("No long wick on one side, no engulfing body, not inside the previous range: no pattern.", "Pas de longue mèche d’un côté, pas de corps qui avale, pas à l’intérieur de l’amplitude précédente : pas de figure."),
+            };
+            let why = ts(format!("{why} And remember: even a real pattern only counts at a location."), format!("{why} Et souviens-toi : même une vraie figure ne compte qu’à un endroit précis."));
+            Choice {
+                visual: Some(Visual::Candles(vec![q.prev, q.last], lo, hi)),
+                prompt: t("What is the candle on the right?", "Qu’est-ce que la bougie de droite ?").into(),
+                detail: None,
+                options: Pattern::ALL.iter().map(|p| p.label().to_string()).collect(),
+                answer: Pattern::ALL.iter().position(|p| *p == q.answer).unwrap_or(0),
+                why,
+            }
         }
         DrillKind::Surprise => {
             use telosgard_core::stage3_drills::{Surprise, SurpriseQ};
@@ -189,7 +282,7 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
             // Fixed order (hot, soft, in line) reads better than a shuffle for a three-way scale.
             let options = Surprise::ALL.iter().map(|s| s.label().to_string()).collect();
             let answer = Surprise::ALL.iter().position(|s| *s == q.answer).unwrap_or(0);
-            Choice { prompt: q.prompt(), detail: None, options, answer, why: q.why() }
+            Choice { visual: None, prompt: q.prompt(), detail: None, options, answer, why: q.why() }
         }
         _ => {
             let q = OrderQ::new(seed);
@@ -211,7 +304,7 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                 OrderKind::BuyStop => t("Buying only once price rises through a level is a buy stop.", "Acheter seulement une fois que le prix a franchi un niveau à la hausse, c’est un buy stop."),
                 OrderKind::SellStop => t("Selling only once price falls through a level is a sell stop.", "Vendre seulement une fois que le prix a franchi un niveau à la baisse, c’est un sell stop."),
             };
-            Choice { prompt: ts(format!("Gold is at {}. You want to {want}. Which order?", money(q.current)), format!("L’or est à {}. Tu veux {want}. Quel ordre ?", money(q.current))), detail: None, options, answer, why: why.into() }
+            Choice { visual: None, prompt: ts(format!("Gold is at {}. You want to {want}. Which order?", money(q.current)), format!("L’or est à {}. Tu veux {want}. Quel ordre ?", money(q.current))), detail: None, options, answer, why: why.into() }
         }
     }
 }
@@ -223,7 +316,7 @@ pub fn ChoiceDrill(kind: DrillKind) -> impl IntoView {
     let seed = RwSignal::new(now() as u64);
     let choice = Memo::new(move |_| {
         let c = make_choice(kind, seed.get());
-        (c.prompt, c.detail, c.options, c.answer, c.why)
+        (c.prompt, c.detail, c.options, c.answer, c.why, c.visual)
     });
     let picked = RwSignal::new(None::<usize>);
     let score = RwSignal::new((0u32, 0u32));
@@ -253,8 +346,13 @@ pub fn ChoiceDrill(kind: DrillKind) -> impl IntoView {
             <p class="mt-2 text-callout text-text-muted">{info.blurb.get()} {t(" Prices are illustrative.", " Prix donnés à titre d’exemple.")}</p>
             <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
                 {move || {
-                    let (prompt, detail, options, answer, why) = choice.get();
+                    let (prompt, detail, options, answer, why, visual) = choice.get();
+                    let picture = visual.map(|v| match v {
+                        Visual::Candles(cs, lo, hi) => crate::ui::chart::candle_strip(&cs, lo, hi, t("The two latest candles; the question is about the one on the right", "Les deux dernières bougies ; la question porte sur celle de droite").into()).into_any(),
+                        Visual::Swings { swings, zones, broke_up } => crate::ui::chart::swing_chart(&swings, &zones, broke_up, t("Swing highs and lows joined by a line", "Sommets et creux de swing reliés par une ligne").into()).into_any(),
+                    });
                     view! {
+                        {picture.map(|p| view! { <div class="mb-3">{p}</div> })}
                         {detail.map(|d| view! { <p class="tabular mb-3 rounded-btn bg-bg p-3 text-headline">{d}</p> })}
                         <h2 class="text-headline">{prompt}</h2>
                         <div class="mt-4 grid gap-2">

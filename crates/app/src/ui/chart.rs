@@ -160,9 +160,75 @@ pub fn candle_strip(cs: &[Candle], lo: Price, hi: Price, label: String) -> impl 
         })
         .collect_view();
     view! {
-        <svg viewBox=format!("0 0 {w} 200") class="h-auto w-full max-w-[520px]" role="img" aria-label=label>
+        // At most 1.5× its own size, so a strip of one or two candles doesn't blow up its labels.
+        <svg viewBox=format!("0 0 {w} 200") class="h-auto w-full" style=format!("max-width:{:.0}px", w * 1.5) role="img" aria-label=label>
             {grid}
             {candles}
+        </svg>
+    }
+}
+
+/// Swing points joined by a line, with optional labelled zones (A–D) and an optional final break
+/// (dashed, above the last swing high when `broke_up`, below the last swing low otherwise).
+/// For the Stage 5 drills; prices are illustrative.
+pub fn swing_chart(swings: &[telosgard_core::stage5_drills::Swing], zones: &[(Price, Price)], broke_up: Option<bool>, label: String) -> impl IntoView + use<> {
+    const W: f64 = 520.0;
+    const H: f64 = 220.0;
+    const PLOT_L: f64 = 34.0;
+    const PLOT_R: f64 = W - 84.0;
+    const TOP: f64 = 14.0;
+    const BOTTOM: f64 = H - 14.0;
+    let mut lo = swings.iter().map(|s| s.price.0).min().unwrap_or(0);
+    let mut hi = swings.iter().map(|s| s.price.0).max().unwrap_or(1);
+    for z in zones {
+        lo = lo.min(z.0.0);
+        hi = hi.max(z.1.0);
+    }
+    let (lo, hi) = ((lo - 400) as f64, (hi + 400) as f64);
+    let y = move |p: i64| TOP + (hi - p as f64) / (hi - lo).max(1.0) * (BOTTOM - TOP);
+    let n = swings.len() + usize::from(broke_up.is_some());
+    let x = move |i: usize| PLOT_L + (PLOT_R - PLOT_L) * i as f64 / (n.max(2) - 1) as f64;
+    let points: Vec<(f64, f64)> = swings.iter().enumerate().map(|(i, s)| (x(i), y(s.price.0))).collect();
+    let path = points.iter().map(|(a, b)| format!("{a:.1},{b:.1}")).collect::<Vec<_>>().join(" ");
+    let breakout = broke_up.and_then(|up| {
+        let last = swings.iter().rev().find(|s| s.high == up)?;
+        let (lx, ly) = *points.last()?;
+        let target = if up { last.price.0 + 600 } else { last.price.0 - 600 };
+        Some(view! {
+            <line x1=PLOT_L x2=PLOT_R y1=y(last.price.0) y2=y(last.price.0) class="stroke-text-muted" stroke-width="1" stroke-dasharray="4 4" />
+            <line x1=lx x2=x(n - 1) y1=ly y2=y(target) class="stroke-text" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round" />
+        })
+    });
+    let letters = ["A", "B", "C", "D"];
+    let bands = zones
+        .iter()
+        .enumerate()
+        .map(|(i, z)| {
+            let (top, bottom) = (y(z.1.0), y(z.0.0));
+            view! {
+                <rect x=PLOT_L - 30.0 y=top width=PLOT_R - PLOT_L + 30.0 height=(bottom - top).max(3.0) class="fill-gold-fill/25 stroke-gold-fill/60" stroke-width="1" />
+                <text x=PLOT_L - 24.0 y=(top + bottom) / 2.0 + 5.0 class="fill-text" font-size="15" font-weight="600">{letters[i % 4]}</text>
+            }
+        })
+        .collect_view();
+    let grid = (0..=3)
+        .map(|i| {
+            let price = Price(((lo + (hi - lo) * i as f64 / 3.0) / 100.0).round() as i64 * 100);
+            let yy = y(price.0);
+            view! {
+                <line x1=PLOT_L x2=PLOT_R y1=yy y2=yy class="stroke-line/30" stroke-width="1" />
+                <text x=PLOT_R + 8.0 y=yy + 5.0 class="fill-text-muted tabular" font-size="15">{axis_label(price)}</text>
+            }
+        })
+        .collect_view();
+    let dots = points.iter().map(|(a, b)| view! { <circle cx=*a cy=*b r="4" class="fill-text" /> }).collect_view();
+    view! {
+        <svg viewBox=format!("0 0 {W} {H}") class="h-auto w-full max-w-[560px]" role="img" aria-label=label>
+            {grid}
+            {bands}
+            <polyline points=path fill="none" class="stroke-text" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+            {dots}
+            {breakout}
         </svg>
     }
 }

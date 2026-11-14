@@ -14,10 +14,13 @@ pub enum DrillKind {
     NoTrade,
     Surprise,
     BuildCandle,
+    FindLevel,
+    NameStructure,
+    NameCandle,
 }
 
 impl DrillKind {
-    pub const ALL: [DrillKind; 10] = [DrillKind::BuildCandle, DrillKind::Surprise, DrillKind::Session, DrillKind::NoTrade, DrillKind::Calibration, DrillKind::Direction, DrillKind::BidAsk, DrillKind::Distance, DrillKind::Pips, DrillKind::Orders];
+    pub const ALL: [DrillKind; 13] = [DrillKind::NameCandle, DrillKind::NameStructure, DrillKind::FindLevel, DrillKind::BuildCandle, DrillKind::Surprise, DrillKind::Session, DrillKind::NoTrade, DrillKind::Calibration, DrillKind::Direction, DrillKind::BidAsk, DrillKind::Distance, DrillKind::Pips, DrillKind::Orders];
     pub fn slug(self) -> &'static str {
         match self {
             DrillKind::Calibration => "calibration",
@@ -30,6 +33,9 @@ impl DrillKind {
             DrillKind::NoTrade => "no-trade",
             DrillKind::Surprise => "surprise",
             DrillKind::BuildCandle => "build-candle",
+            DrillKind::FindLevel => "find-level",
+            DrillKind::NameStructure => "name-structure",
+            DrillKind::NameCandle => "name-candle",
         }
     }
 }
