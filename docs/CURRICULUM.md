@@ -102,11 +102,13 @@ Written from the attempt history (still no attempts past Stage 2): each rubric a
 
 Written from the attempt history (still no attempts past Stage 2): each rubric asks for the limit (one missing link means no trade; a vague Scenario isn't one; the plan is never edited to excuse a trade; Live Readiness doesn't need profit), and each "almost" fixture leaves it out. Facts checked against CME Group Education's "Building a Trade Plan" course (Risk Management and Your Trade Plan; Trading Strategies in Your Trade Plan; Keep a Trade Log) and the BLS and Federal Reserve release calendars, read on 2026-11-16; app details checked against the Checklist, Plan, Trade, Journal and Weekly Review screens. 8 videos verified by oEmbed. The Trading Plan builder's defaults now match the course (minimum reward-to-risk 2, Daily Loss Limit 2R; they were 1.5 and 3R).
 
-## Live Track *(unlocks with Live Readiness)*
-41. **Reviewing your journal:** finding your leaks in your own data
-42. **Brokers & scams:** regulation, checking a licence, red flags (signal groups, "account managers", guaranteed returns)
-43. **Going live, small:** 0.01 lots, 0.25–0.5% risk, the same plan, and different emotions
-44. **Scaling up:** only after three live months with ≥ 90% adherence, and in small steps
+## Live Track *(unlocks with Live Readiness; written 2026-11-16)*
+41. **Reviewing your journal:** group trades by session, Scenario type, Emotion Tag and rule broken; compare average R; a leak is a clearly negative group or one holding the rule breaks; about 20 trades before concluding; one rule change at a time, as a new plan version
+42. **Brokers & scams:** trading against the dealer (CFTC); checking a licence on the regulator's own register with the contact details listed there (FCA, NFA BASIC, ASIC); the CFTC's red flags (social media and dating apps, private chat, guaranteed returns, crypto-only deposits, no address, fees to withdraw); never share a login or let an "account manager" trade
+43. **Going live, small:** only after Live Readiness, with money you could lose entirely; the same plan as a new version with risk at 0.25–0.5%, 0.01 lots; real costs and emotions; an early test withdrawal
+44. **Scaling up:** after three live months at ≥ 90% adherence, +0.25% steps each held a month at ≥ 90%, a 1% ceiling; step down one level after a ~10% drawdown or if adherence slips
+
+Stored as stage 9 (the dashboard labels it "Live Track"). Facts checked against the CFTC's customer advisory "Eight Things You Should Know Before Trading Forex", the FCA Warning List page, NFA BASIC, ESMA and CME Group Education (Proper Position Size; Controlling Risk; Keep a Trade Log), read on 2026-11-16. 7 videos verified by oEmbed, including the CFTC's own.
 
 ## Advanced Track *(unlocks with Live Readiness)*
 - **A1 Breakout & Retest:** break, retest, rejection candle; false breaks on quiet days

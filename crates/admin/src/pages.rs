@@ -200,7 +200,7 @@ pub fn Overview(me: Me) -> impl IntoView {
                                 let w = (reached as f64 / total * 100.0).round();
                                 view! {
                                     <li>
-                                        <p class="tabular flex justify-between text-footnote"><span>{format!("Stage {stage}")}</span><span>{reached}</span></p>
+                                        <p class="tabular flex justify-between text-footnote"><span>{crate::curriculum::stage_name(*stage)}</span><span>{reached}</span></p>
                                         <div class="mt-1 h-2 overflow-hidden rounded-full bg-bg" aria-hidden="true"><div class="h-full rounded-full bg-gold-fill" style=format!("width:{w}%")></div></div>
                                     </li>
                                 }

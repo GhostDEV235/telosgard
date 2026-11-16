@@ -142,6 +142,7 @@ mod tests {
                 29..=31 => 6,
                 32..=36 => 7,
                 37..=40 => 8,
+                41..=44 => 9,
                 _ => continue,
             };
             assert_eq!(l.stage, stage, "L{} belongs to Stage {stage}", l.id);

@@ -81,8 +81,8 @@ pub fn Curriculum(me: Me, selected: RwSignal<Option<u8>>) -> impl IntoView {
             {stages.into_iter().map(|stage| {
                 let in_stage: Vec<_> = lessons.iter().filter(|l| l.stage == stage).map(|l| (l.id, l.title)).collect();
                 view! {
-                    <section class="overflow-hidden rounded-card bg-surface shadow-card" aria-label=format!("Stage {stage}")>
-                        <h2 class="border-b border-line/40 px-5 py-3 text-headline">{format!("Stage {stage}")}</h2>
+                    <section class="overflow-hidden rounded-card bg-surface shadow-card" aria-label=stage_name(stage)>
+                        <h2 class="border-b border-line/40 px-5 py-3 text-headline">{stage_name(stage)}</h2>
                         <div class="hidden grid-cols-[minmax(0,2.4fr)_repeat(4,minmax(0,1fr))] gap-3 px-5 pt-2 text-footnote font-semibold text-text-muted md:grid" aria-hidden="true">
                             <span>"Lesson"</span><span class="text-right">"Passed"</span><span class="text-right">"Quiz right"</span><span class="text-right">"Explain-Back"</span><span class="text-right">"Waiting"</span>
                         </div>
@@ -381,4 +381,9 @@ fn Body(id: u8, d: Detail, me: Me, note: RwSignal<Option<(bool, String)>>, refre
 
 pub fn plural(n: u32, word: &str) -> String {
     format!("{n} {word}{}", if n == 1 { "" } else { "s" })
+}
+
+/// "Stage 3"; the Live Track's lessons (41–44) are stored as stage 9.
+pub fn stage_name(stage: u8) -> String {
+    if stage == 9 { "Live Track".into() } else { format!("Stage {stage}") }
 }
