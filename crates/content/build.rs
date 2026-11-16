@@ -96,7 +96,7 @@ struct Fixture {
     expect: String,
 }
 
-const DRILLS: &[&str] = &["candle_direction", "bid_ask", "dollar_distance", "pip_convert", "order_type", "session", "no_trade", "surprise", "build_candle", "find_level", "name_structure", "name_candle", "pick_leg", "fib_level", "confluence", "place_stop", "size_it"];
+const DRILLS: &[&str] = &["candle_direction", "bid_ask", "dollar_distance", "pip_convert", "order_type", "session", "no_trade", "surprise", "build_candle", "find_level", "name_structure", "name_candle", "pick_leg", "fib_level", "confluence", "place_stop", "size_it", "broken_rule"];
 
 fn is_date(s: &str) -> bool {
     let b = s.as_bytes();

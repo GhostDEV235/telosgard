@@ -10,7 +10,7 @@ use telosgard_core::plan::{HardRules, PlanError, Session, SoftRules, TradingPlan
 use leptos::prelude::*;
 
 const CLASSIC_SETUP: &str = "Classic Price Action: trade only in the direction of the H4 trend (read from market structure), at a key support or resistance zone marked in my checklist, after a confirmation candle (pin bar or engulfing) closes at that zone.";
-const CLASSIC_SETUP_FR: &str = "Price Action classique : ne trader que dans le sens de la tendance H4 (lue dans la structure du marché), sur une zone clé de support ou de résistance notée dans ma checklist, après la clôture d’une bougie de confirmation (pin bar ou englobante) sur cette zone.";
+const CLASSIC_SETUP_FR: &str = "Price Action classique : ne trader que dans le sens de la tendance H4 (lue dans la structure du marché), sur une zone clé de support ou de résistance notée dans ma checklist, après la clôture d’une bougie de confirmation (pin bar ou avalement) sur cette zone.";
 
 fn plan_error(e: PlanError) -> &'static str {
     match e {
@@ -86,9 +86,9 @@ pub fn Plan() -> impl IntoView {
 
     let max_risk = RwSignal::new("1".to_string());
     let max_loss = RwSignal::new("10".to_string());
-    let min_rr = RwSignal::new("1.5".to_string());
+    let min_rr = RwSignal::new("2".to_string());
     let per_day = RwSignal::new("2".to_string());
-    let daily = RwSignal::new("3".to_string());
+    let daily = RwSignal::new("2".to_string());
     let sessions = RwSignal::new(vec![Session::London, Session::NewYork]);
     let setup = RwSignal::new(t(CLASSIC_SETUP, CLASSIC_SETUP_FR).to_string());
     let extra = RwSignal::new(String::new());

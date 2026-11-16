@@ -19,7 +19,7 @@ struct DrillInfo {
     lesson: Tx,
 }
 
-const DRILLS: [DrillInfo; 18] = [
+const DRILLS: [DrillInfo; 19] = [
     DrillInfo { kind: DrillKind::Calibration, title: Tx("Can you call the next candle?", "Peux-tu deviner la prochaine bougie ?"), blurb: Tx("Ten charts: predict up or down, then see your hit rate.", "Dix graphiques : prédis hausse ou baisse, puis découvre ton taux de réussite."), lesson: Tx("Lesson 2", "Leçon 2") },
     DrillInfo { kind: DrillKind::Distance, title: Tx("Measure the move", "Mesure le mouvement"), blurb: Tx("Turn two prices into a Dollar Move.", "Transforme deux prix en Mouvement en dollars."), lesson: Tx("Lesson 4", "Leçon 4") },
     DrillInfo { kind: DrillKind::Direction, title: Tx("Bullish or bearish?", "Haussière ou baissière ?"), blurb: Tx("Read a candle's direction from its open and close.", "Lis le sens d’une bougie à partir de son ouverture et de sa clôture."), lesson: Tx("Lesson 5", "Leçon 5") },
@@ -38,6 +38,7 @@ const DRILLS: [DrillInfo; 18] = [
     DrillInfo { kind: DrillKind::Confluence, title: Tx("Find the confluence", "Trouve la confluence"), blurb: Tx("Spot the zone where a Fibonacci level meets the swing the leg broke.", "Repère la zone où un niveau de Fibonacci rencontre le swing cassé par la jambe."), lesson: Tx("Lesson 31", "Leçon 31") },
     DrillInfo { kind: DrillKind::PlaceStop, title: Tx("Place the stop", "Place le stop"), blurb: Tx("Beyond the structure by about one ATR, and clear of the round number.", "Au-delà de la structure d’environ un ATR, et à l’écart du chiffre rond."), lesson: Tx("Lesson 32", "Leçon 32") },
     DrillInfo { kind: DrillKind::SizeIt, title: Tx("Size it in 30 seconds", "La taille en 30 secondes"), blurb: Tx("Balance, risk and stop in; lots out, rounded down. Beat the clock.", "Solde, risque et stop en entrée ; des lots en sortie, arrondis vers le bas. Bats le chrono."), lesson: Tx("Lesson 33", "Leçon 33") },
+    DrillInfo { kind: DrillKind::BrokenRule, title: Tx("Spot the broken rule", "Repère la règle enfreinte"), blurb: Tx("Check a Demo Trade against a Trading Plan: which Hard Rule did it break, if any?", "Vérifie un trade démo face à un Plan de trading : quelle Règle stricte a-t-il enfreinte, s’il y en a une ?"), lesson: Tx("Lesson 39", "Leçon 39") },
 ];
 
 #[component]
@@ -406,6 +407,58 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
             );
             Choice { visual: None, prompt: t("What size do you trade?", "Quelle taille prends-tu ?").into(), detail: Some(detail), options: q.options.iter().map(|l| lots(*l)).collect(), answer: q.answer, why }
         }
+        DrillKind::BrokenRule => {
+            use telosgard_core::stage8_drills::{Breach, Earlier, RuleQ};
+            let q = RuleQ::new(seed);
+            let fr = crate::i18n::is_fr();
+            let clock = |m: u32| if fr { format!("{} h {:02}", m / 60, m % 60) } else { format!("{:02}:{:02}", m / 60, m % 60) };
+            let usd = |c: i64| telosgard_core::money::Usd(c).to_string();
+            let mv = |c: i64| DollarMove(c).to_string();
+            let lots = telosgard_core::money::Lots(q.lots);
+            let earlier = match q.earlier {
+                Earlier::Nothing => t("no trades yet", "aucun trade"),
+                Earlier::OneWin => t("one win (+2R)", "un gain (+2R)"),
+                Earlier::OneLoss => t("one loss (−1R)", "une perte (−1R)"),
+                Earlier::TwoLosses => t("two losses (−1R, −1R)", "deux pertes (−1R, −1R)"),
+            };
+            let detail = ts(
+                format!(
+                    "Plan: risk ≤ 1% · reward-to-risk ≥ 2:1 · London and New York sessions (03:00–17:00 New York) · Daily Loss Limit 2R · checklist required · No-Trade Windows\nTuesday {} New York · today's news: US CPI at 08:30\nChecklist: {} · earlier today: {}\nBalance $10,000.00 · {lots} lots · stop {} away (risk {}) · target {} away",
+                    clock(q.at),
+                    if q.checklist { "saved" } else { "not saved" },
+                    earlier,
+                    mv(q.stop),
+                    usd(q.risk()),
+                    mv(q.target),
+                ),
+                format!(
+                    "Plan : risque ≤ 1 % · gain/risque ≥ 2 pour 1 · séances de Londres et de New York (3 h–17 h, heure de New York) · Perte maximale du jour 2R · checklist obligatoire · Fenêtres sans trade\nMardi {} heure de New York · annonce du jour : CPI américain à 8 h 30\nChecklist : {} · plus tôt aujourd’hui : {}\nSolde 10 000,00 $ · {lots} lot · stop à {} (risque {}) · objectif à {}",
+                    clock(q.at),
+                    if q.checklist { "enregistrée" } else { "non enregistrée" },
+                    earlier,
+                    mv(q.stop),
+                    usd(q.risk()),
+                    mv(q.target),
+                ),
+            );
+            let why = match q.answer {
+                Breach::None => t("Risk under 1%, at least 2:1, inside the sessions, away from the CPI release, checklist saved and the day's losses under 2R: it follows every Hard Rule. Win or lose, it's a good trade.", "Risque sous 1 %, au moins 2 pour 1, dans les séances, loin de l’annonce du CPI, checklist enregistrée et pertes du jour sous 2R : il respecte toutes les Règles strictes. Gagnant ou perdant, c’est un bon trade."),
+                Breach::Risk => t("The money at risk is about 1.5% of $10,000, over the 1% ceiling. The stop may be fine; the size is too big (Lesson 33).", "La somme en risque fait environ 1,5 % de 10 000 $, au-dessus du plafond de 1 %. Le stop est peut-être bon ; la taille est trop grosse (leçon 33)."),
+                Breach::Reward => t("The target is only 1.5 times the stop distance; the plan asks for at least 2:1 (Lesson 34).", "L’objectif ne fait que 1,5 fois la distance du stop ; le plan demande au moins 2 pour 1 (leçon 34)."),
+                Breach::DailyLimit => t("Two losses already make −2R today: the Daily Loss Limit is reached, so any new entry breaks the plan (Lesson 35).", "Deux pertes font déjà −2R aujourd’hui : la Perte maximale du jour est atteinte, donc toute nouvelle entrée enfreint le plan (leçon 35)."),
+                Breach::NoTradeWindow => t("It's within 5 minutes of the 08:30 CPI release: a No-Trade Window (Lesson 15).", "C’est à moins de 5 minutes de l’annonce du CPI à 8 h 30 : une Fenêtre sans trade (leçon 15)."),
+                Breach::Checklist => t("No Pre-Session Checklist was saved today, and the plan requires one on any day you trade (Lesson 38).", "Aucune Checklist avant la séance n’a été enregistrée aujourd’hui, et le plan en exige une chaque jour où tu trades (leçon 38)."),
+                Breach::Session => t("It's in the Asian session, outside the London and New York sessions this plan trades (Lesson 13).", "C’est pendant la séance asiatique, en dehors des séances de Londres et de New York prévues par ce plan (leçon 13)."),
+            };
+            Choice {
+                visual: None,
+                prompt: t("Which Hard Rule does this trade break?", "Quelle Règle stricte ce trade enfreint-il ?").into(),
+                detail: Some(detail),
+                options: Breach::ALL.iter().map(|b| b.label().to_string()).collect(),
+                answer: Breach::ALL.iter().position(|b| *b == q.answer).unwrap_or(0),
+                why: why.into(),
+            }
+        }
         DrillKind::NameCandle => {
             use telosgard_core::stage5_drills::{Pattern, PatternQ};
             let q = PatternQ::new(seed);
@@ -525,7 +578,7 @@ pub fn ChoiceDrill(kind: DrillKind) -> impl IntoView {
                     });
                     view! {
                         {picture.map(|p| view! { <div class="mb-3">{p}</div> })}
-                        {detail.map(|d| view! { <p class="tabular mb-3 rounded-btn bg-bg p-3 text-headline">{d}</p> })}
+                        {detail.map(|d| view! { <p class="tabular mb-3 whitespace-pre-line rounded-btn bg-bg p-3 text-headline">{d}</p> })}
                         <h2 class="text-headline">{prompt}</h2>
                         <div class="mt-4 grid gap-2">
                             {options

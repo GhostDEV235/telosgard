@@ -94,11 +94,13 @@ Written from the attempt history (still no attempts past Stage 2): each rubric a
 
 Written from the attempt history (still no attempts past Stage 2): each rubric asks for the limit (skip rather than squeeze the stop; too small means no trade; expectancy only shows over many trades; the limit holds however good the next setup looks; a winning rule-break is still a bad trade), and each "almost" fixture leaves it out. Facts checked against CME Group Education (Proper Position Size; Controlling Risk; Misconceptions of Taking Losses), Fidelity's Learning Center (Average True Range) and Federal Reserve Bank of New York Staff Report 125 (Osler: stop-loss orders cluster just beyond round numbers; the disposition effect), read on 2026-11-16. 10 videos verified by oEmbed.
 
-### Stage 8: Plan & Practise *(Wave 8)*
-37. **The Classic Price Action setup, end to end:** H4 trend from structure → H1 zone (with optional Fib confluence) → confirmation candle → stop, size and target from the plan
-38. **The pre-session routine:** the in-app **Pre-Session Checklist**: calendar, Asian range, macro mood, bias, zones, written **Scenarios**, risk for the day
-39. **Writing your Trading Plan:** the builder (Hard and Soft Rules)
-40. **Your first Demo Trade & the weekly review:** journaling it, skipped setups, and the **Weekly Review**
+### Stage 8: Plan & Practise *(Wave 8, written 2026-11-16)*
+37. **The Classic Price Action setup, end to end:** H4 trend from structure → an H1 zone written in that day's Scenarios (Fibonacci confluence optional) → a confirmation candle closes → stop 1–1.5 ATR beyond the structure, target at least 2:1, size from the calculator → last checks (No-Trade Windows, Daily Loss Limit, trades per day); any no means skip and log it
+38. **The pre-session routine:** the in-app **Pre-Session Checklist** (Journal tab): news and its No-Trade Windows, the Asian range and a one-line mood, the H4 bias, 3–5 zones, 1–3 written **Scenarios**, the day's risk; a Hard Rule on any day you trade
+39. **Writing your Trading Plan:** the builder (Tools tab): Hard Rules with the course's values (1%, 2:1, 2R, 2 trades a day, London and New York, ~10% max total loss), the always-on rules, Soft Rules judged by Professor Aurel, versions changed only after a review. Drill "Spot the broken rule"
+40. **Your first Demo Trade & the Weekly Review:** logging a trade, the verdict and disputes, the exit, Emotion Tag and lesson, skipped setups, the **Weekly Review** note (one thing to keep, one to stop), and the four conditions of **Live Readiness**
+
+Written from the attempt history (still no attempts past Stage 2): each rubric asks for the limit (one missing link means no trade; a vague Scenario isn't one; the plan is never edited to excuse a trade; Live Readiness doesn't need profit), and each "almost" fixture leaves it out. Facts checked against CME Group Education's "Building a Trade Plan" course (Risk Management and Your Trade Plan; Trading Strategies in Your Trade Plan; Keep a Trade Log) and the BLS and Federal Reserve release calendars, read on 2026-11-16; app details checked against the Checklist, Plan, Trade, Journal and Weekly Review screens. 8 videos verified by oEmbed. The Trading Plan builder's defaults now match the course (minimum reward-to-risk 2, Daily Loss Limit 2R; they were 1.5 and 3R).
 
 ## Live Track *(unlocks with Live Readiness)*
 41. **Reviewing your journal:** finding your leaks in your own data
