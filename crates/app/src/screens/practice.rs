@@ -19,7 +19,7 @@ struct DrillInfo {
     lesson: Tx,
 }
 
-const DRILLS: [DrillInfo; 16] = [
+const DRILLS: [DrillInfo; 18] = [
     DrillInfo { kind: DrillKind::Calibration, title: Tx("Can you call the next candle?", "Peux-tu deviner la prochaine bougie ?"), blurb: Tx("Ten charts: predict up or down, then see your hit rate.", "Dix graphiques : prédis hausse ou baisse, puis découvre ton taux de réussite."), lesson: Tx("Lesson 2", "Leçon 2") },
     DrillInfo { kind: DrillKind::Distance, title: Tx("Measure the move", "Mesure le mouvement"), blurb: Tx("Turn two prices into a Dollar Move.", "Transforme deux prix en Mouvement en dollars."), lesson: Tx("Lesson 4", "Leçon 4") },
     DrillInfo { kind: DrillKind::Direction, title: Tx("Bullish or bearish?", "Haussière ou baissière ?"), blurb: Tx("Read a candle's direction from its open and close.", "Lis le sens d’une bougie à partir de son ouverture et de sa clôture."), lesson: Tx("Lesson 5", "Leçon 5") },
@@ -36,6 +36,8 @@ const DRILLS: [DrillInfo; 16] = [
     DrillInfo { kind: DrillKind::PickLeg, title: Tx("Pick the leg", "Choisis la jambe"), blurb: Tx("Which two swings do you draw Fibonacci from, and in which order?", "Entre quels deux swings tracer Fibonacci, et dans quel ordre ?"), lesson: Tx("Lesson 29", "Leçon 29") },
     DrillInfo { kind: DrillKind::FibLevel, title: Tx("Place the level", "Place le niveau"), blurb: Tx("Turn a leg into the price of a Fibonacci level or extension.", "Transforme une jambe en prix d’un niveau ou d’une extension de Fibonacci."), lesson: Tx("Lesson 30", "Leçon 30") },
     DrillInfo { kind: DrillKind::Confluence, title: Tx("Find the confluence", "Trouve la confluence"), blurb: Tx("Spot the zone where a Fibonacci level meets the swing the leg broke.", "Repère la zone où un niveau de Fibonacci rencontre le swing cassé par la jambe."), lesson: Tx("Lesson 31", "Leçon 31") },
+    DrillInfo { kind: DrillKind::PlaceStop, title: Tx("Place the stop", "Place le stop"), blurb: Tx("Beyond the structure by about one ATR, and clear of the round number.", "Au-delà de la structure d’environ un ATR, et à l’écart du chiffre rond."), lesson: Tx("Lesson 32", "Leçon 32") },
+    DrillInfo { kind: DrillKind::SizeIt, title: Tx("Size it in 30 seconds", "La taille en 30 secondes"), blurb: Tx("Balance, risk and stop in; lots out, rounded down. Beat the clock.", "Solde, risque et stop en entrée ; des lots en sortie, arrondis vers le bas. Bats le chrono."), lesson: Tx("Lesson 33", "Leçon 33") },
 ];
 
 #[component]
@@ -356,6 +358,54 @@ fn make_choice(kind: DrillKind, seed: u64) -> Choice {
                 why,
             }
         }
+        DrillKind::PlaceStop => {
+            use telosgard_core::stage7_drills::{StopKind, StopQ};
+            let q = StopQ::new(seed);
+            let fr = crate::i18n::is_fr();
+            let right = q.options[q.answer].0;
+            let x = q.atrs_beyond(right);
+            let xs = format!("{}{}{:02}", x / 100, if fr { "," } else { "." }, x % 100);
+            let detail = if q.long {
+                ts(format!("Long. Entry {} · the confirmation candle's low {} · ATR(14) {}", money(q.entry), money(q.structure), q.atr), format!("Achat. Entrée {} · plus bas de la bougie de confirmation {} · ATR(14) {}", money(q.entry), money(q.structure), q.atr))
+            } else {
+                ts(format!("Short. Entry {} · the confirmation candle's high {} · ATR(14) {}", money(q.entry), money(q.structure), q.atr), format!("Vente. Entrée {} · plus haut de la bougie de confirmation {} · ATR(14) {}", money(q.entry), money(q.structure), q.atr))
+            };
+            let why = ts(
+                format!(
+                    "{}: {xs}× ATR beyond the {}, and a few dollars past the round number {} rather than on it, where stops cluster. {} sits inside one ATR, so ordinary noise takes it out; three ATRs away is safe from noise but shrinks your size and your reward-to-risk.",
+                    money(right),
+                    if q.long { "low" } else { "high" },
+                    money(q.round),
+                    money(q.options.iter().find(|o| o.1 == StopKind::InsideNoise).map(|o| o.0).unwrap_or(right)),
+                ),
+                format!(
+                    "{} : {xs} ATR au-delà du {}, et quelques dollars après le chiffre rond {} plutôt que dessus, là où les stops s’accumulent. {} reste à moins d’un ATR : le bruit ordinaire le touche ; à trois ATR, tu es à l’abri du bruit mais ta taille et ton rapport gain/risque fondent.",
+                    money(right),
+                    if q.long { "plus bas" } else { "plus haut" },
+                    money(q.round),
+                    money(q.options.iter().find(|o| o.1 == StopKind::InsideNoise).map(|o| o.0).unwrap_or(right)),
+                ),
+            );
+            Choice {
+                visual: None,
+                prompt: t("Where does the stop go?", "Où va le stop ?").into(),
+                detail: Some(detail),
+                options: q.options.iter().map(|o| money(o.0)).collect(),
+                answer: q.answer,
+                why,
+            }
+        }
+        DrillKind::SizeIt => {
+            use telosgard_core::stage7_drills::SizeQ;
+            let q = SizeQ::new(seed);
+            let lots = |l: telosgard_core::money::Lots| ts(format!("{l} lots"), format!("{l} lot"));
+            let detail = ts(format!("Balance {} · risk {} · stop {} away · 1 lot = 100 oz", q.balance, q.risk, q.stop), format!("Solde {} · risque {} · stop à {} · 1 lot = 100 oz", q.balance, q.risk, q.stop));
+            let why = ts(
+                format!("{} × {} = {} to risk. A {} stop costs {} per 1.00 lot ({} × 100 oz). {} ÷ {} → round down to {}, risking {}. Rounding up would break the plan.", q.balance, q.risk, q.budget, q.stop, q.per_lot, q.stop, q.budget, q.per_lot, lots(q.lots), q.at_risk),
+                format!("{} × {} = {} à risquer. Un stop de {} coûte {} par lot de 1,00 ({} × 100 oz). {} ÷ {} → arrondi vers le bas à {}, soit {} de risque. Arrondir vers le haut casserait le plan.", q.balance, q.risk, q.budget, q.stop, q.per_lot, q.stop, q.budget, q.per_lot, lots(q.lots), q.at_risk),
+            );
+            Choice { visual: None, prompt: t("What size do you trade?", "Quelle taille prends-tu ?").into(), detail: Some(detail), options: q.options.iter().map(|l| lots(*l)).collect(), answer: q.answer, why }
+        }
         DrillKind::NameCandle => {
             use telosgard_core::stage5_drills::{Pattern, PatternQ};
             let q = PatternQ::new(seed);
@@ -423,9 +473,21 @@ pub fn ChoiceDrill(kind: DrillKind) -> impl IntoView {
     });
     let picked = RwSignal::new(None::<usize>);
     let score = RwSignal::new((0u32, 0u32));
+    // "Size it" is timed: seconds from the question appearing to the answer, and how many right answers beat the target.
+    let timed = kind == DrillKind::SizeIt;
+    let shown_at = RwSignal::new(now());
+    let took = RwSignal::new(None::<u32>);
+    let fast = RwSignal::new(0u32);
     let pick = move |i: usize| {
         if picked.get_untracked().is_some() {
             return;
+        }
+        if timed {
+            let secs = ((now() - shown_at.get_untracked()).max(0) + 500) as u32 / 1000;
+            took.set(Some(secs));
+            if secs <= telosgard_core::stage7_drills::SIZE_TARGET_SECS && choice.with_untracked(|c| c.3 == i) {
+                fast.update(|f| *f += 1);
+            }
         }
         picked.set(Some(i));
         let right = choice.with_untracked(|c| c.3 == i);
@@ -438,6 +500,8 @@ pub fn ChoiceDrill(kind: DrillKind) -> impl IntoView {
     let next = move |_| {
         seed.update(|s| *s = s.wrapping_add(7919));
         picked.set(None);
+        took.set(None);
+        shown_at.set(now());
     };
     view! {
         <SubBar back="#practice" back_label=t("Practice", "Entraînement") title=info.title.get() />
@@ -447,6 +511,11 @@ pub fn ChoiceDrill(kind: DrillKind) -> impl IntoView {
                 <p class="tabular shrink-0 whitespace-nowrap text-callout text-text-muted">{move || { let (r, t) = score.get(); ts(format!("{r} of {t} right"), format!("{r} sur {t} justes")) }}</p>
             </div>
             <p class="mt-2 text-callout text-text-muted">{info.blurb.get()} {t(" Prices are illustrative.", " Prix donnés à titre d’exemple.")}</p>
+            {timed.then(|| view! {
+                <p class="tabular mt-1 text-callout text-text-muted">
+                    {move || ts(format!("Target: under 30 seconds. {} so far.", fast.get()), format!("Objectif : moins de 30 secondes. {} pour l’instant.", fast.get()))}
+                </p>
+            })}
             <section class="mt-5 rounded-card bg-surface p-5 shadow-card">
                 {move || {
                     let (prompt, detail, options, answer, why, visual) = choice.get();
@@ -492,6 +561,10 @@ pub fn ChoiceDrill(kind: DrillKind) -> impl IntoView {
                                 } else {
                                     view! { <p class="text-headline text-down">{t("✗ Not quite", "✗ Pas tout à fait")}</p> }.into_any()
                                 }}
+                                {move || took.get().map(|secs| {
+                                    let ok = secs <= telosgard_core::stage7_drills::SIZE_TARGET_SECS;
+                                    view! { <p class=if ok { "tabular mt-1 text-callout text-up" } else { "tabular mt-1 text-callout text-text-muted" }>{if ok { ts(format!("{secs} s: inside the 30-second target."), format!("{secs} s : dans l’objectif de 30 secondes.")) } else { ts(format!("{secs} s: keep practising the steps until they're under 30."), format!("{secs} s : entraîne-toi aux étapes jusqu’à passer sous les 30."))}}</p> }
+                                })}
                                 <p class="mt-1 text-callout">{why.clone()}</p>
                             </div>
                             <button type="button" class=format!("{PILL} mt-4") on:click=next>{t("Next question ›", "Question suivante ›")}</button>

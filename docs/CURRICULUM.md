@@ -85,12 +85,14 @@ Written from the attempt history (still no attempts past Stage 2): each rubric a
 
 Written from the attempt history (still no attempts past Stage 2): each rubric asks for the limit (a backwards grid gives wrong levels; a level is not a signal and 78.6 ends the play; confluence never overrides the trend), and each "almost" fixture leaves it out. Facts checked against CME Group Education (Fibonacci Retracements and Extensions; Support and Resistance) and Fidelity's Learning Center (Fibonacci Retracement), read in the browser on 2026-11-13. CME lists extension ratios of 1.38, 1.5 and 1.61; 127.2% is kept as this course's first target and labelled as such.
 
-### Stage 7: Risk & Psychology *(Wave 7)*
-32. **Stops beyond structure, sized by ATR:** at least 1–1.5× ATR beyond structure, never at an obvious round number; the chart decides the stop
-33. **Position sizing:** the calculator, the 1% ceiling, rounding down; the stop decides the size, never the reverse
-34. **Risk-to-reward & expectancy:** break-even win rates (1:2 needs > 33%); ten losses at 1% leaves ~90%
-35. **Daily loss limit & drawdown:** stopping at 2–3R for the day; why −50% needs +100% to recover
-36. **Bad trade vs losing trade:** FOMO, revenge trading, moving stops, overtrading after wins; a bad trade breaks rules, a losing trade follows them
+### Stage 7: Risk & Psychology *(Wave 7, written 2026-11-16)*
+32. **Stops beyond structure, sized by ATR:** the chart decides the stop (beyond the confirmation wick and the zone); ATR(14) on the entry timeframe measures the noise; about 1–1.5× ATR beyond the structure (a course range); off obvious round numbers, where stops cluster; too wide for 2:1 means skip, never squeeze. Drill "Place the stop"
+33. **Position sizing:** the stop decides the size; lots = (balance × risk %) ÷ (stop × 100 oz), the broker's contract size checked; 1% ceiling; round down to 0.01; too small to trade means no trade. Drill "Size it in 30 seconds" (timed against a 30-second target)
+34. **Risk-to-reward & expectancy:** break-even win rate 1 ÷ (1 + ratio): 50% at 1:1, ~33% at 2:1, 25% at 3:1; expectancy in R; ten losses at 1% leave ~90%, at 5% ~60%
+35. **Daily Loss Limit & drawdown:** 2R, never more than 3R, set in the Pre-Session Checklist; −10% needs +11%, −20% +25%, −50% +100%; drawdown and the Readiness Run's maximum total loss
+36. **Bad trade vs losing trade:** a losing trade followed the plan, a bad trade broke a rule whatever it made; FOMO, revenge trading, moving the stop away, overtrading after wins; grade the process
+
+Written from the attempt history (still no attempts past Stage 2): each rubric asks for the limit (skip rather than squeeze the stop; too small means no trade; expectancy only shows over many trades; the limit holds however good the next setup looks; a winning rule-break is still a bad trade), and each "almost" fixture leaves it out. Facts checked against CME Group Education (Proper Position Size; Controlling Risk; Misconceptions of Taking Losses), Fidelity's Learning Center (Average True Range) and Federal Reserve Bank of New York Staff Report 125 (Osler: stop-loss orders cluster just beyond round numbers; the disposition effect), read on 2026-11-16. 10 videos verified by oEmbed.
 
 ### Stage 8: Plan & Practise *(Wave 8)*
 37. **The Classic Price Action setup, end to end:** H4 trend from structure → H1 zone (with optional Fib confluence) → confirmation candle → stop, size and target from the plan

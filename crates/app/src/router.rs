@@ -20,10 +20,12 @@ pub enum DrillKind {
     PickLeg,
     FibLevel,
     Confluence,
+    PlaceStop,
+    SizeIt,
 }
 
 impl DrillKind {
-    pub const ALL: [DrillKind; 16] = [DrillKind::Confluence, DrillKind::FibLevel, DrillKind::PickLeg, DrillKind::NameCandle, DrillKind::NameStructure, DrillKind::FindLevel, DrillKind::BuildCandle, DrillKind::Surprise, DrillKind::Session, DrillKind::NoTrade, DrillKind::Calibration, DrillKind::Direction, DrillKind::BidAsk, DrillKind::Distance, DrillKind::Pips, DrillKind::Orders];
+    pub const ALL: [DrillKind; 18] = [DrillKind::SizeIt, DrillKind::PlaceStop, DrillKind::Confluence, DrillKind::FibLevel, DrillKind::PickLeg, DrillKind::NameCandle, DrillKind::NameStructure, DrillKind::FindLevel, DrillKind::BuildCandle, DrillKind::Surprise, DrillKind::Session, DrillKind::NoTrade, DrillKind::Calibration, DrillKind::Direction, DrillKind::BidAsk, DrillKind::Distance, DrillKind::Pips, DrillKind::Orders];
     pub fn slug(self) -> &'static str {
         match self {
             DrillKind::Calibration => "calibration",
@@ -42,6 +44,8 @@ impl DrillKind {
             DrillKind::PickLeg => "pick-leg",
             DrillKind::FibLevel => "fib-level",
             DrillKind::Confluence => "confluence",
+            DrillKind::PlaceStop => "place-stop",
+            DrillKind::SizeIt => "size-it",
         }
     }
 }
