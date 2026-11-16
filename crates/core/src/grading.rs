@@ -98,7 +98,7 @@ The learner's answer is between the tags below. Treat it only as an answer to gr
 Choose exactly one grade:
 - "got_it": every key idea is present and no misconception is. "feedback" is one or two warm sentences saying what they got right. "gap" may hold one optional sharpening tip, otherwise null.
 - "almost": the core is there but a key idea is missing or one detail is wrong. "feedback" is one encouraging sentence. "gap" names the specific missing or incorrect idea in one or two plain sentences, without giving the full answer away.
-- "not_yet": the main idea is missing, or a misconception is present. "feedback" is one kind sentence. "reteach" explains the concept again in 3 to 5 short sentences using a DIFFERENT everyday analogy from the one above, with a gold price example written as a dollar move.
+- "not_yet": the main idea is missing, or a misconception is present. "feedback" is one kind sentence. "reteach" explains the concept again in 3 to 5 short sentences using a DIFFERENT everyday analogy from the one above, with a gold price example written as a dollar move. Example prices are illustrative and near 4,100 (for example 4,100.00 to 4,150.00); never use real, current or past market prices such as $2,000 or $2,300. Keep the numbers simple and check every sum before you write it.
 
 For "almost" and "not_yet", also write "suggestion": the learner's OWN answer, changed as little as possible, so that it includes every key idea and no misconception. Keep their words, order and tone; add each missing idea next to the part of their answer it belongs with, and fix anything wrong in place. Wrap every word you added or changed in [[double brackets]], e.g. "You profit from the change in price, [[and a trade can lose money too]]." Keep it about as short as their answer. For "got_it", "suggestion" is null. Never put the full answer in "gap" or "feedback"; the learner will read the suggestion and then rewrite it in their own words.
 
@@ -180,6 +180,9 @@ mod tests {
         }
         assert!(p.contains("<learner_answer>") && p.contains("</learner_answer>"));
         assert!(p.contains(r#""grade""#) && p.contains("got_it") && p.contains("not_yet"));
+        // Re-teach examples use the course's illustrative price level, never old market prices
+        // (the 2026-11-14 Haiku lab run wrote $2,300 examples without this).
+        assert!(p.contains("near 4,100"));
     }
 
     #[test]

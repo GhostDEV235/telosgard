@@ -132,7 +132,7 @@ must_include = ["hot means the actual number is stronger than the forecast (the 
 misconceptions = ["markets react to the change from last month", "you should trade in the direction of the surprise as soon as it comes out"]
 
 [[explain_back.fixtures]]
-answer = "Hot means the number came out stronger than the forecast, which is what markets had priced in. That usually means higher rates for longer, so gold usually falls, though the details or revisions can make it go the other way. I wouldn't trade the release candle: I wait until the No-Trade Window ends and only take my normal setup."
+answer = "Hot means the number came out stronger than the forecast, which is what markets had priced in. That usually means higher rates for longer, so gold usually falls, and soft data usually does the opposite and lifts it, though the details or revisions can make it go the other way. I wouldn't trade the release candle: I wait until the No-Trade Window ends and only take my normal setup."
 expect = "got_it"
 
 [[explain_back.fixtures]]

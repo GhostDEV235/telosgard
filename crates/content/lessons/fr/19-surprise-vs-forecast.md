@@ -132,7 +132,7 @@ must_include = ["chaud veut dire que le chiffre réel est plus fort que la prév
 misconceptions = ["les marchés réagissent à la variation par rapport au mois dernier", "il faut trader dans le sens de la surprise dès qu’elle sort"]
 
 [[explain_back.fixtures]]
-answer = "Chaud veut dire que le chiffre est sorti plus fort que la prévision, que le marché avait déjà intégrée. Ça laisse en général attendre des taux élevés plus longtemps, donc l’or baisse en général, même si le détail ou les révisions peuvent le faire partir dans l’autre sens. Je ne trade pas la bougie de la publication : j’attends la fin de la Fenêtre sans trade et je prends seulement ma configuration habituelle."
+answer = "Chaud veut dire que le chiffre est sorti plus fort que la prévision, que le marché avait déjà intégrée. Ça laisse en général attendre des taux élevés plus longtemps, donc l’or baisse en général, et une statistique molle fait en général l’inverse et le fait monter, même si le détail ou les révisions peuvent le faire partir dans l’autre sens. Je ne trade pas la bougie de la publication : j’attends la fin de la Fenêtre sans trade et je prends seulement ma configuration habituelle."
 expect = "got_it"
 
 [[explain_back.fixtures]]

@@ -158,7 +158,7 @@ answer = "Gold is open from Sunday 6 pm to Friday 5 pm New York time, with a one
 expect = "got_it"
 
 [[explain_back.fixtures]]
-answer = "Gold trades nearly 24 hours a day through the Asian, London and New York sessions, one after the other."
+answer = "Gold trades nearly 24 hours a day through the Asian, London and New York sessions, one after the other, and it's busiest when London and New York are open."
 expect = "almost"
 
 [[explain_back.fixtures]]
