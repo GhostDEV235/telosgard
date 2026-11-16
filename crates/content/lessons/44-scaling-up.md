@@ -127,7 +127,7 @@ must_include = ["only after three live months with at least 90% of trades follow
 misconceptions = ["a winning streak is the time to double your risk", "scaling up means going above 1% once you're profitable"]
 
 [[explain_back.fixtures]]
-answer = "Only after three live months where at least 90% of my trades followed the plan. Then I go up 0.25% at a time, from 0.5 to 0.75 to 1%, saving each as a new plan version and holding it at least a month at 90% before the next step, and I never go above 1%; the balance growing does the rest. If the account drops about 10% from its peak or my adherence slips, I step back down a level and review my journal."
+answer = "Only after three live months where at least 90% of my trades followed the plan. Then I go up 0.25% at a time, from 0.5 to 0.75 to 1%, saving each as a new plan version and holding it at least a month at 90% before the next step, and I never go above 1%, however well it goes. If the account drops about 10% from its peak or my adherence slips, I step back down a level and review my journal."
 expect = "got_it"
 
 [[explain_back.fixtures]]

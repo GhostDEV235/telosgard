@@ -127,7 +127,7 @@ must_include = ["seulement après trois mois en réel avec au moins 90 % des tr
 misconceptions = ["une série de gains, c’est le moment de doubler le risque", "grossir veut dire dépasser 1 % une fois qu’on est rentable"]
 
 [[explain_back.fixtures]]
-answer = "Seulement après trois mois en réel où au moins 90 % de mes trades ont respecté le plan. Ensuite je monte de 0,25 % à la fois, de 0,5 à 0,75 puis 1 %, j’enregistre chaque marche dans une nouvelle version du plan et je la tiens au moins un mois à 90 % avant la suivante, et je ne dépasse jamais 1 % ; c’est le solde qui grandit. Si le compte baisse d’environ 10 % depuis son sommet ou si mon respect du plan faiblit, je redescends d’une marche et je relis mon journal."
+answer = "Seulement après trois mois en réel où au moins 90 % de mes trades ont respecté le plan. Ensuite je monte de 0,25 % à la fois, de 0,5 à 0,75 puis 1 %, j’enregistre chaque marche dans une nouvelle version du plan et je la tiens au moins un mois à 90 % avant la suivante, et je ne dépasse jamais 1 %, aussi bien que ça se passe. Si le compte baisse d’environ 10 % depuis son sommet ou si mon respect du plan faiblit, je redescends d’une marche et je relis mon journal."
 expect = "got_it"
 
 [[explain_back.fixtures]]
