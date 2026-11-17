@@ -158,7 +158,7 @@ answer = "L’or est ouvert du dimanche 18 h au vendredi 17 h, heure de New York
 expect = "got_it"
 
 [[explain_back.fixtures]]
-answer = "L’or se trade à travers les séances asiatique, de Londres et de New York, l’une après l’autre, et c’est quand Londres et New York sont ouvertes qu’il y a le plus d’activité."
+answer = "L’or se trade du dimanche soir au vendredi soir, heure de New York, avec une courte pause chaque jour, et les séances asiatique, de Londres et de New York prennent le relais l’une après l’autre."
 expect = "almost"
 
 [[explain_back.fixtures]]
