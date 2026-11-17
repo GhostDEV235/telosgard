@@ -205,7 +205,10 @@ pub fn GraderLab() -> impl IntoView {
                                     <details>
                                         <summary class="flex cursor-pointer list-none flex-wrap items-center gap-3">
                                             <span class=format!("w-5 text-headline {}", mark.1)>{mark.0}</span>
-                                            <span class="tabular w-16 text-callout">{format!("L{}", o.lesson)}</span>
+                                            <span class="tabular w-16 text-callout">{match telosgard_core::course::LessonId::from_content_id(o.lesson) {
+                                                Some(id @ (telosgard_core::course::LessonId::Advanced(_) | telosgard_core::course::LessonId::Indicators)) => crate::catalog::label(id),
+                                                _ => format!("L{}", o.lesson),
+                                            }}</span>
                                             <span class="w-28 text-callout">{o.fixture}</span>
                                             <span class="text-footnote text-text-muted">"expected " {o.expected}</span>
                                             <span class="ml-auto text-callout font-semibold">{chip(o.grade)}</span>

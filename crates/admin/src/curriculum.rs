@@ -32,8 +32,25 @@ impl Stats {
     }
 }
 
+use telosgard_core::course::LessonId;
+
+/// The doc id ("lesson-05", "lesson-a1", "lesson-ind") for a lesson's content number (`LessonId::content_id`).
 pub fn doc_id(n: u8) -> String {
-    format!("lesson-{n:02}")
+    LessonId::from_content_id(n).map_or_else(|| format!("lesson-{n:02}"), |id| id.doc_id())
+}
+
+/// Short label for a content number: "12", "A1", "Ind".
+pub fn short(n: u8) -> String {
+    match LessonId::from_content_id(n) {
+        Some(LessonId::Advanced(a)) => format!("A{a}"),
+        Some(LessonId::Indicators) => "Ind".into(),
+        _ => n.to_string(),
+    }
+}
+
+/// "Lesson 12", "Advanced 1", "Indicators".
+pub fn long(n: u8) -> String {
+    crate::api::lesson_label(&doc_id(n))
 }
 
 pub fn pct(v: f64) -> String {
@@ -42,7 +59,8 @@ pub fn pct(v: f64) -> String {
 
 /// Reads the selected lesson from `#lesson-<NN>`.
 pub fn selected_from_hash() -> Option<u8> {
-    window().location().hash().ok()?.strip_prefix("#lesson-")?.parse().ok()
+    let h = window().location().hash().ok()?;
+    LessonId::from_doc_id(h.strip_prefix('#')?).map(LessonId::content_id)
 }
 
 pub async fn load_stats() -> Result<Vec<Stats>, String> {
@@ -92,9 +110,9 @@ pub fn Curriculum(me: Me, selected: RwSignal<Option<u8>>) -> impl IntoView {
                                 let english_only = telosgard_content::lesson_in(true, id).is_none();
                                 view! {
                                     <li>
-                                        <a href=format!("#lesson-{id:02}") class="press grid gap-1 px-5 py-3 hover:bg-raised/60 md:grid-cols-[minmax(0,2.4fr)_repeat(4,minmax(0,1fr))] md:items-center md:gap-3">
+                                        <a href=format!("#{}", doc_id(id)) class="press grid gap-1 px-5 py-3 hover:bg-raised/60 md:grid-cols-[minmax(0,2.4fr)_repeat(4,minmax(0,1fr))] md:items-center md:gap-3">
                                             <span class="min-w-0">
-                                                <span class="tabular mr-2 text-text-muted">{id}</span>
+                                                <span class="tabular mr-2 text-text-muted">{short(id)}</span>
                                                 <span class="text-body font-semibold">{title}</span>
                                                 <span class="ml-2 inline-flex flex-wrap gap-1.5 align-middle">
                                                     {move || row().hidden.then(|| view! { <span class="rounded-full bg-warn-bg px-2 py-0.5 text-footnote font-semibold text-warn-ink">"Hidden"</span> })}
@@ -194,19 +212,19 @@ fn LessonPanel(id: u8, me: Me, on_change: Callback<()>) -> impl IntoView {
             id="lesson-panel"
             role="dialog"
             aria-modal="true"
-            aria-label=format!("Lesson {id}")
+            aria-label=long(id)
             class="anim-sheet fixed inset-y-0 right-0 z-50 w-full max-w-[640px] overflow-y-auto bg-bg px-[max(16px,env(safe-area-inset-right,0px))] pt-[calc(16px+env(safe-area-inset-top,0px))] pb-[calc(24px+env(safe-area-inset-bottom,0px))] shadow-sheet md:px-6"
         >
             <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                    <p class="text-eyebrow text-eyebrow-ink">{format!("Lesson {id}")}</p>
+                    <p class="text-eyebrow text-eyebrow-ink">{long(id)}</p>
                     <h2 class="font-display text-title1">{title}</h2>
                 </div>
                 <button type="button" class="press grid size-11 shrink-0 place-items-center rounded-full bg-surface shadow-card" aria-label="Close" on:click=move |_| close()>
                     <svg viewBox="0 0 24 24" class="size-5" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
                 </button>
             </div>
-            <p class="mt-2"><a class="text-callout underline underline-offset-4" href=format!("/#lesson-{id}") target="_blank" rel="noopener">"Preview it in the course ↗"</a></p>
+            <p class="mt-2"><a class="text-callout underline underline-offset-4" href=format!("/#{}", doc_id(id)) target="_blank" rel="noopener">"Preview it in the course ↗"</a></p>
             {move || note.get().map(|(ok, t)| view! {
                 <p role=if ok { "status" } else { "alert" } class=format!("mt-3 rounded-btn px-3 py-2 text-callout {}", if ok { "bg-ok-bg text-ok-ink" } else { "bg-bad-bg text-bad-ink" })>{t}</p>
             })}
@@ -385,5 +403,9 @@ pub fn plural(n: u32, word: &str) -> String {
 
 /// "Stage 3"; the Live Track's lessons (41–44) are stored as stage 9.
 pub fn stage_name(stage: u8) -> String {
-    if stage == 9 { "Live Track".into() } else { format!("Stage {stage}") }
+    match stage {
+        9 => "Live Track".into(),
+        10 => "Advanced Track".into(),
+        _ => format!("Stage {stage}"),
+    }
 }

@@ -120,6 +120,12 @@ fn validate(file: &str, f: &Front, body: &str, fr: bool) -> (Vec<String>, usize)
     if prefix != f.id {
         err(format!("file number {prefix} doesn't match id {}", f.id));
     }
+    if !(1..=44).contains(&f.id) && !(100..=110).contains(&f.id) {
+        err(format!("id {} is outside L1–44, 100 (Indicators) and 101–110 (A1–A10)", f.id));
+    }
+    if (101..=110).contains(&f.id) && f.stage != 10 {
+        err("A1–A10 (ids 101–110) are stage 10, the Advanced Track".into());
+    }
     if f.id <= 12 && f.stage != 1 {
         err("lessons 1–12 are Stage 1".into());
     }
@@ -370,8 +376,11 @@ fn emit(out: &mut String, f: &Front, minutes: usize) {
 fn main() {
     let dir = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("lessons");
     let mut errors = Vec::new();
-    let en = read_dir(&dir, &mut errors, "");
-    let fr = read_dir(&dir.join("fr"), &mut errors, "fr/");
+    // Sorted by id, not file name, so 101 (A1) comes after 44 rather than after 10.
+    let mut en = read_dir(&dir, &mut errors, "");
+    let mut fr = read_dir(&dir.join("fr"), &mut errors, "fr/");
+    en.sort_by_key(|p| p.front.id);
+    fr.sort_by_key(|p| p.front.id);
 
     let mut out = String::from("pub static LESSONS: &[Lesson] = &[\n");
     let mut seen = Vec::new();

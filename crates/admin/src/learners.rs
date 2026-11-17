@@ -287,7 +287,7 @@ fn ProfileBody(p: Profile, me: Me, note: RwSignal<Option<(bool, String)>>, refre
                 view! {
                     <ul class="mt-2 divide-y divide-line/40 overflow-hidden rounded-card bg-surface shadow-card">
                         {p.attempts.iter().map(|v| {
-                            let lesson = text(v, "lesson").map(|l| api::lesson_label(&format!("lesson-{:0>2}", l))).unwrap_or_default();
+                            let lesson = v.get("lesson").and_then(|l| l.as_u64().or_else(|| l.as_str()?.parse().ok())).and_then(|n| u8::try_from(n).ok()).map(crate::curriculum::long).unwrap_or_default();
                             view! {
                                 <li class="px-4 py-3">
                                     <div class="flex flex-wrap items-baseline justify-between gap-2">

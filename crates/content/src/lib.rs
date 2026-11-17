@@ -128,7 +128,8 @@ mod tests {
 
     #[test]
     fn written_lessons_are_contiguous_and_in_their_stages() {
-        let ids: Vec<u8> = LESSONS.iter().map(|l| l.id).collect();
+        // Numbered lessons run 1..n; 100 is the Indicators side lesson and 101–110 are A1–A10.
+        let ids: Vec<u8> = LESSONS.iter().map(|l| l.id).filter(|id| *id < 100).collect();
         assert_eq!(ids, (1..=ids.len() as u8).collect::<Vec<_>>(), "written lessons run 1..n with no gaps");
         assert!(ids.len() >= 40, "Stages 1–8 are written");
         // Course map v3: Stage 1 = L1–12, Stage 2 = L13–15, Stage 3 = L16–20.
@@ -143,6 +144,7 @@ mod tests {
                 32..=36 => 7,
                 37..=40 => 8,
                 41..=44 => 9,
+                101..=110 => 10,
                 _ => continue,
             };
             assert_eq!(l.stage, stage, "L{} belongs to Stage {stage}", l.id);

@@ -222,11 +222,11 @@ pub fn Overview(me: Me) -> impl IntoView {
                         view! {
                             <ul class="mt-3 divide-y divide-line/40">
                                 {ranked.into_iter().take(5).map(|(r, s)| {
-                                    let n: u8 = s.lesson.trim_start_matches("lesson-").parse().unwrap_or(0);
+                                    let n: u8 = telosgard_core::course::LessonId::from_doc_id(&s.lesson).map_or(0, |l| l.content_id());
                                     let title = telosgard_content::lesson(n).map(|l| l.title).unwrap_or("");
                                     view! {
                                         <li><a href=format!("#{}", s.lesson) class="press flex min-h-11 items-center justify-between gap-3 py-2">
-                                            <span class="min-w-0 truncate text-callout"><span class="tabular mr-2 text-text-muted">{n}</span>{title}</span>
+                                            <span class="min-w-0 truncate text-callout"><span class="tabular mr-2 text-text-muted">{crate::curriculum::short(n)}</span>{title}</span>
                                             <span class="tabular shrink-0 text-footnote text-text-muted">{format!("{} right · {} not yet", crate::curriculum::pct(r), s.not_yet)}</span>
                                         </a></li>
                                     }

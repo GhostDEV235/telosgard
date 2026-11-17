@@ -179,10 +179,8 @@ pub const SECTIONS: &[Section] = &[
 ];
 
 pub fn title(id: LessonId) -> &'static str {
-    if let Numbered(n) = id {
-        if let Some(l) = crate::i18n::lesson(n) {
-            return l.title;
-        }
+    if let Some(l) = crate::i18n::lesson(id.content_id()) {
+        return l.title;
     }
     SECTIONS.iter().flat_map(|s| s.lessons.iter()).find(|(l, _)| *l == id).map_or(t("Lesson", "Leçon"), |(_, x)| x.get())
 }

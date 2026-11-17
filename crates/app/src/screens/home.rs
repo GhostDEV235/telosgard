@@ -47,15 +47,12 @@ fn hero_art() -> impl IntoView {
 }
 
 fn minutes_line(id: telosgard_core::course::LessonId) -> String {
-    match id {
-        telosgard_core::course::LessonId::Numbered(n) => match crate::i18n::lesson(n) {
-            Some(l) => ts(
-                format!("About {} minutes, step by step, then a short quiz and an Explain-Back.", l.read_minutes),
-                format!("Environ {} minutes, pas à pas, puis un petit quiz et un « Explique-le ».", l.read_minutes),
-            ),
-            None => t("Written when you get close to it, using what worked for you so far.", "Écrite quand tu en approcheras, à partir de ce qui a marché pour toi jusque-là.").into(),
-        },
-        _ => t("A short lesson, then a quiz and an Explain-Back.", "Une courte leçon, puis un quiz et un « Explique-le ».").into(),
+    match crate::i18n::lesson(id.content_id()) {
+        Some(l) => ts(
+            format!("About {} minutes, step by step, then a short quiz and an Explain-Back.", l.read_minutes),
+            format!("Environ {} minutes, pas à pas, puis un petit quiz et un « Explique-le ».", l.read_minutes),
+        ),
+        None => t("Written when you get close to it, using what worked for you so far.", "Écrite quand tu en approcheras, à partir de ce qui a marché pour toi jusque-là.").into(),
     }
 }
 

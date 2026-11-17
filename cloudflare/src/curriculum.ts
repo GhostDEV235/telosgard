@@ -3,6 +3,7 @@
 // Explain-Back answers are returned without any identity (Instructors never see who wrote them).
 
 import { ownerEmails, type AuthEnv } from "./auth";
+import { lessonDocFromNumber } from "./lesson-ids";
 
 export const LESSON_ID = /^lesson-([0-9]{2}|a[0-9]{1,2}|ind)$/;
 
@@ -19,9 +20,9 @@ function parse(body: string): Record<string, unknown> {
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 const lessonOf = (v: unknown): string | null => {
-  if (typeof v === "number") return `lesson-${String(v).padStart(2, "0")}`;
+  if (typeof v === "number") return lessonDocFromNumber(v);
   if (typeof v === "string" && LESSON_ID.test(v)) return v;
-  if (typeof v === "string" && /^\d{1,2}$/.test(v)) return `lesson-${v.padStart(2, "0")}`;
+  if (typeof v === "string" && /^\d{1,3}$/.test(v)) return lessonDocFromNumber(Number(v));
   return null;
 };
 

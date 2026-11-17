@@ -24,6 +24,8 @@ pub enum Track {
 pub const LAST_CORE: u8 = 40;
 pub const LAST_LIVE: u8 = 44;
 pub const LAST_ADVANCED: u8 = 10;
+/// Content number of the Indicators side lesson; A1–A10 follow it (see `LessonId::content_id`).
+pub const CONTENT_SIDE: u8 = 100;
 /// Inclusive lesson ranges of the Core Track's stages.
 pub const STAGES: [(u8, u8); 8] = [(1, 12), (13, 15), (16, 20), (21, 23), (24, 28), (29, 31), (32, 36), (37, 40)];
 
@@ -67,6 +69,23 @@ impl LessonId {
         };
         (id.is_valid() && id.doc_id() == s).then_some(id)
     }
+    /// The number this lesson's content and records are stored under: L1–44 as themselves,
+    /// the Indicators side lesson as 100, A1–A10 as 101–110 (`CONTENT_SIDE`).
+    pub fn content_id(self) -> u8 {
+        match self {
+            LessonId::Numbered(n) => n,
+            LessonId::Advanced(n) => CONTENT_SIDE + n,
+            LessonId::Indicators => CONTENT_SIDE,
+        }
+    }
+    pub fn from_content_id(n: u8) -> Option<LessonId> {
+        let id = match n {
+            CONTENT_SIDE => LessonId::Indicators,
+            n if n > CONTENT_SIDE => LessonId::Advanced(n - CONTENT_SIDE),
+            n => LessonId::Numbered(n),
+        };
+        id.is_valid().then_some(id)
+    }
     /// The lesson that must be passed before this one, if any.
     pub fn predecessor(self) -> Option<LessonId> {
         match self {
@@ -96,6 +115,21 @@ impl LessonId {
 mod tests {
     use super::*;
     use LessonId::*;
+
+    #[test]
+    fn content_ids_round_trip_and_never_collide() {
+        let all: Vec<LessonId> = (1..=LAST_LIVE).map(Numbered).chain((1..=LAST_ADVANCED).map(Advanced)).chain([Indicators]).collect();
+        let mut ns: Vec<u8> = all.iter().map(|l| l.content_id()).collect();
+        for l in &all {
+            assert_eq!(LessonId::from_content_id(l.content_id()), Some(*l));
+        }
+        ns.sort();
+        ns.dedup();
+        assert_eq!(ns.len(), all.len());
+        assert_eq!(Advanced(1).content_id(), 101);
+        assert_eq!(LessonId::from_content_id(45), None);
+        assert_eq!(LessonId::from_content_id(111), None);
+    }
 
     #[test]
     fn tracks_and_stages() {

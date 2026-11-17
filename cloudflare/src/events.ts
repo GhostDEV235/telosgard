@@ -12,6 +12,8 @@
 //   checklist            {}                            a new Pre-Session Checklist
 //   activity             {kind}                        any other save (plan, review, run, profile…)
 
+import { lessonDocFromNumber } from "./lesson-ids";
+
 export interface NewEvent {
   type: string;
   lesson?: string;
@@ -26,9 +28,9 @@ const obj = (v: unknown): Record<string, unknown> => (v && typeof v === "object"
 
 /** Two-digit lesson doc id for a lesson number or id string ("lesson-05"), or undefined. */
 function lessonDoc(v: unknown): string | undefined {
-  if (typeof v === "number" && Number.isInteger(v) && v > 0) return `lesson-${String(v).padStart(2, "0")}`;
+  if (typeof v === "number") return lessonDocFromNumber(v) ?? undefined;
   if (typeof v === "string" && /^lesson-[a-z0-9]{1,4}$/.test(v)) return v;
-  if (typeof v === "string" && /^\d{1,3}$/.test(v)) return `lesson-${v.padStart(2, "0")}`;
+  if (typeof v === "string" && /^\d{1,3}$/.test(v)) return lessonDocFromNumber(Number(v)) ?? undefined;
   return undefined;
 }
 

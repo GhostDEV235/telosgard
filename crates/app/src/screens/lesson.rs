@@ -92,10 +92,7 @@ fn locked(id: LessonId) -> impl IntoView {
 }
 
 pub fn content_for(id: LessonId) -> Option<&'static Lesson> {
-    match id {
-        LessonId::Numbered(n) => crate::i18n::lesson(n),
-        _ => None,
-    }
+    crate::i18n::lesson(id.content_id())
 }
 
 fn not_written() -> impl IntoView {
@@ -867,7 +864,7 @@ fn MorePractice(lesson: &'static Lesson) -> impl IntoView {
     let rounds = RwSignal::new(0u32);
 
     let earlier = move || -> Vec<&'static Lesson> {
-        crate::i18n::lessons().into_iter().filter(|l| l.id < lesson.id && progress.passed(LessonId::Numbered(l.id))).collect()
+        crate::i18n::lessons().into_iter().filter(|l| l.id < lesson.id && LessonId::from_content_id(l.id).is_some_and(|id| progress.passed(id))).collect()
     };
     let start = move |scope: MoreScope| {
         let mut sources: Vec<&'static Lesson> = vec![lesson];

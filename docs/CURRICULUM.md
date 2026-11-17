@@ -110,14 +110,16 @@ Written from the attempt history (still no attempts past Stage 2): each rubric a
 
 Stored as stage 9 (the dashboard labels it "Live Track"). Facts checked against the CFTC's customer advisory "Eight Things You Should Know Before Trading Forex", the FCA Warning List page, NFA BASIC, ESMA and CME Group Education (Proper Position Size; Controlling Risk; Keep a Trade Log), read on 2026-11-16. 7 videos verified by oEmbed, including the CFTC's own.
 
-## Advanced Track *(unlocks with Live Readiness)*
-- **A1 Breakout & Retest:** break, retest, rejection candle; false breaks on quiet days
-- **A2 Asian-Range Breakout:** marking the Asian high/low, trading the break as London opens, a fixed window and clear invalidation
-- **A3 News Follow-Through:** waiting for the release whipsaw to settle, then trading the established direction with the top-down framework
+## Advanced Track *(unlocks with Live Readiness; A1–A3 written 2026-11-17)*
+- **A1 Breakout & retest:** a break is an H1 close beyond a zone respected at least twice; no chasing: wait for the retest of the broken zone and a confirmation candle; stop 1–1.5 × ATR beyond its wick (back inside the old range), next zone at ≥ 2:1; distrust quiet-day breaks and breaks against H4; a close back inside the range kills it
+- **A2 Asian-range breakout:** mark the H1 high and low from the Asian session's start to the London open (3 am New York); trade only an H1 close beyond it from 3 to 6 am New York, preferably with H4; stop just beyond the range's middle, target ≥ 2:1 before the next H4 zone; skip ranges too wide for that, breaks against H4, London bank holidays
+- **A3 News follow-through:** after the No-Trade Window, wait for the first H1 candle after the release to close (FOMC: let the 2:30 press conference start); a direction holds one way and breaks H1 structure, ideally with H4 and the surprise; join it on a pullback with confirmation; stop on the current (bigger) ATR, so a smaller size; still ≥ 2:1
 - **A4–A6 Supply & Demand:** zones vs lines, fresh vs tested zones, combining zones with Classic structure
 - **A7–A10 Smart Money Concepts:** liquidity and sweeps, order blocks, fair value gaps, an SMC rulebook (SMC terms vary by teacher, so each lesson states its definition)
 
 Adopting an Advanced strategy requires a new **Trading Plan** version.
+
+Stored as stage 10 under content numbers 101–110 (A1–A10; the Indicators side lesson is 100), so the app, the dashboard and the Worker can key them like numbered lessons. A1–A3 checked against CME Group Education (Trend and Continuation Patterns; Support and Resistance), the World Gold Council, the Federal Reserve, the *Journal of Futures Markets* (2001, "What moves the gold market?") and the *International Review of Financial Analysis* (2024, gold's intraday reaction to FOMC shocks), read on 2026-11-17. 6 videos verified by oEmbed.
 
 ## Suggested pace *(shown on Home; never a deadline)*
 | Weeks | Stages |
